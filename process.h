@@ -35,4 +35,4 @@ bool fmt_process_run(FmtProcess *proc, const char *str_in, size_t in_len,
 
 G_END_DECLS
 
-#endif // FMT_PROCESS_H
+#endif  // FMT_PROCESS_H

@@ -24,8 +24,7 @@
 
 #include <glib.h>
 #include <gtk/gtk.h>
-
-# include <webkit2/webkit2.h>
+#include <webkit2/webkit2.h>
 
 //#include <Scintilla.h>
 //#include <ScintillaWidget.h>
@@ -54,4 +53,4 @@ extern GeanyData *geany_data;
 
 G_END_DECLS
 
-#endif // FMT_PLUGIN_H
+#endif  // FMT_PLUGIN_H

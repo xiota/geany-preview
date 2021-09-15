@@ -27,35 +27,30 @@
 
 #define IO_BUF_SIZE 4096
 
-struct FmtProcess
-{
+struct FmtProcess {
   GPid child_pid;
   GIOChannel *ch_in, *ch_out;
   int return_code;
   unsigned long exit_handler;
 };
 
-static void on_process_exited(GPid pid, int status, FmtProcess *proc)
-{
+static void on_process_exited(GPid pid, int status, FmtProcess *proc) {
   g_spawn_close_pid(pid);
   proc->child_pid = 0;
 
   // FIXME: is it automatically removed?
-  if (proc->exit_handler > 0)
-  {
+  if (proc->exit_handler > 0) {
     g_source_remove(proc->exit_handler);
     proc->exit_handler = 0;
   }
 
-  if (proc->ch_in)
-  {
+  if (proc->ch_in) {
     g_io_channel_shutdown(proc->ch_in, true, NULL);
     g_io_channel_unref(proc->ch_in);
     proc->ch_in = NULL;
   }
 
-  if (proc->ch_out)
-  {
+  if (proc->ch_out) {
     g_io_channel_shutdown(proc->ch_out, true, NULL);
     g_io_channel_unref(proc->ch_out);
     proc->ch_out = NULL;
@@ -64,8 +59,7 @@ static void on_process_exited(GPid pid, int status, FmtProcess *proc)
   proc->return_code = status;
 }
 
-FmtProcess *fmt_process_open(const char *work_dir, const char *const *argv)
-{
+FmtProcess *fmt_process_open(const char *work_dir, const char *const *argv) {
   FmtProcess *proc;
   GError *error = NULL;
   int fd_in = -1, fd_out = -1;
@@ -75,8 +69,7 @@ FmtProcess *fmt_process_open(const char *work_dir, const char *const *argv)
   if (!g_spawn_async_with_pipes(work_dir, (char **)argv, NULL,
                                 G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD,
                                 NULL, NULL, &proc->child_pid, &fd_in, &fd_out,
-                                NULL, &error))
-  {
+                                NULL, &error)) {
     g_warning("Failed to create subprocess: %s", error->message);
     g_error_free(error);
     g_free(proc);
@@ -94,26 +87,21 @@ FmtProcess *fmt_process_open(const char *work_dir, const char *const *argv)
   return proc;
 }
 
-int fmt_process_close(FmtProcess *proc)
-{
+int fmt_process_close(FmtProcess *proc) {
   int ret_code = proc->return_code;
 
-  if (proc->ch_in)
-  {
+  if (proc->ch_in) {
     g_io_channel_shutdown(proc->ch_in, true, NULL);
     g_io_channel_unref(proc->ch_in);
   }
 
-  if (proc->ch_out)
-  {
+  if (proc->ch_out) {
     g_io_channel_shutdown(proc->ch_out, true, NULL);
     g_io_channel_unref(proc->ch_out);
   }
 
-  if (proc->child_pid > 0)
-  {
-    if (proc->exit_handler > 0)
-      g_source_remove(proc->exit_handler);
+  if (proc->child_pid > 0) {
+    if (proc->exit_handler > 0) g_source_remove(proc->exit_handler);
     g_spawn_close_pid(proc->child_pid);
   }
 
@@ -123,18 +111,14 @@ int fmt_process_close(FmtProcess *proc)
 }
 
 bool fmt_process_run(FmtProcess *proc, const char *str_in, size_t in_len,
-                     GString *str_out)
-{
+                     GString *str_out) {
   GIOStatus status;
   GError *error = NULL;
   bool read_complete = false;
   size_t in_off = 0;
 
-  if (str_in && in_len)
-  {
-
-    do
-    { // until all text is pushed into process's stdin
+  if (str_in && in_len) {
+    do {  // until all text is pushed into process's stdin
 
       size_t bytes_written = 0;
       size_t write_size_remaining = in_len - in_off;
@@ -147,8 +131,7 @@ bool fmt_process_run(FmtProcess *proc, const char *str_in, size_t in_len,
 
       in_off += bytes_written;
 
-      if (status == G_IO_STATUS_ERROR)
-      {
+      if (status == G_IO_STATUS_ERROR) {
         g_warning("Failed writing to subprocess's stdin: %s", error->message);
         g_error_free(error);
         return false;
@@ -164,8 +147,7 @@ bool fmt_process_run(FmtProcess *proc, const char *str_in, size_t in_len,
 
   // All text should be written to process's stdin by now, read the
   // rest of the process's stdout.
-  while (!read_complete)
-  {
+  while (!read_complete) {
     char *tail_string = NULL;
     size_t tail_len = 0;
 
@@ -173,24 +155,18 @@ bool fmt_process_run(FmtProcess *proc, const char *str_in, size_t in_len,
     status =
         g_io_channel_read_to_end(proc->ch_out, &tail_string, &tail_len, &error);
 
-    if (tail_len > 0)
-      g_string_append_len(str_out, tail_string, tail_len);
+    if (tail_len > 0) g_string_append_len(str_out, tail_string, tail_len);
 
     g_free(tail_string);
 
-    if (status == G_IO_STATUS_ERROR)
-    {
+    if (status == G_IO_STATUS_ERROR) {
       g_warning("Failed to read rest of subprocess's stdout: %s",
                 error->message);
       g_error_free(error);
       return false;
-    }
-    else if (status == G_IO_STATUS_AGAIN)
-    {
+    } else if (status == G_IO_STATUS_AGAIN) {
       continue;
-    }
-    else
-    {
+    } else {
       read_complete = true;
     }
   }
