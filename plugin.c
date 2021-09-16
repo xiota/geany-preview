@@ -25,6 +25,7 @@
 #include "config.h"
 #endif
 
+#include "formats.h"
 #include "plugin.h"
 #include "process.h"
 
@@ -50,9 +51,6 @@ static void on_document_signal(GObject *obj, GeanyDocument *doc,
                                gpointer user_data);
 static void on_document_filetype_set(GObject *obj, GeanyDocument *doc,
                                      GeanyFiletype *ft_old, gpointer user_data);
-
-GString *pandoc(const char *work_dir, const char *input, char *type);
-GString *asciidoctor(const char *work_dir, const char *input);
 
 static void update_preview();
 
@@ -262,25 +260,33 @@ static void update_preview() {
     // case GEANY_FILETYPES_XML:
     case GEANY_FILETYPES_NONE: {
       char *filename = g_path_get_basename(DOC_FILENAME(doc));
-      int _len = strlen(filename);
       GString *html = NULL;
-      if (g_strcmp0(&filename[_len - 8], ".textile") == 0) {
+
+      if (g_regex_match_simple("fountain", filename, G_REGEX_CASELESS, 0)) {
+        html = screenplain(g_path_get_dirname(DOC_FILENAME(doc)), text, "html");
+      } else if (g_regex_match_simple("textile", filename, G_REGEX_CASELESS,
+                                      0)) {
         html = pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "textile");
-      } else if (g_strcmp0(&filename[_len - 9], ".dokuwiki") == 0) {
-        html = pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "dokuwiki");
-      } else if (g_strcmp0(&filename[_len - 10], ".mediawiki") == 0 ||
-                 g_strcmp0(&filename[_len - 5], ".wiki") == 0) {
-        html = pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "mediawiki");
-      } else if (g_strcmp0(&filename[_len - 5], ".muse") == 0) {
+      } else if (g_regex_match_simple("wiki", filename, G_REGEX_CASELESS, 0)) {
+        if (g_regex_match_simple("dokuwiki", filename, G_REGEX_CASELESS, 0)) {
+          html =
+              pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "dokuwiki");
+        } else if (g_regex_match_simple("tikiwiki", filename, G_REGEX_CASELESS,
+                                        0)) {
+          html =
+              pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "tikiwiki");
+        } else if (g_regex_match_simple("vimwiki", filename, G_REGEX_CASELESS,
+                                        0)) {
+          html = pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "vimwiki");
+        } else if (g_regex_match_simple("twiki", filename, G_REGEX_CASELESS,
+                                        0)) {
+          html = pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "twiki");
+        } else {
+          html =
+              pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "mediawiki");
+        }
+      } else if (g_regex_match_simple("muse", filename, G_REGEX_CASELESS, 0)) {
         html = pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "muse");
-      } else if (g_strcmp0(&filename[_len - 9], ".tikiwiki") == 0) {
-        html = pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "tikiwiki");
-      } else if (g_strcmp0(&filename[_len - 8], ".vimwiki") == 0) {
-        html = pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "vimwiki");
-      } else if (g_strcmp0(&filename[_len - 6], ".twiki") == 0) {
-        html = pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "twiki");
-      } else {
-        html = pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, NULL);
       }
       if (html) {
         char *uri = g_filename_to_uri(DOC_FILENAME(doc), NULL, NULL);
@@ -300,77 +306,6 @@ static void update_preview() {
   }
 
   wv_load_scroll_pos();
-}
-
-GString *pandoc(const char *work_dir, const char *input, char *type) {
-  if (input == NULL) {
-    return NULL;
-  }
-
-  GPtrArray *args = g_ptr_array_new_with_free_func(g_free);
-  g_ptr_array_add(args, g_strdup("pandoc"));
-
-  if (type != NULL) {
-    g_ptr_array_add(args, g_strdup_printf("--from=%s", type));
-  }
-  g_ptr_array_add(args, g_strdup("--to=html"));
-  g_ptr_array_add(args, g_strdup("--quiet"));
-  g_ptr_array_add(args, NULL);  // end of args
-
-  FmtProcess *proc =
-      fmt_process_open(work_dir, (const char *const *)args->pdata);
-  g_ptr_array_free(args, TRUE);
-
-  if (!proc) {
-    // command not found
-    return NULL;
-  }
-
-  GString *output = g_string_sized_new(strlen(input));
-  if (!fmt_process_run(proc, input, strlen(input), output)) {
-    g_warning("Failed to format document range");
-    g_string_free(output, TRUE);
-    fmt_process_close(proc);
-    return NULL;
-  }
-
-  return output;
-}
-
-GString *asciidoctor(const char *work_dir, const char *input) {
-  if (input == NULL) {
-    return NULL;
-  }
-
-  GPtrArray *args = g_ptr_array_new_with_free_func(g_free);
-  g_ptr_array_add(args, g_strdup("asciidoctor"));
-
-  if (work_dir != NULL) {
-    g_ptr_array_add(args, g_strdup_printf("--base-dir=DIR%s", work_dir));
-  }
-  g_ptr_array_add(args, g_strdup("--quiet"));
-  g_ptr_array_add(args, g_strdup("--out-file=-"));
-  g_ptr_array_add(args, g_strdup("-"));
-  g_ptr_array_add(args, NULL);  // end of args
-
-  FmtProcess *proc =
-      fmt_process_open(work_dir, (const char *const *)args->pdata);
-  g_ptr_array_free(args, TRUE);
-
-  if (!proc) {
-    // command not found
-    return NULL;
-  }
-
-  GString *output = g_string_sized_new(strlen(input));
-  if (!fmt_process_run(proc, input, strlen(input), output)) {
-    g_warning("Failed to format document range");
-    g_string_free(output, TRUE);
-    fmt_process_close(proc);
-    return NULL;
-  }
-
-  return output;
 }
 
 static gboolean update_preview_timeout_callback(gpointer user_data) {
@@ -399,8 +334,13 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
                  doc->file_type->id != GEANY_FILETYPES_NONE) {
         update_preview();
       } else if (g_timeout_handle == 0) {
+        int length = (int)scintilla_send_message(doc->editor->sci,
+                                                 SCI_GETTEXTLENGTH, 0, 0);
+        double _tt = (double)length * 4. / 1024.;
+        int timeout = (int)_tt > 200 ? (int)_tt : 200; // max(_tt, 200)
+        g_warning("timeout = %d", timeout);
         g_timeout_handle =
-            g_timeout_add(200, update_preview_timeout_callback, NULL);
+            g_timeout_add(timeout, update_preview_timeout_callback, NULL);
       }
     }
   }

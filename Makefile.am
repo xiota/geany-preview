@@ -17,4 +17,5 @@ preview_la_LIBADD = $(GEANY_LIBS) $(WEBKIT_LIBS) $(CMARK_LIBS)
 preview_la_LDFLAGS = -module -avoid-version
 preview_la_SOURCES = \
 	plugin.c plugin.h \
+	formats.c formats.h \
 	process.c process.h
