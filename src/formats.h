@@ -23,9 +23,17 @@
 
 #include "process.h"
 
-// wrappers around command line programs
-GString *pandoc(const char *work_dir, const char *input, char *type);
-GString *asciidoctor(const char *work_dir, const char *input);
-GString *screenplain(const char *work_dir, const char *input, const char *format);
+enum PandocOptions {
+  PANDOC_NONE = 0,
+  PANDOC_FRAGMENT = 1,  // turn off --standalone
+  PANDOC_TOC = 2
+};
 
-#endif // PREVIEW_FORMATS_H
+// wrappers around command line programs
+GString *pandoc(const char *work_dir, const char *input, const char *type,
+                const uint options);
+GString *asciidoctor(const char *work_dir, const char *input);
+GString *screenplain(const char *work_dir, const char *input,
+                     const char *format);
+
+#endif  // PREVIEW_FORMATS_H

@@ -15,9 +15,9 @@ RM = del
 CP = copy /y
 
 FMT_CFLAGS := $(CFLAGS) -std=c99 -DGTK -DSCI_LEXER \
-	-DG_LOG_DOMAIN=\""CodeFormat"\" \
+	-DG_LOG_DOMAIN=\""Preview"\" \
 	-DFMT_README_FILE=\"$(DOCDIR)/README.md\" \
-	-DFMT_SYSTEM_CONFIG=\"$(DATADIR)/code-format.conf\" \
+	-DFMT_SYSTEM_CONFIG=\"$(DATADIR)/preview.conf\" \
 	$(shell $(PKG_CONFIG_EXE) --cflags gtk+-2.0) \
 	-I"$(GEANY_SOURCE)/src" \
 	-I"$(GEANY_SOURCE)/plugins" \
@@ -28,27 +28,21 @@ FMT_CFLAGS := $(CFLAGS) -std=c99 -DGTK -DSCI_LEXER \
 
 FMT_LDFLAGS := $(LDFLAGS) $(shell $(PKG_CONFIG_EXE) --libs gtk+-2.0)
 
-code-format.dll: format.o plugin.o prefs.o process.o style.o
+preview.dll: formats.o plugin.o process.o
 	$(CC) -shared $(FMT_CFLAGS) -o $@ $^ $(FMT_LDFLAGS)
 
-format.o: format.c
+formats.o: src/formats.c
 	$(CC) -c $(FMT_CFLAGS) -o $@ $<
 
-plugin.o: plugin.c
+plugin.o: src/plugin.c
 	$(CC) -c $(FMT_CFLAGS) -o $@ $<
 
-prefs.o: prefs.c
-	$(CC) -c $(FMT_CFLAGS) -o $@ $<
-
-process.o: process.c
-	$(CC) -c $(FMT_CFLAGS) -o $@ $<
-
-style.o: style.c
+process.o: src/process.c
 	$(CC) -c $(FMT_CFLAGS) -o $@ $<
 
 install:
-	$(CP) code-format.dll $(PLUGINDIR)
-	$(CP) code-format.conf $(DATADIR)
+	$(CP) preview.dll $(PLUGINDIR)
+	$(CP) preview.conf $(DATADIR)
 	$(CP) README.md $(DOCDIR)
 
 clean:

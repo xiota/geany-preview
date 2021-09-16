@@ -35,6 +35,9 @@
 
 #include <cmark-gfm.h>
 
+#define WEBVIEW_WARN(msg) \
+  webkit_web_view_load_plain_text(WEBKIT_WEB_VIEW(g_viewer), (msg))
+
 GeanyPlugin *geany_plugin;
 GeanyData *geany_data;
 
@@ -124,12 +127,6 @@ void plugin_init(G_GNUC_UNUSED GeanyData *data) {
   webkit_settings_set_allow_universal_access_from_file_urls(wv_settings, TRUE);
 
   webkit_settings_set_default_font_family(wv_settings, "serif");
-  // webkit_settings_set_monospace_font_family(wv_settings, "monospace");
-  // webkit_settings_set_serif_font_family (wv_settings, "serif");
-  // webkit_settings_set_sans_serif_font_family(wv_settings, "sans-serif");
-  // webkit_settings_set_cursive_font_family(wv_settings, "cursive");
-  // webkit_settings_set_fantasy_font_family(wv_settings, "fantasy");
-  // webkit_settings_set_pictograph_font_family(wv_settings, "pictograph");
 
   g_viewer = webkit_web_view_new_with_settings(wv_settings);
 
@@ -145,7 +142,7 @@ void plugin_init(G_GNUC_UNUSED GeanyData *data) {
   gtk_widget_show_all(g_scrolled_win);
   gtk_notebook_set_current_page(nb, g_page_num);
 
-  webkit_web_view_load_plain_text(WEBKIT_WEB_VIEW(g_viewer), "Loading...");
+  WEBVIEW_WARN("Loading...");
 
 #define CONNECT(sig, cb) \
   plugin_signal_connect(geany_plugin, NULL, sig, TRUE, G_CALLBACK(cb), NULL)
@@ -172,139 +169,120 @@ void plugin_cleanup() {
 static void update_preview() {
   GeanyDocument *doc = document_get_current();
   if (!DOC_VALID(doc)) {
-    webkit_web_view_load_plain_text(WEBKIT_WEB_VIEW(g_viewer),
-                                    "Unknown document type.");
+    WEBVIEW_WARN("Unknown document type.");
     return;
   }
 
+  char *uri = g_filename_to_uri(DOC_FILENAME(doc), NULL, NULL);
+  char *basename = g_path_get_basename(DOC_FILENAME(doc));
+  char *work_dir = g_path_get_dirname(DOC_FILENAME(doc));
   char *text = (char *)scintilla_send_message(doc->editor->sci,
                                               SCI_GETCHARACTERPOINTER, 0, 0);
+  char *html = NULL;
+  char *plain = NULL;
+  GString *output = NULL;
+
+  // save scroll position
   wv_save_scroll_pos();
 
+  // callback to restore scroll position
   if (g_load_handle == 0) {
     g_load_handle =
         g_signal_connect_swapped(WEBKIT_WEB_VIEW(g_viewer), "load-changed",
                                  G_CALLBACK(wv_loading_callback), NULL);
   }
 
+  // TODO: Add preferences to set pandoc options
+  uint pandoc_options = PANDOC_NONE;
+
   switch (doc->file_type->id) {
-    case GEANY_FILETYPES_MARKDOWN: {
-      // TODO: Add option to switch markdown interpreter
-      char *html = cmark_markdown_to_html(text, strlen(text), 0);
-      char *uri = g_filename_to_uri(DOC_FILENAME(doc), NULL, NULL);
-      webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), html, uri);
-      g_free(html);
-      g_free(uri);
-    } break;
+    case GEANY_FILETYPES_HTML:
+      html = text;
+      break;
+    case GEANY_FILETYPES_MARKDOWN:
+      // TODO: Add option to switch markdown interpreter and type
+      html = cmark_markdown_to_html(text, strlen(text), 0);
+      // output = pandoc(work_dir, text, "gfm", pandoc_options);
+      break;
+    case GEANY_FILETYPES_ASCIIDOC:
+      output = asciidoctor(work_dir, text);
+      break;
+    case GEANY_FILETYPES_DOCBOOK:
+      output = pandoc(work_dir, text, "docbook", pandoc_options);
+      break;
+    case GEANY_FILETYPES_LATEX:
+      output = pandoc(work_dir, text, "latex", pandoc_options);
+      break;
+    case GEANY_FILETYPES_REST:
+      output = pandoc(work_dir, text, "rst", pandoc_options);
+      break;
+    case GEANY_FILETYPES_TXT2TAGS:
+      output = pandoc(work_dir, text, "t2t", pandoc_options);
+      break;
 
-    case GEANY_FILETYPES_HTML: {
-      char *uri = g_filename_to_uri(DOC_FILENAME(doc), NULL, NULL);
-      webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), text, uri);
-      g_free(uri);
-    } break;
+#define CHECK_TYPE(_type) \
+  g_regex_match_simple((_type), basename, G_REGEX_CASELESS, 0)
 
-    case GEANY_FILETYPES_ASCIIDOC: {
-      GString *html = asciidoctor(g_path_get_dirname(DOC_FILENAME(doc)), text);
-      if (html) {
-        char *uri = g_filename_to_uri(DOC_FILENAME(doc), NULL, NULL);
-        webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), html->str, uri);
-        g_string_free(html, TRUE);
-        g_free(uri);
+    case GEANY_FILETYPES_NONE:
+      if (CHECK_TYPE("gfm")) {
+        output = pandoc(work_dir, text, "gfm", pandoc_options);
+      } else if (CHECK_TYPE("fountain")) {
+        output = screenplain(work_dir, text, "html");
+      } else if (CHECK_TYPE("textile")) {
+        output = pandoc(work_dir, text, "textile", pandoc_options);
+      } else if (CHECK_TYPE("txt")) {
+        if (CHECK_TYPE("gfm")) {
+          output = pandoc(work_dir, text, "gfm", pandoc_options);
+        } else if (CHECK_TYPE("pandoc")) {
+          output = pandoc(work_dir, text, "markdown", pandoc_options);
+        } else {
+          plain = g_strdup(text);
+        }
+      } else if (CHECK_TYPE("wiki")) {
+        if (CHECK_TYPE("dokuwiki")) {
+          output = pandoc(work_dir, text, "dokuwiki", pandoc_options);
+        } else if (CHECK_TYPE("tikiwiki")) {
+          output = pandoc(work_dir, text, "tikiwiki", pandoc_options);
+        } else if (CHECK_TYPE("vimwiki")) {
+          output = pandoc(work_dir, text, "vimwiki", pandoc_options);
+        } else if (CHECK_TYPE("twiki")) {
+          output = pandoc(work_dir, text, "twiki", pandoc_options);
+        } else {
+          output = pandoc(work_dir, text, "mediawiki", pandoc_options);
+        }
+      } else if (CHECK_TYPE("muse")) {
+        output = pandoc(work_dir, text, "muse", pandoc_options);
+      } else if (CHECK_TYPE("org")) {
+        output = pandoc(work_dir, text, "org", pandoc_options);
       }
-    } break;
-
-    case GEANY_FILETYPES_DOCBOOK: {
-      GString *html =
-          pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "docbook");
-      if (html) {
-        char *uri = g_filename_to_uri(DOC_FILENAME(doc), NULL, NULL);
-        webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), html->str, uri);
-        g_string_free(html, TRUE);
-        g_free(uri);
-      }
-    } break;
-
-    case GEANY_FILETYPES_LATEX: {
-      GString *html =
-          pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "latex");
-      if (html) {
-        char *uri = g_filename_to_uri(DOC_FILENAME(doc), NULL, NULL);
-        webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), html->str, uri);
-        g_string_free(html, TRUE);
-        g_free(uri);
-      }
-    } break;
-
-    case GEANY_FILETYPES_REST: {
-      GString *html =
-          pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "rst");
-      if (html) {
-        char *uri = g_filename_to_uri(DOC_FILENAME(doc), NULL, NULL);
-        webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), html->str, uri);
-        g_string_free(html, TRUE);
-        g_free(uri);
-      }
-    } break;
-
-    case GEANY_FILETYPES_TXT2TAGS: {
-      GString *html =
-          pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "t2t");
-      if (html) {
-        char *uri = g_filename_to_uri(DOC_FILENAME(doc), NULL, NULL);
-        webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), html->str, uri);
-        g_string_free(html, TRUE);
-        g_free(uri);
-      }
-    } break;
+      break;
+#undef CHECK_TYPE
 
     // case GEANY_FILETYPES_XML:
-    case GEANY_FILETYPES_NONE: {
-      char *filename = g_path_get_basename(DOC_FILENAME(doc));
-      GString *html = NULL;
-
-      if (g_regex_match_simple("fountain", filename, G_REGEX_CASELESS, 0)) {
-        html = screenplain(g_path_get_dirname(DOC_FILENAME(doc)), text, "html");
-      } else if (g_regex_match_simple("textile", filename, G_REGEX_CASELESS,
-                                      0)) {
-        html = pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "textile");
-      } else if (g_regex_match_simple("wiki", filename, G_REGEX_CASELESS, 0)) {
-        if (g_regex_match_simple("dokuwiki", filename, G_REGEX_CASELESS, 0)) {
-          html =
-              pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "dokuwiki");
-        } else if (g_regex_match_simple("tikiwiki", filename, G_REGEX_CASELESS,
-                                        0)) {
-          html =
-              pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "tikiwiki");
-        } else if (g_regex_match_simple("vimwiki", filename, G_REGEX_CASELESS,
-                                        0)) {
-          html = pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "vimwiki");
-        } else if (g_regex_match_simple("twiki", filename, G_REGEX_CASELESS,
-                                        0)) {
-          html = pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "twiki");
-        } else {
-          html =
-              pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "mediawiki");
-        }
-      } else if (g_regex_match_simple("muse", filename, G_REGEX_CASELESS, 0)) {
-        html = pandoc(g_path_get_dirname(DOC_FILENAME(doc)), text, "muse");
-      }
-      if (html) {
-        char *uri = g_filename_to_uri(DOC_FILENAME(doc), NULL, NULL);
-        webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), html->str, uri);
-        g_string_free(html, TRUE);
-        g_free(uri);
-      }
-    } break;
-
     default: {
-      char *_text = g_malloc(64);
-      sprintf(_text, "Cannot preview type: %s, %s.", doc->file_type->name,
-              doc->encoding);
-      webkit_web_view_load_plain_text(WEBKIT_WEB_VIEW(g_viewer), _text);
-      g_free(_text);
+      // html = NULL;
     } break;
   }
 
+  if (html) {
+    webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), html, uri);
+    g_free(html);
+  } else if (output) {
+    webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), output->str, uri);
+    g_string_free(output, TRUE);
+  } else {
+    char *_text = g_malloc(64);
+    sprintf(_text, "Unable to process type: %s, %s.", doc->file_type->name,
+            doc->encoding);
+    WEBVIEW_WARN(_text);
+    g_free(_text);
+  }
+
+  g_free(uri);
+  g_free(basename);
+  g_free(work_dir);
+
+  // restore scroll position
   wv_load_scroll_pos();
 }
 
@@ -318,8 +296,7 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
                                  SCNotification *notif, gpointer user_data) {
   GeanyDocument *doc = document_get_current();
   if (!DOC_VALID(doc)) {
-    webkit_web_view_load_plain_text(WEBKIT_WEB_VIEW(g_viewer),
-                                    "Unknown document type.");
+    WEBVIEW_WARN("Unknown document type.");
     return FALSE;
   }
   if (notif->nmhdr.code == SCN_MODIFIED && notif->length > 0) {
@@ -327,18 +304,22 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
       GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
       if (gtk_notebook_get_current_page(nb) != g_page_num &&
           g_timeout_handle == 0) {
-        // delay updates when preview is not visible
+        // delay updates when preview is not visible,
+        // but still need to update in case user switches tabs
+        // TODO: Stop updates and update when user switches tab
         g_timeout_handle =
             g_timeout_add(5000, update_preview_timeout_callback, NULL);
       } else if (doc->file_type->id != GEANY_FILETYPES_ASCIIDOC &&
                  doc->file_type->id != GEANY_FILETYPES_NONE) {
+        // no delay because HTML, Markdown, and pandoc are fast enough
         update_preview();
       } else if (g_timeout_handle == 0) {
+        // TODO: Make delay adjustable for slower computers
+        // delay based on document size for slow external processors
         int length = (int)scintilla_send_message(doc->editor->sci,
                                                  SCI_GETTEXTLENGTH, 0, 0);
         double _tt = (double)length * 4. / 1024.;
-        int timeout = (int)_tt > 200 ? (int)_tt : 200; // max(_tt, 200)
-        g_warning("timeout = %d", timeout);
+        int timeout = (int)_tt > 200 ? (int)_tt : 200;  // max(_tt, 200)
         g_timeout_handle =
             g_timeout_add(timeout, update_preview_timeout_callback, NULL);
       }

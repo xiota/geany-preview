@@ -19,9 +19,11 @@
  */
 
 #include "formats.h"
+
 #include "process.h"
 
-GString *pandoc(const char *work_dir, const char *input, char *type) {
+GString *pandoc(const char *work_dir, const char *input, const char *type,
+                const uint options) {
   if (input == NULL) {
     return NULL;
   }
@@ -34,14 +36,21 @@ GString *pandoc(const char *work_dir, const char *input, char *type) {
   }
   g_ptr_array_add(args, g_strdup("--to=html"));
   g_ptr_array_add(args, g_strdup("--quiet"));
+
+  if (!(options & PANDOC_FRAGMENT)) {
+    g_ptr_array_add(args, g_strdup("--standalone"));
+  }
+  if (options & PANDOC_TOC) {
+    g_ptr_array_add(args, g_strdup("--toc"));
+  }
+
   g_ptr_array_add(args, NULL);  // end of args
 
   FmtProcess *proc =
       fmt_process_open(work_dir, (const char *const *)args->pdata);
 
   if (!proc) {
-    // command not found
-    g_warning("%s not found", (char *)args->pdata[0]);
+    // command not found, FmtProcess will print warning
     return NULL;
   }
   g_ptr_array_free(args, TRUE);
@@ -77,8 +86,7 @@ GString *asciidoctor(const char *work_dir, const char *input) {
       fmt_process_open(work_dir, (const char *const *)args->pdata);
 
   if (!proc) {
-    // command not found
-    g_warning("%s not found", (char *)args->pdata[0]);
+    // command not found, FmtProcess will print warning
     return NULL;
   }
   g_ptr_array_free(args, TRUE);
@@ -114,8 +122,7 @@ GString *screenplain(const char *work_dir, const char *input,
       fmt_process_open(work_dir, (const char *const *)args->pdata);
 
   if (!proc) {
-    // command not found
-    g_warning("%s not found", (char *)args->pdata[0]);
+    // command not found, FmtProcess will print warning
     return NULL;
   }
   g_ptr_array_free(args, TRUE);
