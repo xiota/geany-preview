@@ -337,22 +337,22 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
           g_timeout_handle == 0) {
         // delay updates when preview is not visible,
         // but still need to update in case user switches tabs
-        // TODO: Stop updates and update when user switches tab
+        // TODO: Stop updates entirely when not visible
         g_timeout_handle = g_timeout_add(settings.background_interval,
                                          update_preview_timeout_callback, NULL);
       } else if (doc->file_type->id != GEANY_FILETYPES_ASCIIDOC &&
                  doc->file_type->id != GEANY_FILETYPES_NONE) {
         // no delay because HTML, Markdown, and pandoc are fast enough
+        // should there be a delay for very large files?
         update_preview();
       } else if (g_timeout_handle == 0) {
-        // TODO: Make delay adjustable for slower computers
-        // delay based on document size for slow external processors
+        // delay for slow external programs
         int length = (int)scintilla_send_message(doc->editor->sci,
                                                  SCI_GETTEXTLENGTH, 0, 0);
-        double _tt = (double)length * 4. / 1024.;
+        double _tt = (double)length * settings.size_interval_factor;
         int timeout = (int)_tt > settings.update_interval
                           ? (int)_tt
-                          : settings.update_interval;  // max(_tt, 200)
+                          : settings.update_interval;
 
         g_timeout_handle =
             g_timeout_add(timeout, update_preview_timeout_callback, NULL);

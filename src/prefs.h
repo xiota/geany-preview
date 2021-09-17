@@ -32,6 +32,7 @@ extern GeanyData *geany_data;
 struct PreviewSettings {
   int update_interval;
   int background_interval;
+  double size_interval_factor;
   char *html_processor;
   char *markdown_processor;
   char *asciidoc_processor;
@@ -87,6 +88,18 @@ G_END_DECLS
   do {                                   \
     if (HAS_KEY(#key)) {                \
       int val = GET_KEY(integer, #key); \
+      if (val) {                         \
+        settings.key = val;              \
+      } else {                           \
+        settings.key = (def);            \
+      }                                  \
+    }                                    \
+  } while (0)
+
+#define LOAD_KEY_DOUBLE(key, def)       \
+  do {                                   \
+    if (HAS_KEY(#key)) {                \
+      int val = GET_KEY(double, #key); \
       if (val) {                         \
         settings.key = val;              \
       } else {                           \

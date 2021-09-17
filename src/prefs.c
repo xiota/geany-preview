@@ -118,7 +118,16 @@ void load_settings(GKeyFile *kf) {
   }
 
   LOAD_KEY_INTEGER(update_interval, 200);
+  if (settings.update_interval < 5) {
+    settings.update_interval = 5;
+  }
+
   LOAD_KEY_INTEGER(background_interval, 5000);
+
+  LOAD_KEY_DOUBLE(size_interval_factor, 0.004);
+  if (settings.update_interval < 0) {
+    settings.size_interval_factor = 0;
+  }
 
   LOAD_KEY_STRING(html_processor, "native");
   LOAD_KEY_STRING(markdown_processor, "native");
@@ -140,6 +149,7 @@ void load_settings(GKeyFile *kf) {
 void init_settings() {
   settings.update_interval = 200;
   settings.background_interval = 5000;
+  settings.size_interval_factor = 0.004;
   settings.html_processor = g_strdup("native");
   settings.markdown_processor = g_strdup("native");
   settings.asciidoc_processor = g_strdup("asciidoctor");
