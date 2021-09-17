@@ -130,7 +130,7 @@ void load_settings(GKeyFile *kf) {
   LOAD_KEY_BOOLEAN(pandoc_fragment, FALSE);
   LOAD_KEY_BOOLEAN(pandoc_toc, FALSE);
 
-  LOAD_KEY_STRING(pandoc_markdown, "gfm");
+  LOAD_KEY_STRING(pandoc_markdown, "markdown");
   LOAD_KEY_STRING(default_font_family, "serif");
 
   LOAD_KEY_BOOLEAN(verbatim_plain_text, FALSE);
@@ -148,7 +148,7 @@ void init_settings() {
   settings.pandoc_disabled = FALSE;
   settings.pandoc_fragment = FALSE;
   settings.pandoc_toc = FALSE;
-  settings.pandoc_markdown = g_strdup("gfm");
+  settings.pandoc_markdown = g_strdup("markdown");
   settings.default_font_family = g_strdup("serif");
   settings.verbatim_plain_text = FALSE;
   settings.extended_types = TRUE;
