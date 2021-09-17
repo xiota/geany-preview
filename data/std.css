@@ -1,0 +1,290 @@
+/*
+	===========
+	StandardCSS
+	===========
+*/
+
+/* HTML Elements */
+ul, ol, li, h1, h2, h3, h4, h5, h6, pre, form, body, html, p, blockquote, q, fieldset, dl, dt, dd, iframe, table, tbody, thead, td, th, address, legend {
+	margin:0;
+	padding:0;
+	font-size: 1.0em;
+	font-style: inherit;
+	font-family: inherit;
+	vertical-align: baseline;
+}
+
+/* HTML5 Elements */
+article, aside, canvas, details, figcaption, figure, footer, header, hgroup, main, menu, nav, section, summary {
+    display: block;
+}
+
+/* iOS overrides hightlight color show when the user taps a link */
+* {
+	-webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+/* Prevent iOS from adjusting text while changing orientation */
+html {
+    -ms-text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+	font-size: 12px;
+	line-height: 1.5em;
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+/**
+ * Headings and text
+ * Description:
+ * Note: :first-child on the right place over there?
+ */
+
+h1 {
+	font-size: 1.5em; /* 18px */
+	line-height: 1em; /* 18px */
+	margin: 2em 0 1em 0; /* 18px */
+}
+
+h1:first-child, h2:first-child, h3:first-child, h4:first-child, h5:first-child { margin-top: 0; } /* reset the first H{x} of the page */
+* html h1, * html h2 { margin-top: 0; } /* Don't we all love Bill? */
+
+h2 {
+	font-size: 1.3333em; /* 16px */
+	line-height: 1.125em; /* 18px */
+	margin-top: 1.6875em; /* 27px */
+	margin-bottom: 0.5625em; /* 9px */
+}
+
+h3 {
+	font-size: 1.1667em; /* 14px */
+	line-height: 1.286em; /* 18px */
+	margin-top: 1.929em; /* 27 px */
+	margin-bottom: 0.643em; /* 9px */
+	}
+	h2 + h3 {
+		margin-top: 1.2857em; /* 18 px */
+	}
+
+h4 {
+	margin-top: 1.5em; /* 18px */
+	}
+	h3 + h4 {
+		margin-top: 0.5em; /* 9 px */
+	}
+
+h5 {
+	margin-top: 1.5em; /* 18px */
+	font-weight: normal;
+}
+	h4 + h5 {
+		margin-top: 0em; /* 9 px */
+	}
+
+p {
+	font-size: 1em; /* 12px */
+	line-height: 1.5em; /* 18px */
+	margin: 0 0 1.5em 0;
+}
+p.intro {
+	font-size: 1.08333em;
+	line-height: 1.3846em;
+	font-weight: bold;
+}
+
+blockquote {
+	margin: 0 2.5em 1.5em 2.5em;
+	font-style: oblique;
+}
+q { font-style: oblique; }
+
+hr {
+	margin: 0 0 1.5em 0;
+	height: 1px;
+	background: #333;
+	border: none;
+}
+
+small {
+	font-size: 0.8333em; /* 10px */
+	line-height: 1.8em; /* 18px */ /* SOMETHING STRANGE HAPPENING HERE!! was 1.8em IE IS NOT HELPING HERE! */
+}
+
+a img, :link img, :visited img {
+	border: none;
+}
+
+a {
+	background: transparent; /* prevents grey brackground IE10 */
+	outline: 0;
+}
+
+address { font-style: normal; }
+
+figure {
+    margin: 0;
+}
+
+/**
+ * Lists
+ * Description: List elements (<ul>, <ol>, <dl>)
+ */
+
+ul,
+ol { margin: 0 0 1.5em 2.5em; }
+	li ul,
+	li ol { margin: 0 0 0 2.5em; }
+
+dl { margin: 0 0 1.5em 0; }
+	dt {
+		font-weight: bold;
+		margin: 1.5em 0 0 0;
+	}
+	dd { margin: 0 0 0 2.5em; }
+
+/**
+ * Misc
+ * Description: These styles are often used for general purposes
+ * Use on: All HTML elements
+ * Note: names of these classes should be self explanatory, but may renamed in future
+ */
+
+.break { clear: both; }
+.right { float: right; }
+.left { float: left; }
+.hide, .skip { display: none; }
+.center { text-align: center; }
+
+/**
+ * Forms
+ *
+ */
+
+fieldset { border: none; }
+form br { clear: left; }
+
+label {
+	float: left;
+	width: 150px;
+	margin: 0 0 0.9em 0;
+	}
+	label.inline{
+		width: auto;
+		display: inline;
+		margin-right: 15px;
+	}
+input, input.text, textarea, select {
+	font-family: inherit; /* Inherit from body */
+	font-size: 100%; /* Inherit from body */
+	width: 300px;
+	margin: 0 0 0.9em 0;
+	}
+	textarea {
+		overflow: auto; /* Remove default scrollbar from IE8/9 */
+	}
+
+/* Checkbox/ radio */
+label input {
+	width: auto;
+	height: auto;
+	margin: 0 5px 0 0;
+	padding: 0;
+	vertical-align: middle;
+	border: none; /* For IE */
+}
+
+/* IE8/9/10 padding fixes */
+input[type="checkbox"],
+input[type="radio"] {
+    box-sizing: border-box;
+    padding: 0;
+}
+
+/* iOS resets for search fields */
+input[type="search"] {
+    -webkit-appearance: textfield;
+    -moz-box-sizing: content-box;
+    -webkit-box-sizing: content-box;
+    box-sizing: content-box;
+}
+
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+    -webkit-appearance: none;
+}
+
+input.inline, select.inline {
+	width: 150px;
+}
+input.small {
+	width: 30px;
+}
+input.medium {
+	width: 60px;
+}
+
+label, button {
+	cursor: pointer;
+}
+
+/* Standard buttons */
+button,
+input[type="button"],
+input[type="reset"],
+input[type="submit"] {
+	-webkit-appearance: button;
+	cursor: pointer;
+}
+
+button,
+input {
+	line-height: normal;
+}
+
+/* Button: disabled state */
+button[disabled],
+input[disabled] {
+    cursor: default;
+}
+
+/* Firefox reset (removes extra user Agent padding left and right of a button */
+input::-moz-focus-inner,
+button::-moz-focus-inner {
+	border: 0;
+	padding: 0;
+}
+
+/**
+ * Feedback
+ * Use on: <ul>, <p>
+ * Note: .feedback-error is default
+ */
+
+.feedback-error, .feedback-warning, .feedback-confirm, .feedback-notice {
+	margin: 0 0 1.5em 0;
+	padding: 1.4255em 10px 1.4255em 50px;
+	list-style: none;
+	color: #000;
+	background-repeat: no-repeat;
+	background-position: 3% 50%;
+	border: 1px solid #d8000c;
+	background-image: url(../icons/error.png);
+	background-color: #ffbaba;
+	}
+	.feedback-warning {
+		border: 1px solid #FFD700;
+		background-image: url(../icons/warning.png);
+		background-color: #feffca;
+	}
+	.feedback-confirm {
+		border: 1px solid #3e983b;
+		background-image: url(../icons/online.png);
+		background-color: #e7f9e8;
+	}
+	.feedback-notice {
+		border: 1px solid #00529b;
+		background-image: url(../icons/info.png);
+		background-color: #bde5f8;
+	}
