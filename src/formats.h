@@ -36,6 +36,9 @@ enum PandocOptions {
   PANDOC_TOC = 2
 };
 
+char *find_css(const char *css);
+char *find_copy_css(const char *css, const char *src);
+
 // wrappers around command line programs
 GString *pandoc(const char *work_dir, const char *input, const char *in_format);
 GString *asciidoctor(const char *work_dir, const char *input);

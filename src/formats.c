@@ -24,6 +24,44 @@
 #include "prefs.h"
 #include "process.h"
 
+char *find_css(const char *css) {
+  char *css_fn = g_build_filename(geany_data->app->configdir, "plugins",
+                                  "preview", css, NULL);
+  char *css_dn = g_path_get_dirname(css_fn);
+  g_mkdir_with_parents(css_dn, 0755);
+  g_free(css_dn);
+
+  if (g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
+    return css_fn;
+  } else {
+    return NULL;
+  }
+}
+
+char *find_copy_css(const char *css, const char *src) {
+  char *css_fn = g_build_filename(geany_data->app->configdir, "plugins",
+                                  "preview", css, NULL);
+  char *css_dn = g_path_get_dirname(css_fn);
+  g_mkdir_with_parents(css_dn, 0755);
+  g_free(css_dn);
+
+  if (!g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
+    if (g_file_test(src, G_FILE_TEST_EXISTS)) {
+      char *contents = NULL;
+      size_t length = 0;
+      if (g_file_get_contents(src, &contents, &length, NULL)) {
+        g_file_set_contents(css_fn, contents, length, NULL);
+        g_free(contents);
+      }
+    }
+  }
+  if (g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
+    return css_fn;
+  } else {
+    return NULL;
+  }
+}
+
 GString *pandoc(const char *work_dir, const char *input,
                 const char *from_format) {
   if (input == NULL) {
@@ -54,25 +92,13 @@ GString *pandoc(const char *work_dir, const char *input,
   // use pandoc-format.css file from user config dir
   // if it does not exist, copy it from the system config dir
   char *css = g_strdup_printf("pandoc-%s.css", from_format);
-  char *css_fn = g_build_filename(geany_data->app->configdir, "plugins",
-                                  "preview", css, NULL);
-  char *css_dn = g_path_get_dirname(css_fn);
-  g_mkdir_with_parents(css_dn, 0755);
-
-  if (!g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
-    if (g_file_test(PREVIEW_CSS_PANDOC, G_FILE_TEST_EXISTS)) {
-      char *contents = NULL;
-      size_t length = 0;
-      if (g_file_get_contents(PREVIEW_CSS_PANDOC, &contents, &length, NULL)) {
-        g_file_set_contents(css_fn, contents, length, NULL);
-        g_free(contents);
-      }
-    }
+  char *css_fn = find_css(css);
+  if (!css_fn) {
+    css_fn = find_copy_css("pandoc.css", PREVIEW_CSS_PANDOC);
   }
-  if (g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
+  if (css_fn) {
     g_ptr_array_add(args, g_strdup_printf("--css=%s", css_fn));
   }
-  g_free(css_dn);
   g_free(css_fn);
   g_free(css);
 
@@ -152,27 +178,13 @@ GString *screenplain(const char *work_dir, const char *input,
 
   // use screenplain.css file from user config dir
   // if it does not exist, copy it from the system config dir
-  char *css_fn = g_build_filename(geany_data->app->configdir, "plugins",
-                                  "preview", "screenplain.css", NULL);
-  char *css_dn = g_path_get_dirname(css_fn);
-  g_mkdir_with_parents(css_dn, 0755);
-
-  if (!g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
-    if (g_file_test(PREVIEW_CSS_SCREENPLAIN, G_FILE_TEST_EXISTS)) {
-      char *contents = NULL;
-      size_t length = 0;
-      if (g_file_get_contents(PREVIEW_CSS_SCREENPLAIN, &contents, &length,
-                              NULL)) {
-        g_file_set_contents(css_fn, contents, length, NULL);
-        g_free(contents);
-      }
-    }
-  }
-  if (g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
+  char *css = g_strdup("screenplain.css");
+  char *css_fn = find_copy_css(css, PREVIEW_CSS_SCREENPLAIN);
+  if (css_fn) {
     g_ptr_array_add(args, g_strdup_printf("--css=%s", css_fn));
   }
-  g_free(css_dn);
   g_free(css_fn);
+  g_free(css);
 
   // end of args
   g_ptr_array_add(args, NULL);
