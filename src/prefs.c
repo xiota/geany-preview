@@ -17,9 +17,9 @@ void init_settings() {
   settings.asciidoc_processor = g_strdup("asciidoctor");
   settings.fountain_processor = g_strdup("screenplain");
   settings.wiki_default = g_strdup("mediawiki");
-
   settings.pandoc_fragment = FALSE;
   settings.pandoc_toc = FALSE;
+  settings.pandoc_markdown = g_strdup("gfm");
 }
 
 void open_settings() {
@@ -77,6 +77,7 @@ void save_settings() {
 
   SET_KEY(boolean, "preview", "pandoc_fragment", settings.pandoc_fragment);
   SET_KEY(boolean, "preview", "pandoc_toc", settings.pandoc_toc);
+  SET_KEY(string, "preview", "pandoc_markdown", settings.pandoc_markdown);
 
   contents = g_key_file_to_data(kf, &length, NULL);
   if (contents) {
@@ -170,5 +171,15 @@ void load_settings(GKeyFile *kf) {
 
   if (HAS_KEY("preview", "pandoc_toc")) {
     settings.pandoc_toc = GET_KEY(boolean, "preview", "pandoc_toc");
+  }
+
+  if (HAS_KEY("preview", "pandoc_markdown")) {
+    char *val = GET_KEY(string, "preview", "pandoc_markdown");
+    if (val) {
+      settings.pandoc_markdown = g_strdup(val);
+    } else {
+      settings.pandoc_markdown = g_strdup("gfm");
+    }
+    g_free(val);
   }
 }

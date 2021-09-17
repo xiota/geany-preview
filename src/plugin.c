@@ -210,7 +210,7 @@ static void update_preview() {
       break;
     case GEANY_FILETYPES_MARKDOWN:
       if (REGEX_CHK("pandoc", settings.markdown_processor)) {
-        output = pandoc(work_dir, text, "gfm");
+        output = pandoc(work_dir, text, settings.pandoc_markdown);
       } else {
         html = cmark_markdown_to_html(text, strlen(text), 0);
       }

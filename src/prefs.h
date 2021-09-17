@@ -34,6 +34,7 @@ struct PreviewSettings {
   char *wiki_default;
   gboolean pandoc_fragment;
   gboolean pandoc_toc;
+  char *pandoc_markdown;
 };
 
 void init_settings();
