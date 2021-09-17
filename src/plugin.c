@@ -226,7 +226,7 @@ static void update_preview() {
     case GEANY_FILETYPES_NONE:
       if (CHECK_TYPE("gfm")) {
         output = pandoc(work_dir, text, "gfm", pandoc_options);
-      } else if (CHECK_TYPE("fountain")) {
+      } else if (CHECK_TYPE("fountain") || CHECK_TYPE("spmd")) {
         output = screenplain(work_dir, text, "html");
       } else if (CHECK_TYPE("textile")) {
         output = pandoc(work_dir, text, "textile", pandoc_options);

@@ -1,0 +1,167 @@
+/* Reset */
+html, body, div, span, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, abbr, address, cite, code, del, dfn, em, img, ins, kbd, q, samp, small, strong, sub, sup, var, b, i, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, figcaption, figure, footer, header, hgroup, menu, nav, section, summary, time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
+}
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
+	display: block;
+}
+/* Styles for Screenplain */
+html {
+	font-size: 8pt;
+}
+#wrapper {
+	font-family: "Courier Prime", "Courier Final Draft", "Courier Screenplay", Courier, monospace;
+	font-size: 1rem;
+	text-align: left;
+	width: 34.074rem;
+	background: #fff;
+	padding-left: 0.5rem;
+	padding-right: 0.5rem;
+	padding-top: 0.25rem;
+	padding-bottom: 1rem;
+	position: relative;
+	margin: 0 auto;
+	border: none;
+}
+header {
+	margin-bottom: 1rem;
+	border-bottom: 1px solid black;
+}
+footer {
+	margin-top: 1rem;
+}
+em {
+	font-style: italic;
+}
+strong {
+	font-weight: bold;
+}
+br {
+	clear: both;
+}
+/* Slug */
+div {
+	width: 100%;
+}
+h1:before, h2:before, h3:before, h4:before, h5:before {
+	content: "◦ ";
+	margin-left: -0.667rem;
+}
+h1, h2, h3, h4, h5 {
+	font-family: "Gill Sans", "Helvetiva Neue", Helvetica, sans-serif;
+	margin-top: 1.778rem;
+	font-weight: normal;
+	color: rgb(110, 110, 110);
+	border-top: dotted 1px rgb(199, 199, 199);
+	font-size: 0.815rem;
+}
+h1, .h1-synopsis {
+	margin-left: -5.259rem;
+}
+h2, .h2-synopsis {
+	margin-left: -4.519rem;
+}
+h3, .h3-synopsis {
+	margin-left: -3.037rem;
+}
+h4, .h4-synopsis {
+	margin-left: -1.556rem;
+}
+h5, .h5-synopsis {
+	margin-left: -0.074rem;
+}
+.h1-synopsis, .h2-synopsis, .h3-synopsis, .h4-synopsis, .h5-synopsis, .h6-synopsis {
+	font-family: "Gill Sans", "Helvetiva Neue", Helvetica, sans-serif;
+	font-size: 0.741rem;
+	font-style: italic;
+	color: rgb(145, 145, 145);
+	display: block;
+	margin-bottom: 0.370rem;
+}
+h6 {
+	margin-top: 2rem;
+	text-transform: uppercase;
+	font-weight: bold;
+}
+div.block {
+	position: relative;
+	background: #fff;
+}
+div.action p {
+	margin-top: 1rem;
+}
+.centered {
+	text-align: center;
+}
+div.dialog, div.dual {
+	margin-top: 1rem;
+}
+div.transition {
+	margin-top: 1rem;
+	margin-bottom: 0.889rem;
+	text-align: right;
+}
+.dialog p.character {
+	padding-left: 11.358rem;
+}
+.dialog p.parenthetical {
+	padding-left: 8.519rem;
+}
+.dialog p {
+	padding-left: 5.679rem;
+	width: 22.716rem;
+}
+.dual > div {
+	float: left;
+	width: 48% !important;
+}
+.dual p.character {
+	padding-left: 6rem;
+}
+.dual p.parenthetical {
+	padding-left: 3rem;
+}
+.dual p {
+	padding-left: 0;
+	width: 19rem;
+}
+.dual .right {
+	margin-left: 1rem;
+}
+.dual .right p.character {
+	padding-left: 6rem;
+}
+span.scnuml {
+	display: block;
+	float: left;
+	margin-left: -4.52rem;
+	font-weight: inherit;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	-o-user-select: none;
+	user-select: none;
+}
+span.scnumr {
+	display: block;
+	float: right;
+	margin-right: 0.72rem;
+	font-weight: inherit;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	-o-user-select: none;
+	user-select: none;
+}
+.page-break {
+	page-break-before: always;
+}

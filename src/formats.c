@@ -19,7 +19,6 @@
  */
 
 #include "formats.h"
-
 #include "process.h"
 
 GString *pandoc(const char *work_dir, const char *input, const char *type,
@@ -116,8 +115,35 @@ GString *screenplain(const char *work_dir, const char *input,
   } else {
     g_ptr_array_add(args, g_strdup("--format=html"));
   }
-  g_ptr_array_add(args, NULL);  // end of args
 
+  // use screenplain.css file from user config dir
+  // if it does not exist, copy it from the system config dir
+  char *css_fn = g_build_filename(geany_data->app->configdir, "plugins",
+                                  "preview", "screenplain.css", NULL);
+  char *css_dn = g_path_get_dirname(css_fn);
+  g_mkdir_with_parents(css_dn, 0755);
+
+  if (!g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
+    if (g_file_test(PREVIEW_SCREENPLAIN_CSS, G_FILE_TEST_EXISTS)) {
+      char *contents = NULL;
+      size_t length = 0;
+      if (g_file_get_contents(PREVIEW_SCREENPLAIN_CSS, &contents, &length,
+                              NULL)) {
+        g_file_set_contents(css_fn, contents, length, NULL);
+        g_free(contents);
+      }
+    }
+  }
+  if (g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
+    g_ptr_array_add(args, g_strdup_printf("--css=%s", css_fn));
+  }
+  g_free(css_dn);
+  g_free(css_fn);
+
+  // end of args
+  g_ptr_array_add(args, NULL);
+
+  // rutn program
   FmtProcess *proc =
       fmt_process_open(work_dir, (const char *const *)args->pdata);
 

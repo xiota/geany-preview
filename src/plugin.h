@@ -19,8 +19,8 @@
  * MA 02110-1301, USA.
  */
 
-#ifndef FMT_PLUGIN_H
-#define FMT_PLUGIN_H
+#ifndef PREVIEW_PLUGIN_H
+#define PREVIEW_PLUGIN_H
 
 #include <glib.h>
 #include <gtk/gtk.h>
@@ -53,4 +53,4 @@ extern GeanyData *geany_data;
 
 G_END_DECLS
 
-#endif  // FMT_PLUGIN_H
+#endif  // PREVIEW_PLUGIN_H

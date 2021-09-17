@@ -29,6 +29,8 @@ To display formats other than HTML or Markdown requires the use of auxiliary pro
 
 * [Screenplain](https://github.com/vilcans/screenplain) is used to process screenplays written in [Fountain](https://www.fountain.io/).
 
+Custom stylesheets and other settings may changed by editing files in the `geany/plugins/preview` config folder.  Currently, only the stylesheet used by screenplain may be edited.  To reset the stylesheet, delete it.  It will be recreated the next time a fountain document is processed.
+
 ## Requirements
 
 This plugin depends on the following libraries and programs:
