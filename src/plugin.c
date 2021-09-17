@@ -122,12 +122,6 @@ void plugin_init(G_GNUC_UNUSED GeanyData *data) {
   open_settings();
 
   WebKitSettings *wv_settings = webkit_settings_new();
-  webkit_settings_set_enable_java(wv_settings, FALSE);
-  webkit_settings_set_enable_javascript(wv_settings, TRUE);
-  webkit_settings_set_enable_javascript_markup(wv_settings, FALSE);
-  webkit_settings_set_allow_file_access_from_file_urls(wv_settings, TRUE);
-  webkit_settings_set_allow_universal_access_from_file_urls(wv_settings, TRUE);
-
   webkit_settings_set_default_font_family(wv_settings,
                                           settings.default_font_family);
 
@@ -342,17 +336,24 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
                                          update_preview_timeout_callback, NULL);
       } else if (doc->file_type->id != GEANY_FILETYPES_ASCIIDOC &&
                  doc->file_type->id != GEANY_FILETYPES_NONE) {
-        // no delay because HTML, Markdown, and pandoc are fast enough
-        // should there be a delay for very large files?
-        update_preview();
+        // delay for fast programs
+        int length = (int)scintilla_send_message(doc->editor->sci,
+                                                 SCI_GETTEXTLENGTH, 0, 0);
+        double _tt = (double)length * settings.size_factor_fast;
+        int timeout = (int)_tt > settings.update_interval_fast
+                          ? (int)_tt
+                          : settings.update_interval_fast;
+
+        g_timeout_handle =
+            g_timeout_add(timeout, update_preview_timeout_callback, NULL);
       } else if (g_timeout_handle == 0) {
         // delay for slow external programs
         int length = (int)scintilla_send_message(doc->editor->sci,
                                                  SCI_GETTEXTLENGTH, 0, 0);
-        double _tt = (double)length * settings.size_interval_factor;
-        int timeout = (int)_tt > settings.update_interval
+        double _tt = (double)length * settings.size_factor_slow;
+        int timeout = (int)_tt > settings.update_interval_slow
                           ? (int)_tt
-                          : settings.update_interval;
+                          : settings.update_interval_slow;
 
         g_timeout_handle =
             g_timeout_add(timeout, update_preview_timeout_callback, NULL);

@@ -30,9 +30,11 @@ extern GeanyPlugin *geany_plugin;
 extern GeanyData *geany_data;
 
 struct PreviewSettings {
-  int update_interval;
+  int update_interval_slow;
+  double size_factor_slow;
+  int update_interval_fast;
+  double size_factor_fast;
   int background_interval;
-  double size_interval_factor;
   char *html_processor;
   char *markdown_processor;
   char *asciidoc_processor;
@@ -60,52 +62,61 @@ G_END_DECLS
 
 #define HAS_KEY(key) g_key_file_has_key(kf, PLUGIN_GROUP, (key), NULL)
 #define GET_KEY(T, key) g_key_file_get_##T(kf, PLUGIN_GROUP, (key), NULL)
-#define SET_KEY(T, key, _val) g_key_file_set_##T(kf, PLUGIN_GROUP, (key), (_val))
+#define SET_KEY(T, key, _val) \
+  g_key_file_set_##T(kf, PLUGIN_GROUP, (key), (_val))
 
-#define LOAD_KEY_STRING(key, def)         \
-  do {                                    \
+#define LOAD_KEY_STRING(key, def)        \
+  do {                                   \
     if (HAS_KEY(#key)) {                 \
       char *val = GET_KEY(string, #key); \
-      if (val) {                          \
-        settings.key = g_strdup(val);     \
-      } else {                            \
-        settings.key = g_strdup((def));   \
-      }                                   \
-      g_free(val);                        \
-    }                                     \
+      if (val) {                         \
+        settings.key = g_strdup(val);    \
+      } else {                           \
+        settings.key = g_strdup((def));  \
+      }                                  \
+      g_free(val);                       \
+    }                                    \
   } while (0)
 
-#define LOAD_KEY_BOOLEAN(key, def)            \
-  do {                                        \
+#define LOAD_KEY_BOOLEAN(key, def)           \
+  do {                                       \
     if (HAS_KEY(#key)) {                     \
       settings.key = GET_KEY(boolean, #key); \
-    } else {                                  \
-      settings.key = (def);                   \
-    }                                         \
+    } else {                                 \
+      settings.key = (def);                  \
+    }                                        \
   } while (0)
 
-#define LOAD_KEY_INTEGER(key, def)       \
-  do {                                   \
+#define LOAD_KEY_INTEGER(key, def, min) \
+  do {                                  \
     if (HAS_KEY(#key)) {                \
       int val = GET_KEY(integer, #key); \
-      if (val) {                         \
-        settings.key = val;              \
-      } else {                           \
-        settings.key = (def);            \
-      }                                  \
-    }                                    \
+      if (val) {                        \
+        if (val < (min)) {              \
+          settings.key = (min);         \
+        } else {                        \
+          settings.key = val;           \
+        }                               \
+      } else {                          \
+        settings.key = (def);           \
+      }                                 \
+    }                                   \
   } while (0)
 
-#define LOAD_KEY_DOUBLE(key, def)       \
-  do {                                   \
-    if (HAS_KEY(#key)) {                \
+#define LOAD_KEY_DOUBLE(key, def, min) \
+  do {                                 \
+    if (HAS_KEY(#key)) {               \
       int val = GET_KEY(double, #key); \
-      if (val) {                         \
-        settings.key = val;              \
-      } else {                           \
-        settings.key = (def);            \
-      }                                  \
-    }                                    \
+      if (val) {                       \
+        if (val < (min)) {             \
+          settings.key = (min);        \
+        } else {                       \
+          settings.key = val;          \
+        }                              \
+      } else {                         \
+        settings.key = (def);          \
+      }                                \
+    }                                  \
   } while (0)
 
 #endif  // PREVIEW_PREFS_H

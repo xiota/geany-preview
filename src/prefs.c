@@ -83,7 +83,10 @@ void save_settings() {
       kf, fn, G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS, NULL);
 
   // Update settings with new contents
-  SET_KEY(integer, "update_interval", settings.update_interval);
+  SET_KEY(integer, "update_interval_slow", settings.update_interval_slow);
+  SET_KEY(double, "size_factor_slow", settings.size_factor_slow);
+  SET_KEY(integer, "update_interval_fast", settings.update_interval_fast);
+  SET_KEY(double, "size_factor_fast", settings.size_factor_fast);
   SET_KEY(integer, "background_interval", settings.background_interval);
 
   SET_KEY(string, "html_processor", settings.html_processor);
@@ -117,17 +120,11 @@ void load_settings(GKeyFile *kf) {
     return;
   }
 
-  LOAD_KEY_INTEGER(update_interval, 200);
-  if (settings.update_interval < 5) {
-    settings.update_interval = 5;
-  }
-
-  LOAD_KEY_INTEGER(background_interval, 5000);
-
-  LOAD_KEY_DOUBLE(size_interval_factor, 0.004);
-  if (settings.update_interval < 0) {
-    settings.size_interval_factor = 0;
-  }
+  LOAD_KEY_INTEGER(update_interval_slow, 200, 5);
+  LOAD_KEY_DOUBLE(size_factor_slow, 0.004, 0);
+  LOAD_KEY_INTEGER(update_interval_fast, 25, 5);
+  LOAD_KEY_DOUBLE(size_factor_fast, 0.001, 0);
+  LOAD_KEY_INTEGER(background_interval, 5000, 5);
 
   LOAD_KEY_STRING(html_processor, "native");
   LOAD_KEY_STRING(markdown_processor, "native");
@@ -147,9 +144,11 @@ void load_settings(GKeyFile *kf) {
 }
 
 void init_settings() {
-  settings.update_interval = 200;
+  settings.update_interval_slow = 200;
+  settings.size_factor_slow = 0.004;
+  settings.update_interval_fast = 25;
+  settings.size_factor_fast = 0.001;
   settings.background_interval = 5000;
-  settings.size_interval_factor = 0.004;
   settings.html_processor = g_strdup("native");
   settings.markdown_processor = g_strdup("native");
   settings.asciidoc_processor = g_strdup("asciidoctor");
