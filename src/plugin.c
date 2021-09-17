@@ -25,18 +25,22 @@
 #include "config.h"
 #endif
 
+#include <cmark-gfm.h>
+
 #include "formats.h"
 #include "plugin.h"
 #include "process.h"
+#include "prefs.h"
+
+#define WEBVIEW_WARN(msg) \
+  webkit_web_view_load_plain_text(WEBKIT_WEB_VIEW(g_viewer), (msg))
+
+#define REGEX_CHK(_tp, _str) \
+  g_regex_match_simple((_tp), (_str), G_REGEX_CASELESS, 0)
 
 #ifndef _
 #define _(s) s
 #endif
-
-#include <cmark-gfm.h>
-
-#define WEBVIEW_WARN(msg) \
-  webkit_web_view_load_plain_text(WEBKIT_WEB_VIEW(g_viewer), (msg))
 
 GeanyPlugin *geany_plugin;
 GeanyData *geany_data;
@@ -64,6 +68,8 @@ static gint g_page_num = 0;
 static gint32 g_scrollY = 0;
 static gulong g_load_handle = 0;
 static guint g_timeout_handle = 0;
+
+extern struct PreviewSettings settings;
 
 // Functions
 
@@ -119,6 +125,8 @@ static void wv_loading_callback(WebKitWebView *web_view,
 }
 
 void plugin_init(G_GNUC_UNUSED GeanyData *data) {
+  open_settings();
+
   WebKitSettings *wv_settings = webkit_settings_new();
   webkit_settings_set_enable_java(wv_settings, FALSE);
   webkit_settings_set_enable_javascript(wv_settings, TRUE);
@@ -192,32 +200,35 @@ static void update_preview() {
                                  G_CALLBACK(wv_loading_callback), NULL);
   }
 
-  // TODO: Add preferences to set pandoc options
-  uint pandoc_options = PANDOC_NONE;
-
   switch (doc->file_type->id) {
     case GEANY_FILETYPES_HTML:
-      html = text;
+      if (REGEX_CHK("pandoc", settings.html_processor)) {
+        output = pandoc(work_dir, text, "html");
+      } else {
+        html = g_strdup(text);
+      }
       break;
     case GEANY_FILETYPES_MARKDOWN:
-      // TODO: Add option to switch markdown interpreter and type
-      html = cmark_markdown_to_html(text, strlen(text), 0);
-      // output = pandoc(work_dir, text, "gfm", pandoc_options);
+      if (REGEX_CHK("pandoc", settings.markdown_processor)) {
+        output = pandoc(work_dir, text, "gfm");
+      } else {
+        html = cmark_markdown_to_html(text, strlen(text), 0);
+      }
       break;
     case GEANY_FILETYPES_ASCIIDOC:
       output = asciidoctor(work_dir, text);
       break;
     case GEANY_FILETYPES_DOCBOOK:
-      output = pandoc(work_dir, text, "docbook", pandoc_options);
+      output = pandoc(work_dir, text, "docbook");
       break;
     case GEANY_FILETYPES_LATEX:
-      output = pandoc(work_dir, text, "latex", pandoc_options);
+      output = pandoc(work_dir, text, "latex");
       break;
     case GEANY_FILETYPES_REST:
-      output = pandoc(work_dir, text, "rst", pandoc_options);
+      output = pandoc(work_dir, text, "rst");
       break;
     case GEANY_FILETYPES_TXT2TAGS:
-      output = pandoc(work_dir, text, "t2t", pandoc_options);
+      output = pandoc(work_dir, text, "t2t");
       break;
 
 #define CHECK_TYPE(_type) \
@@ -225,35 +236,37 @@ static void update_preview() {
 
     case GEANY_FILETYPES_NONE:
       if (CHECK_TYPE("gfm")) {
-        output = pandoc(work_dir, text, "gfm", pandoc_options);
+        output = pandoc(work_dir, text, "gfm");
       } else if (CHECK_TYPE("fountain") || CHECK_TYPE("spmd")) {
         output = screenplain(work_dir, text, "html");
       } else if (CHECK_TYPE("textile")) {
-        output = pandoc(work_dir, text, "textile", pandoc_options);
+        output = pandoc(work_dir, text, "textile");
       } else if (CHECK_TYPE("txt")) {
         if (CHECK_TYPE("gfm")) {
-          output = pandoc(work_dir, text, "gfm", pandoc_options);
+          output = pandoc(work_dir, text, "gfm");
         } else if (CHECK_TYPE("pandoc")) {
-          output = pandoc(work_dir, text, "markdown", pandoc_options);
+          output = pandoc(work_dir, text, "markdown");
         } else {
           plain = g_strdup(text);
         }
       } else if (CHECK_TYPE("wiki")) {
         if (CHECK_TYPE("dokuwiki")) {
-          output = pandoc(work_dir, text, "dokuwiki", pandoc_options);
+          output = pandoc(work_dir, text, "dokuwiki");
         } else if (CHECK_TYPE("tikiwiki")) {
-          output = pandoc(work_dir, text, "tikiwiki", pandoc_options);
+          output = pandoc(work_dir, text, "tikiwiki");
         } else if (CHECK_TYPE("vimwiki")) {
-          output = pandoc(work_dir, text, "vimwiki", pandoc_options);
+          output = pandoc(work_dir, text, "vimwiki");
         } else if (CHECK_TYPE("twiki")) {
-          output = pandoc(work_dir, text, "twiki", pandoc_options);
+          output = pandoc(work_dir, text, "twiki");
+        } else if (CHECK_TYPE("mediawiki") || CHECK_TYPE("wikipedia")) {
+          output = pandoc(work_dir, text, "mediawiki");
         } else {
-          output = pandoc(work_dir, text, "mediawiki", pandoc_options);
+          output = pandoc(work_dir, text, settings.wiki_default);
         }
       } else if (CHECK_TYPE("muse")) {
-        output = pandoc(work_dir, text, "muse", pandoc_options);
+        output = pandoc(work_dir, text, "muse");
       } else if (CHECK_TYPE("org")) {
-        output = pandoc(work_dir, text, "org", pandoc_options);
+        output = pandoc(work_dir, text, "org");
       }
       break;
 #undef CHECK_TYPE
@@ -307,8 +320,8 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
         // delay updates when preview is not visible,
         // but still need to update in case user switches tabs
         // TODO: Stop updates and update when user switches tab
-        g_timeout_handle =
-            g_timeout_add(5000, update_preview_timeout_callback, NULL);
+        g_timeout_handle = g_timeout_add(settings.background_interval,
+                                         update_preview_timeout_callback, NULL);
       } else if (doc->file_type->id != GEANY_FILETYPES_ASCIIDOC &&
                  doc->file_type->id != GEANY_FILETYPES_NONE) {
         // no delay because HTML, Markdown, and pandoc are fast enough
@@ -319,7 +332,10 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
         int length = (int)scintilla_send_message(doc->editor->sci,
                                                  SCI_GETTEXTLENGTH, 0, 0);
         double _tt = (double)length * 4. / 1024.;
-        int timeout = (int)_tt > 200 ? (int)_tt : 200;  // max(_tt, 200)
+        int timeout = (int)_tt > settings.update_interval
+                          ? (int)_tt
+                          : settings.update_interval;  // max(_tt, 200)
+
         g_timeout_handle =
             g_timeout_add(timeout, update_preview_timeout_callback, NULL);
       }

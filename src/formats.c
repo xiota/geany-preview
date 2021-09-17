@@ -20,9 +20,11 @@
 
 #include "formats.h"
 #include "process.h"
+#include "prefs.h"
 
-GString *pandoc(const char *work_dir, const char *input, const char *type,
-                const uint options) {
+extern struct PreviewSettings settings;
+
+GString *pandoc(const char *work_dir, const char *input, const char *from_format) {
   if (input == NULL) {
     return NULL;
   }
@@ -30,20 +32,48 @@ GString *pandoc(const char *work_dir, const char *input, const char *type,
   GPtrArray *args = g_ptr_array_new_with_free_func(g_free);
   g_ptr_array_add(args, g_strdup("pandoc"));
 
-  if (type != NULL) {
-    g_ptr_array_add(args, g_strdup_printf("--from=%s", type));
+  if (from_format != NULL) {
+    g_ptr_array_add(args, g_strdup_printf("--from=%s", from_format));
   }
   g_ptr_array_add(args, g_strdup("--to=html"));
   g_ptr_array_add(args, g_strdup("--quiet"));
 
-  if (!(options & PANDOC_FRAGMENT)) {
+  if (!settings.pandoc_fragment) {
     g_ptr_array_add(args, g_strdup("--standalone"));
   }
-  if (options & PANDOC_TOC) {
+  if (settings.pandoc_toc) {
     g_ptr_array_add(args, g_strdup("--toc"));
+    g_ptr_array_add(args, g_strdup("--toc-depth=6"));
   }
 
-  g_ptr_array_add(args, NULL);  // end of args
+  // use pandoc-format.css file from user config dir
+  // if it does not exist, copy it from the system config dir
+  char *css = g_strdup_printf("pandoc-%s.css", from_format);
+  char *css_fn = g_build_filename(geany_data->app->configdir, "plugins",
+                                  "preview", css, NULL);
+  char *css_dn = g_path_get_dirname(css_fn);
+  g_mkdir_with_parents(css_dn, 0755);
+
+  if (!g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
+    if (g_file_test(PREVIEW_CSS_PANDOC, G_FILE_TEST_EXISTS)) {
+      char *contents = NULL;
+      size_t length = 0;
+      if (g_file_get_contents(PREVIEW_CSS_PANDOC, &contents, &length,
+                              NULL)) {
+        g_file_set_contents(css_fn, contents, length, NULL);
+        g_free(contents);
+      }
+    }
+  }
+  if (g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
+    g_ptr_array_add(args, g_strdup_printf("--css=%s", css_fn));
+  }
+  g_free(css_dn);
+  g_free(css_fn);
+  g_free(css);
+
+  // end of args
+  g_ptr_array_add(args, NULL);
 
   FmtProcess *proc =
       fmt_process_open(work_dir, (const char *const *)args->pdata);
@@ -102,7 +132,7 @@ GString *asciidoctor(const char *work_dir, const char *input) {
 }
 
 GString *screenplain(const char *work_dir, const char *input,
-                     const char *format) {
+                     const char *to_format) {
   if (input == NULL) {
     return NULL;
   }
@@ -110,8 +140,8 @@ GString *screenplain(const char *work_dir, const char *input,
   GPtrArray *args = g_ptr_array_new_with_free_func(g_free);
   g_ptr_array_add(args, g_strdup("screenplain"));
 
-  if (format != NULL) {
-    g_ptr_array_add(args, g_strdup_printf("--format=%s", format));
+  if (to_format != NULL) {
+    g_ptr_array_add(args, g_strdup_printf("--format=%s", to_format));
   } else {
     g_ptr_array_add(args, g_strdup("--format=html"));
   }
@@ -124,10 +154,10 @@ GString *screenplain(const char *work_dir, const char *input,
   g_mkdir_with_parents(css_dn, 0755);
 
   if (!g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
-    if (g_file_test(PREVIEW_SCREENPLAIN_CSS, G_FILE_TEST_EXISTS)) {
+    if (g_file_test(PREVIEW_CSS_SCREENPLAIN, G_FILE_TEST_EXISTS)) {
       char *contents = NULL;
       size_t length = 0;
-      if (g_file_get_contents(PREVIEW_SCREENPLAIN_CSS, &contents, &length,
+      if (g_file_get_contents(PREVIEW_CSS_SCREENPLAIN, &contents, &length,
                               NULL)) {
         g_file_set_contents(css_fn, contents, length, NULL);
         g_free(contents);

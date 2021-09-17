@@ -18,21 +18,27 @@
  * MA 02110-1301, USA.
  */
 
-#ifndef PREVIEW_FORMATS_H
-#define PREVIEW_FORMATS_H
+#ifndef PREVIEW_PREFS_H
+#define PREVIEW_PREFS_H
 
-#include "process.h"
+#include <geanyplugin.h>
+#include <gtk/gtk.h>
 
-enum PandocOptions {
-  PANDOC_NONE = 0,
-  PANDOC_FRAGMENT = 1,  // turn off --standalone
-  PANDOC_TOC = 2
+struct PreviewSettings {
+  int update_interval;
+  int background_interval;
+  char *html_processor;
+  char *markdown_processor;
+  char *asciidoc_processor;
+  char *fountain_processor;
+  char *wiki_default;
+  gboolean pandoc_fragment;
+  gboolean pandoc_toc;
 };
 
-// wrappers around command line programs
-GString *pandoc(const char *work_dir, const char *input, const char *in_format);
-GString *asciidoctor(const char *work_dir, const char *input);
-GString *screenplain(const char *work_dir, const char *input,
-                     const char *out_format);
+void init_settings();
+void open_settings();
+void load_settings(GKeyFile *kf);
+void save_settings();
 
-#endif  // PREVIEW_FORMATS_H
+#endif  // PREVIEW_PREFS_H
