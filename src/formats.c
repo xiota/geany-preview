@@ -24,8 +24,6 @@
 #include "prefs.h"
 #include "process.h"
 
-extern struct PreviewSettings settings;
-
 GString *pandoc(const char *work_dir, const char *input,
                 const char *from_format) {
   if (input == NULL) {

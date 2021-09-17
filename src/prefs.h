@@ -24,6 +24,11 @@
 #include <geanyplugin.h>
 #include <gtk/gtk.h>
 
+G_BEGIN_DECLS
+
+extern GeanyPlugin *geany_plugin;
+extern GeanyData *geany_data;
+
 struct PreviewSettings {
   int update_interval;
   int background_interval;
@@ -37,6 +42,8 @@ struct PreviewSettings {
   gboolean pandoc_toc;
   char *pandoc_markdown;
   char *default_font_family;
+  gboolean verbatim_plain_text;
+  gboolean extended_types;
 };
 
 void init_settings();
@@ -45,17 +52,19 @@ void load_settings(GKeyFile *kf);
 void save_settings();
 void save_default_settings();
 
+G_END_DECLS
+
 // Macros to make loading settings easier
 #define PLUGIN_GROUP "preview"
 
-#define HAS_KEY(key) g_key_file_has_key(kf, PLUGIN_GROUP, key, NULL)
-#define GET_KEY(T, key) g_key_file_get_##T(kf, PLUGIN_GROUP, key, NULL)
-#define SET_KEY(T, key, val) g_key_file_set_##T(kf, PLUGIN_GROUP, key, val)
+#define HAS_KEY(key) g_key_file_has_key(kf, PLUGIN_GROUP, (key), NULL)
+#define GET_KEY(T, key) g_key_file_get_##T(kf, PLUGIN_GROUP, (key), NULL)
+#define SET_KEY(T, key, _val) g_key_file_set_##T(kf, PLUGIN_GROUP, (key), (_val))
 
 #define LOAD_KEY_STRING(key, def)         \
   do {                                    \
-    if (HAS_KEY("key")) {                 \
-      char *val = GET_KEY(string, "key"); \
+    if (HAS_KEY(#key)) {                 \
+      char *val = GET_KEY(string, #key); \
       if (val) {                          \
         settings.key = g_strdup(val);     \
       } else {                            \
@@ -65,17 +74,19 @@ void save_default_settings();
     }                                     \
   } while (0)
 
-#define LOAD_KEY_BOOLEAN(key)                 \
+#define LOAD_KEY_BOOLEAN(key, def)            \
   do {                                        \
-    if (HAS_KEY("key")) {                     \
-      settings.key = GET_KEY(boolean, "key"); \
+    if (HAS_KEY(#key)) {                     \
+      settings.key = GET_KEY(boolean, #key); \
+    } else {                                  \
+      settings.key = (def);                   \
     }                                         \
   } while (0)
 
 #define LOAD_KEY_INTEGER(key, def)       \
   do {                                   \
-    if (HAS_KEY("key")) {                \
-      int val = GET_KEY(integer, "key"); \
+    if (HAS_KEY(#key)) {                \
+      int val = GET_KEY(integer, #key); \
       if (val) {                         \
         settings.key = val;              \
       } else {                           \

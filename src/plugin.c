@@ -238,7 +238,10 @@ static void update_preview() {
   g_regex_match_simple((_type), basename, G_REGEX_CASELESS, 0)
 
     case GEANY_FILETYPES_NONE:
-      if (CHECK_TYPE("gfm")) {
+      if (!settings.extended_types) {
+        plain = g_strdup("Extended file type detection has been disabled.");
+        break;
+      } else if (CHECK_TYPE("gfm")) {
         output = pandoc(work_dir, text, "gfm");
       } else if (CHECK_TYPE("fountain") || CHECK_TYPE("spmd")) {
         if (REGEX_CHK("disable", settings.fountain_processor)) {
@@ -254,8 +257,10 @@ static void update_preview() {
           output = pandoc(work_dir, text, "gfm");
         } else if (CHECK_TYPE("pandoc")) {
           output = pandoc(work_dir, text, "markdown");
-        } else {
+        } else if (settings.verbatim_plain_text) {
           plain = g_strdup(text);
+        } else {
+          plain = g_strdup("Verbatim text has been disabled.");
         }
       } else if (CHECK_TYPE("wiki")) {
         if (REGEX_CHK("disable", settings.wiki_default)) {

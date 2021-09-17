@@ -23,6 +23,13 @@
 
 #include "process.h"
 
+G_BEGIN_DECLS
+
+extern GeanyPlugin *geany_plugin;
+extern GeanyData *geany_data;
+
+extern struct PreviewSettings settings;
+
 enum PandocOptions {
   PANDOC_NONE = 0,
   PANDOC_FRAGMENT = 1,  // turn off --standalone
@@ -34,5 +41,7 @@ GString *pandoc(const char *work_dir, const char *input, const char *in_format);
 GString *asciidoctor(const char *work_dir, const char *input);
 GString *screenplain(const char *work_dir, const char *input,
                      const char *out_format);
+
+G_END_DECLS
 
 #endif  // PREVIEW_FORMATS_H
