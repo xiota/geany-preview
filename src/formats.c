@@ -19,14 +19,21 @@
  */
 
 #include "formats.h"
-#include "process.h"
+
+#include "common.h"
 #include "prefs.h"
+#include "process.h"
 
 extern struct PreviewSettings settings;
 
-GString *pandoc(const char *work_dir, const char *input, const char *from_format) {
+GString *pandoc(const char *work_dir, const char *input,
+                const char *from_format) {
   if (input == NULL) {
     return NULL;
+  }
+  if (settings.pandoc_disabled) {
+    GString *output = g_string_new("<pre>Pandoc has been disabled.</pre>");
+    return output;
   }
 
   GPtrArray *args = g_ptr_array_new_with_free_func(g_free);
@@ -58,8 +65,7 @@ GString *pandoc(const char *work_dir, const char *input, const char *from_format
     if (g_file_test(PREVIEW_CSS_PANDOC, G_FILE_TEST_EXISTS)) {
       char *contents = NULL;
       size_t length = 0;
-      if (g_file_get_contents(PREVIEW_CSS_PANDOC, &contents, &length,
-                              NULL)) {
+      if (g_file_get_contents(PREVIEW_CSS_PANDOC, &contents, &length, NULL)) {
         g_file_set_contents(css_fn, contents, length, NULL);
         g_free(contents);
       }

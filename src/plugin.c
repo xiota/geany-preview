@@ -27,29 +27,23 @@
 
 #include <cmark-gfm.h>
 
+#include "common.h"
 #include "formats.h"
 #include "plugin.h"
-#include "process.h"
 #include "prefs.h"
+#include "process.h"
 
 #define WEBVIEW_WARN(msg) \
   webkit_web_view_load_plain_text(WEBKIT_WEB_VIEW(g_viewer), (msg))
-
-#define REGEX_CHK(_tp, _str) \
-  g_regex_match_simple((_tp), (_str), G_REGEX_CASELESS, 0)
-
-#ifndef _
-#define _(s) s
-#endif
 
 GeanyPlugin *geany_plugin;
 GeanyData *geany_data;
 
 PLUGIN_VERSION_CHECK(211)
 
-PLUGIN_SET_INFO(_("Preview"),
-                _("Rendered preview of HTML, Markdown, and other documents."),
-                _("0.1"), _("xiota"))
+PLUGIN_SET_INFO("Preview",
+                "Quick previews of HTML, Markdown, and other formats.", "0.1",
+                "xiota")
 
 // Function Declarations
 static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
@@ -134,7 +128,8 @@ void plugin_init(G_GNUC_UNUSED GeanyData *data) {
   webkit_settings_set_allow_file_access_from_file_urls(wv_settings, TRUE);
   webkit_settings_set_allow_universal_access_from_file_urls(wv_settings, TRUE);
 
-  webkit_settings_set_default_font_family(wv_settings, "serif");
+  webkit_settings_set_default_font_family(wv_settings,
+                                          settings.default_font_family);
 
   g_viewer = webkit_web_view_new_with_settings(wv_settings);
 
@@ -202,21 +197,29 @@ static void update_preview() {
 
   switch (doc->file_type->id) {
     case GEANY_FILETYPES_HTML:
-      if (REGEX_CHK("pandoc", settings.html_processor)) {
+      if (REGEX_CHK("disable", settings.html_processor)) {
+        plain = g_strdup("Preview of HTML documents has been disabled.");
+      } else if (REGEX_CHK("pandoc", settings.html_processor)) {
         output = pandoc(work_dir, text, "html");
       } else {
         html = g_strdup(text);
       }
       break;
     case GEANY_FILETYPES_MARKDOWN:
-      if (REGEX_CHK("pandoc", settings.markdown_processor)) {
+      if (REGEX_CHK("disable", settings.markdown_processor)) {
+        plain = g_strdup("Preview of Markdown documents has been disabled.");
+      } else if (REGEX_CHK("pandoc", settings.markdown_processor)) {
         output = pandoc(work_dir, text, settings.pandoc_markdown);
       } else {
         html = cmark_markdown_to_html(text, strlen(text), 0);
       }
       break;
     case GEANY_FILETYPES_ASCIIDOC:
-      output = asciidoctor(work_dir, text);
+      if (REGEX_CHK("disable", settings.asciidoc_processor)) {
+        plain = g_strdup("Preview of AsciiDoc documents has been disabled.");
+      } else {
+        output = asciidoctor(work_dir, text);
+      }
       break;
     case GEANY_FILETYPES_DOCBOOK:
       output = pandoc(work_dir, text, "docbook");
@@ -238,7 +241,12 @@ static void update_preview() {
       if (CHECK_TYPE("gfm")) {
         output = pandoc(work_dir, text, "gfm");
       } else if (CHECK_TYPE("fountain") || CHECK_TYPE("spmd")) {
-        output = screenplain(work_dir, text, "html");
+        if (REGEX_CHK("disable", settings.fountain_processor)) {
+          plain =
+              g_strdup("Preview of Fountain screenplays has been disabled.");
+        } else {
+          output = screenplain(work_dir, text, "html");
+        }
       } else if (CHECK_TYPE("textile")) {
         output = pandoc(work_dir, text, "textile");
       } else if (CHECK_TYPE("txt")) {
@@ -250,7 +258,9 @@ static void update_preview() {
           plain = g_strdup(text);
         }
       } else if (CHECK_TYPE("wiki")) {
-        if (CHECK_TYPE("dokuwiki")) {
+        if (REGEX_CHK("disable", settings.wiki_default)) {
+          plain = g_strdup("Preview of wiki documents has been disabled.");
+        } else if (CHECK_TYPE("dokuwiki")) {
           output = pandoc(work_dir, text, "dokuwiki");
         } else if (CHECK_TYPE("tikiwiki")) {
           output = pandoc(work_dir, text, "tikiwiki");
@@ -283,12 +293,15 @@ static void update_preview() {
   } else if (output) {
     webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), output->str, uri);
     g_string_free(output, TRUE);
+  } else if (plain) {
+    WEBVIEW_WARN(plain);
+    g_free(plain);
   } else {
-    char *_text = g_malloc(64);
-    sprintf(_text, "Unable to process type: %s, %s.", doc->file_type->name,
+    plain = g_malloc(64);
+    sprintf(plain, "Unable to process type: %s, %s.", doc->file_type->name,
             doc->encoding);
-    WEBVIEW_WARN(_text);
-    g_free(_text);
+    WEBVIEW_WARN(plain);
+    g_free(plain);
   }
 
   g_free(uri);

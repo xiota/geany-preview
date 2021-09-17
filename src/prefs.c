@@ -1,25 +1,23 @@
 #include "prefs.h"
 
-#define HAS_KEY(gp, key) g_key_file_has_key(kf, gp, key, NULL)
-#define GET_KEY(T, gp, key) g_key_file_get_##T(kf, gp, key, NULL)
-#define SET_KEY(T, gp, key, val) g_key_file_set_##T(kf, gp, key, val)
-
+// Global Variables
 extern GeanyData *geany_data;
-
 struct PreviewSettings settings;
 
+// Functions
 void init_settings() {
   settings.update_interval = 200;
   settings.background_interval = 5000;
-
   settings.html_processor = g_strdup("native");
   settings.markdown_processor = g_strdup("native");
   settings.asciidoc_processor = g_strdup("asciidoctor");
   settings.fountain_processor = g_strdup("screenplain");
   settings.wiki_default = g_strdup("mediawiki");
+  settings.pandoc_disabled = FALSE;
   settings.pandoc_fragment = FALSE;
   settings.pandoc_toc = FALSE;
   settings.pandoc_markdown = g_strdup("gfm");
+  settings.default_font_family = g_strdup("serif");
 }
 
 void open_settings() {
@@ -34,8 +32,7 @@ void open_settings() {
 
   // if file does not exist, create it with default settings
   if (!g_file_test(conf_fn, G_FILE_TEST_EXISTS)) {
-    save_settings();
-    return;
+    save_default_settings();
   }
 
   g_key_file_load_from_file(
@@ -62,22 +59,20 @@ void save_settings() {
 
   // Update with new contents
 
-  SET_KEY(integer, "preview", "update_interval", settings.update_interval);
-  SET_KEY(integer, "preview", "background_interval",
-          settings.background_interval);
+  SET_KEY(integer, "update_interval", settings.update_interval);
+  SET_KEY(integer, "background_interval", settings.background_interval);
 
-  SET_KEY(string, "preview", "html_processor", settings.html_processor);
-  SET_KEY(string, "preview", "markdown_processor",
-          settings.markdown_processor);
-  SET_KEY(string, "preview", "asciidoc_processor",
-          settings.asciidoc_processor);
-  SET_KEY(string, "preview", "fountain_processor",
-          settings.fountain_processor);
-  SET_KEY(string, "preview", "wiki_default", settings.wiki_default);
+  SET_KEY(string, "html_processor", settings.html_processor);
+  SET_KEY(string, "markdown_processor", settings.markdown_processor);
+  SET_KEY(string, "asciidoc_processor", settings.asciidoc_processor);
+  SET_KEY(string, "fountain_processor", settings.fountain_processor);
+  SET_KEY(string, "wiki_default", settings.wiki_default);
 
-  SET_KEY(boolean, "preview", "pandoc_fragment", settings.pandoc_fragment);
-  SET_KEY(boolean, "preview", "pandoc_toc", settings.pandoc_toc);
-  SET_KEY(string, "preview", "pandoc_markdown", settings.pandoc_markdown);
+  SET_KEY(boolean, "pandoc_disabled", settings.pandoc_disabled);
+  SET_KEY(boolean, "pandoc_fragment", settings.pandoc_fragment);
+  SET_KEY(boolean, "pandoc_toc", settings.pandoc_toc);
+  SET_KEY(string, "pandoc_markdown", settings.pandoc_markdown);
+  SET_KEY(string, "default_font_family", settings.default_font_family);
 
   contents = g_key_file_to_data(kf, &length, NULL);
   if (contents) {
@@ -91,95 +86,43 @@ void save_settings() {
 }
 
 void load_settings(GKeyFile *kf) {
-
   if (!g_key_file_has_group(kf, "preview")) {
     return;
   }
 
-  if (HAS_KEY("preview", "update_interval")) {
-    int val = GET_KEY(integer, "preview", "update_interval");
-    if (val) {
-      settings.update_interval = val;
-    } else {
-      settings.update_interval = 200;
+  LOAD_KEY_INTEGER(update_interval, 200);
+  LOAD_KEY_INTEGER(background_interval, 5000);
+
+  LOAD_KEY_STRING(html_processor, "native");
+  LOAD_KEY_STRING(markdown_processor, "native");
+  LOAD_KEY_STRING(asciidoc_processor, "asciidoctor");
+  LOAD_KEY_STRING(fountain_processor, "screenplain");
+  LOAD_KEY_STRING(wiki_default, "mediawiki");
+
+  LOAD_KEY_BOOLEAN(pandoc_disabled);
+  LOAD_KEY_BOOLEAN(pandoc_fragment);
+  LOAD_KEY_BOOLEAN(pandoc_toc);
+
+  LOAD_KEY_STRING(pandoc_markdown, "gfm");
+  LOAD_KEY_STRING(default_font_family, "serif");
+}
+
+void save_default_settings() {
+  char *conf_fn = g_build_filename(geany_data->app->configdir, "plugins",
+                                   "preview", "preview.conf", NULL);
+  char *conf_dn = g_path_get_dirname(conf_fn);
+  g_mkdir_with_parents(conf_dn, 0755);
+
+  if (!g_file_test(conf_fn, G_FILE_TEST_EXISTS)) {
+    if (g_file_test(PREVIEW_CONFIG, G_FILE_TEST_EXISTS)) {
+      char *contents = NULL;
+      size_t length = 0;
+      if (g_file_get_contents(PREVIEW_CONFIG, &contents, &length, NULL)) {
+        g_file_set_contents(conf_fn, contents, length, NULL);
+        g_free(contents);
+      }
     }
   }
-
-  if (HAS_KEY("preview", "background_interval")) {
-    int val = GET_KEY(integer, "preview", "background_interval");
-    if (val) {
-      settings.update_interval = val;
-    } else {
-      settings.update_interval = 5000;
-    }
-  }
-
-  if (HAS_KEY("preview", "html_processor")) {
-    char *val = GET_KEY(string, "preview", "html_processor");
-    if (val) {
-      settings.markdown_processor = g_strdup(val);
-    } else {
-      settings.markdown_processor = g_strdup("native");
-    }
-    g_free(val);
-  }
-
-  if (HAS_KEY("preview", "markdown_processor")) {
-    char *val = GET_KEY(string, "preview", "markdown_processor");
-    if (val) {
-      settings.markdown_processor = g_strdup(val);
-    } else {
-      settings.markdown_processor = g_strdup("native");
-    }
-    g_free(val);
-  }
-
-  if (HAS_KEY("preview", "asciidoc_processor")) {
-    char *val = GET_KEY(string, "preview", "asciidoc_processor");
-    if (val) {
-      settings.markdown_processor = g_strdup(val);
-    } else {
-      settings.markdown_processor = g_strdup("asciidoctor");
-    }
-    g_free(val);
-  }
-
-  if (HAS_KEY("preview", "fountain_processor")) {
-    char *val = GET_KEY(string, "preview", "fountain_processor");
-    if (val) {
-      settings.markdown_processor = g_strdup(val);
-    } else {
-      settings.markdown_processor = g_strdup("screenplain");
-    }
-    g_free(val);
-  }
-
-  if (HAS_KEY("preview", "wiki_default")) {
-    char *val = GET_KEY(string, "preview", "wiki_default");
-    if (val) {
-      settings.markdown_processor = g_strdup(val);
-    } else {
-      settings.markdown_processor = g_strdup("mediawiki");
-    }
-    g_free(val);
-  }
-
-  if (HAS_KEY("preview", "pandoc_fragment")) {
-    settings.pandoc_fragment =
-        GET_KEY(boolean, "preview", "pandoc_fragment");
-  }
-
-  if (HAS_KEY("preview", "pandoc_toc")) {
-    settings.pandoc_toc = GET_KEY(boolean, "preview", "pandoc_toc");
-  }
-
-  if (HAS_KEY("preview", "pandoc_markdown")) {
-    char *val = GET_KEY(string, "preview", "pandoc_markdown");
-    if (val) {
-      settings.pandoc_markdown = g_strdup(val);
-    } else {
-      settings.pandoc_markdown = g_strdup("gfm");
-    }
-    g_free(val);
-  }
+  g_free(conf_dn);
+  g_free(conf_fn);
 }

@@ -32,14 +32,56 @@ struct PreviewSettings {
   char *asciidoc_processor;
   char *fountain_processor;
   char *wiki_default;
+  gboolean pandoc_disabled;
   gboolean pandoc_fragment;
   gboolean pandoc_toc;
   char *pandoc_markdown;
+  char *default_font_family;
 };
 
 void init_settings();
 void open_settings();
 void load_settings(GKeyFile *kf);
 void save_settings();
+void save_default_settings();
+
+// Macros to make loading settings easier
+#define PLUGIN_GROUP "preview"
+
+#define HAS_KEY(key) g_key_file_has_key(kf, PLUGIN_GROUP, key, NULL)
+#define GET_KEY(T, key) g_key_file_get_##T(kf, PLUGIN_GROUP, key, NULL)
+#define SET_KEY(T, key, val) g_key_file_set_##T(kf, PLUGIN_GROUP, key, val)
+
+#define LOAD_KEY_STRING(key, def)         \
+  do {                                    \
+    if (HAS_KEY("key")) {                 \
+      char *val = GET_KEY(string, "key"); \
+      if (val) {                          \
+        settings.key = g_strdup(val);     \
+      } else {                            \
+        settings.key = g_strdup((def));   \
+      }                                   \
+      g_free(val);                        \
+    }                                     \
+  } while (0)
+
+#define LOAD_KEY_BOOLEAN(key)                 \
+  do {                                        \
+    if (HAS_KEY("key")) {                     \
+      settings.key = GET_KEY(boolean, "key"); \
+    }                                         \
+  } while (0)
+
+#define LOAD_KEY_INTEGER(key, def)       \
+  do {                                   \
+    if (HAS_KEY("key")) {                \
+      int val = GET_KEY(integer, "key"); \
+      if (val) {                         \
+        settings.key = val;              \
+      } else {                           \
+        settings.key = (def);            \
+      }                                  \
+    }                                    \
+  } while (0)
 
 #endif  // PREVIEW_PREFS_H
