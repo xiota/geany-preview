@@ -27,7 +27,6 @@
 
 #include <cmark-gfm.h>
 
-#include "common.h"
 #include "formats.h"
 #include "plugin.h"
 #include "prefs.h"
@@ -36,16 +35,9 @@
 #define WEBVIEW_WARN(msg) \
   webkit_web_view_load_plain_text(WEBKIT_WEB_VIEW(g_viewer), (msg))
 
-GeanyPlugin *geany_plugin;
-GeanyData *geany_data;
-
-PLUGIN_VERSION_CHECK(211)
-
-PLUGIN_SET_INFO("Preview",
-                "Quick previews of HTML, Markdown, and other formats.", "0.1",
-                "xiota")
-
-// Function Declarations
+/* ********************
+ * Declarations
+ */
 static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
                                  SCNotification *notif, gpointer user_data);
 static void on_document_signal(GObject *obj, GeanyDocument *doc,
@@ -55,7 +47,17 @@ static void on_document_filetype_set(GObject *obj, GeanyDocument *doc,
 
 static void update_preview();
 
-// Globals
+/* ********************
+ * Globals
+ */
+GeanyPlugin *geany_plugin;
+GeanyData *geany_data;
+
+static gboolean preview_init(GeanyPlugin *plugin, gpointer data);
+static void preview_cleanup(GeanyPlugin *plugin, gpointer data);
+
+void preview_cleanup();
+
 static GtkWidget *g_viewer = NULL;
 static GtkWidget *g_scrolled_win = NULL;
 static gint g_page_num = 0;
@@ -65,8 +67,76 @@ static guint g_timeout_handle = 0;
 
 extern struct PreviewSettings settings;
 
-// Functions
+/* ********************
+ * Plugin Setup
+ */
+static PluginCallback preview_callbacks[] = {
+    /* Set 'after' (third field) to TRUE to run the callback @a after the
+     * default handler. If 'after' is FALSE, the callback is run @a before the
+     * default handler, so the plugin can prevent Geany from processing the
+     * notification. Use this with care. */
+    {"geany-startup-complete", (GCallback)&on_document_signal, FALSE, NULL},
+    {"editor-notify", (GCallback)&on_editor_notify, FALSE, NULL},
+    {"document-activate", (GCallback)&on_document_signal, FALSE, NULL},
+    {"document-filetype-set", (GCallback)&on_document_filetype_set, FALSE,
+     NULL},
+    {"document-new", (GCallback)&on_document_signal, FALSE, NULL},
+    {"document-open", (GCallback)&on_document_signal, FALSE, NULL},
+    {"document-reload", (GCallback)&on_document_signal, FALSE, NULL},
+    {NULL, NULL, FALSE, NULL}};
 
+void geany_load_module(GeanyPlugin *plugin) {
+  plugin->info->name = _("Preview");
+  plugin->info->description =
+      _("Quick previews of HTML, Markdown, and other formats.");
+  plugin->info->version = "0.1";
+  plugin->info->author = _("xiota");
+
+  plugin->funcs->init = preview_init;
+  plugin->funcs->configure = NULL;
+  plugin->funcs->help = NULL;
+  plugin->funcs->cleanup = preview_cleanup;
+  plugin->funcs->callbacks = preview_callbacks;
+
+  GEANY_PLUGIN_REGISTER(plugin, 225);
+}
+
+static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
+  open_settings();
+
+  WebKitSettings *wv_settings = webkit_settings_new();
+  webkit_settings_set_default_font_family(wv_settings,
+                                          settings.default_font_family);
+
+  g_viewer = webkit_web_view_new_with_settings(wv_settings);
+
+  g_scrolled_win = gtk_scrolled_window_new(NULL, NULL);
+  gtk_container_add(GTK_CONTAINER(g_scrolled_win), g_viewer);
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(g_scrolled_win),
+                                 GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+
+  GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
+  g_page_num =
+      gtk_notebook_append_page(nb, g_scrolled_win, gtk_label_new("Preview"));
+
+  gtk_widget_show_all(g_scrolled_win);
+  gtk_notebook_set_current_page(nb, g_page_num);
+
+  WEBVIEW_WARN("Loading...");
+}
+
+static void preview_cleanup(GeanyPlugin *plugin, gpointer data) {
+  // fmt_prefs_deinit();
+  GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
+  gtk_notebook_remove_page(nb, g_page_num);
+
+  gtk_widget_destroy(g_viewer);
+  gtk_widget_destroy(g_scrolled_win);
+}
+
+/* ********************
+ * Functions
+ */
 static void wv_load_scroll_callback(GObject *object, GAsyncResult *result,
                                     gpointer user_data) {}
 
@@ -116,51 +186,6 @@ static void wv_loading_callback(WebKitWebView *web_view,
                                 gpointer user_data) {
   // don't wait for WEBKIT_LOAD_FINISHED, othewise preview will flicker
   wv_load_scroll_pos();
-}
-
-void plugin_init(G_GNUC_UNUSED GeanyData *data) {
-  open_settings();
-
-  WebKitSettings *wv_settings = webkit_settings_new();
-  webkit_settings_set_default_font_family(wv_settings,
-                                          settings.default_font_family);
-
-  g_viewer = webkit_web_view_new_with_settings(wv_settings);
-
-  g_scrolled_win = gtk_scrolled_window_new(NULL, NULL);
-  gtk_container_add(GTK_CONTAINER(g_scrolled_win), g_viewer);
-  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(g_scrolled_win),
-                                 GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-
-  GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
-  g_page_num =
-      gtk_notebook_append_page(nb, g_scrolled_win, gtk_label_new("Preview"));
-
-  gtk_widget_show_all(g_scrolled_win);
-  gtk_notebook_set_current_page(nb, g_page_num);
-
-  WEBVIEW_WARN("Loading...");
-
-#define CONNECT(sig, cb) \
-  plugin_signal_connect(geany_plugin, NULL, sig, TRUE, G_CALLBACK(cb), NULL)
-
-  CONNECT("geany-startup-complete", on_document_signal);
-  CONNECT("editor-notify", on_editor_notify);
-  CONNECT("document-activate", on_document_signal);
-  CONNECT("document-filetype-set", on_document_filetype_set);
-  CONNECT("document-new", on_document_signal);
-  CONNECT("document-open", on_document_signal);
-  CONNECT("document-reload", on_document_signal);
-#undef CONNECT
-}
-
-void plugin_cleanup() {
-  // fmt_prefs_deinit();
-  GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
-  gtk_notebook_remove_page(nb, g_page_num);
-
-  gtk_widget_destroy(g_viewer);
-  gtk_widget_destroy(g_scrolled_win);
 }
 
 static void update_preview() {

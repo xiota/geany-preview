@@ -51,6 +51,9 @@ G_BEGIN_DECLS
 extern GeanyPlugin *geany_plugin;
 extern GeanyData *geany_data;
 
+#define REGEX_CHK(_tp, _str) \
+  g_regex_match_simple((_tp), (_str), G_REGEX_CASELESS, 0)
+
 G_END_DECLS
 
 #endif  // PREVIEW_PLUGIN_H

@@ -21,13 +21,9 @@
 #ifndef PREVIEW_PREFS_H
 #define PREVIEW_PREFS_H
 
-#include <geanyplugin.h>
-#include <gtk/gtk.h>
+#include "plugin.h"
 
 G_BEGIN_DECLS
-
-extern GeanyPlugin *geany_plugin;
-extern GeanyData *geany_data;
 
 struct PreviewSettings {
   int update_interval_slow;

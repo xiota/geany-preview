@@ -20,7 +20,6 @@
 
 #include "formats.h"
 
-#include "common.h"
 #include "prefs.h"
 #include "process.h"
 

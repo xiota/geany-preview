@@ -23,7 +23,6 @@ preview_la_LDFLAGS = -module -avoid-version
 preview_la_SOURCES = \
 	src/plugin.c \
 	src/plugin.h \
-	src/common.h \
 	src/formats.c \
 	src/formats.h \
 	src/prefs.c \

@@ -21,12 +21,10 @@
 #ifndef PREVIEW_FORMATS_H
 #define PREVIEW_FORMATS_H
 
+#include "plugin.h"
 #include "process.h"
 
 G_BEGIN_DECLS
-
-extern GeanyPlugin *geany_plugin;
-extern GeanyData *geany_data;
 
 extern struct PreviewSettings settings;
 
