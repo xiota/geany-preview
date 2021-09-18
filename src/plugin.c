@@ -64,6 +64,7 @@ static gint g_page_num = 0;
 static gint32 g_scrollY = 0;
 static gulong g_load_handle = 0;
 static guint g_timeout_handle = 0;
+gboolean g_snippet = FALSE;
 
 extern struct PreviewSettings settings;
 
@@ -145,10 +146,7 @@ static void preview_cleanup(GeanyPlugin *plugin, gpointer data) {
 /* ********************
  * Functions
  */
-static void wv_load_scroll_callback(GObject *object, GAsyncResult *result,
-                                    gpointer user_data) {}
-
-static void wv_save_scroll_pos_callback(GObject *object, GAsyncResult *result,
+static void wv_save_position_callback(GObject *object, GAsyncResult *result,
                                         gpointer user_data) {
   WebKitJavascriptResult *js_result;
   JSCValue *value;
@@ -171,21 +169,21 @@ static void wv_save_scroll_pos_callback(GObject *object, GAsyncResult *result,
   webkit_javascript_result_unref(js_result);
 }
 
-static void wv_save_scroll_pos() {
+static void wv_save_position() {
   char *script;
   script = g_strdup("window.scrollY");
 
   webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(g_viewer), script, NULL,
-                                 wv_save_scroll_pos_callback, NULL);
+                                 wv_save_position_callback, NULL);
   g_free(script);
 }
 
-static void wv_load_scroll_pos() {
+static void wv_load_position() {
   char *script;
   script = g_strdup_printf("window.scrollTo(0, %d);", g_scrollY);
 
   webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(g_viewer), script, NULL,
-                                 wv_load_scroll_callback, NULL);
+                                 NULL, NULL);
   g_free(script);
 }
 
@@ -193,7 +191,7 @@ static void wv_loading_callback(WebKitWebView *web_view,
                                 WebKitLoadEvent load_event,
                                 gpointer user_data) {
   // don't wait for WEBKIT_LOAD_FINISHED, othewise preview will flicker
-  wv_load_scroll_pos();
+  wv_load_position();
 }
 
 static void update_preview() {
@@ -213,7 +211,7 @@ static void update_preview() {
   GString *output = NULL;
 
   // save scroll position
-  wv_save_scroll_pos();
+  wv_save_position();
 
   // callback to restore scroll position
   if (g_load_handle == 0) {
@@ -341,7 +339,7 @@ static void update_preview() {
   g_free(work_dir);
 
   // restore scroll position
-  wv_load_scroll_pos();
+  wv_load_position();
 }
 
 static gboolean update_preview_timeout_callback(gpointer user_data) {
