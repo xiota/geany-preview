@@ -45,6 +45,7 @@ static void on_document_signal(GObject *obj, GeanyDocument *doc,
 static void on_document_filetype_set(GObject *obj, GeanyDocument *doc,
                                      GeanyFiletype *ft_old, gpointer user_data);
 
+static gboolean update_preview_timeout_callback(gpointer user_data);
 static void update_preview();
 
 /* ********************
@@ -56,9 +57,8 @@ GeanyData *geany_data;
 static gboolean preview_init(GeanyPlugin *plugin, gpointer data);
 static void preview_cleanup(GeanyPlugin *plugin, gpointer data);
 
-void preview_cleanup();
-
 static GtkWidget *g_viewer = NULL;
+static WebKitWebContext *g_wv_context = NULL;
 static GtkWidget *g_scrolled_win = NULL;
 static gint g_page_num = 0;
 static gint32 g_scrollY = 0;
@@ -70,21 +70,6 @@ extern struct PreviewSettings settings;
 /* ********************
  * Plugin Setup
  */
-static PluginCallback preview_callbacks[] = {
-    /* Set 'after' (third field) to TRUE to run the callback @a after the
-     * default handler. If 'after' is FALSE, the callback is run @a before the
-     * default handler, so the plugin can prevent Geany from processing the
-     * notification. Use this with care. */
-    {"geany-startup-complete", (GCallback)&on_document_signal, FALSE, NULL},
-    {"editor-notify", (GCallback)&on_editor_notify, FALSE, NULL},
-    {"document-activate", (GCallback)&on_document_signal, FALSE, NULL},
-    {"document-filetype-set", (GCallback)&on_document_filetype_set, FALSE,
-     NULL},
-    {"document-new", (GCallback)&on_document_signal, FALSE, NULL},
-    {"document-open", (GCallback)&on_document_signal, FALSE, NULL},
-    {"document-reload", (GCallback)&on_document_signal, FALSE, NULL},
-    {NULL, NULL, FALSE, NULL}};
-
 void geany_load_module(GeanyPlugin *plugin) {
   plugin->info->name = _("Preview");
   plugin->info->description =
@@ -96,12 +81,27 @@ void geany_load_module(GeanyPlugin *plugin) {
   plugin->funcs->configure = NULL;
   plugin->funcs->help = NULL;
   plugin->funcs->cleanup = preview_cleanup;
-  plugin->funcs->callbacks = preview_callbacks;
+
+#define PREVIEW_PSC(sig, cb) \
+  plugin_signal_connect(plugin, NULL, (sig), TRUE, G_CALLBACK(cb), NULL)
+
+  PREVIEW_PSC("geany-startup-complete", on_document_signal);
+  PREVIEW_PSC("editor-notify", on_editor_notify);
+  PREVIEW_PSC("document-activate", on_document_signal);
+  PREVIEW_PSC("document-filetype-set", on_document_filetype_set);
+  PREVIEW_PSC("document-new", on_document_signal);
+  PREVIEW_PSC("document-open", on_document_signal);
+  PREVIEW_PSC("document-reload", on_document_signal);
+#undef CONNECT
 
   GEANY_PLUGIN_REGISTER(plugin, 225);
+  geany_plugin_set_data(plugin, plugin, NULL);
 }
 
 static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
+  geany_plugin = plugin;
+  geany_data = plugin->geany_data;
+
   open_settings();
 
   WebKitSettings *wv_settings = webkit_settings_new();
@@ -109,6 +109,7 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
                                           settings.default_font_family);
 
   g_viewer = webkit_web_view_new_with_settings(wv_settings);
+  g_wv_context = webkit_web_view_get_context (WEBKIT_WEB_VIEW(g_viewer));
 
   g_scrolled_win = gtk_scrolled_window_new(NULL, NULL);
   gtk_container_add(GTK_CONTAINER(g_scrolled_win), g_viewer);
@@ -122,7 +123,14 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
   gtk_widget_show_all(g_scrolled_win);
   gtk_notebook_set_current_page(nb, g_page_num);
 
-  WEBVIEW_WARN("Loading...");
+  WEBVIEW_WARN("Loading.");
+
+  // preview may need to be updated after a delay on first use
+  if (g_timeout_handle == 0) {
+    g_timeout_handle = g_timeout_add(settings.background_interval / 2,
+                                     update_preview_timeout_callback, NULL);
+  }
+  return TRUE;
 }
 
 static void preview_cleanup(GeanyPlugin *plugin, gpointer data) {
@@ -390,11 +398,13 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
 
 static void on_document_signal(GObject *obj, GeanyDocument *doc,
                                gpointer user_data) {
+  webkit_web_context_clear_cache(g_wv_context);
   update_preview();
 }
 
 static void on_document_filetype_set(GObject *obj, GeanyDocument *doc,
                                      GeanyFiletype *ft_old,
                                      gpointer user_data) {
+  webkit_web_context_clear_cache(g_wv_context);
   update_preview();
 }
