@@ -10,10 +10,11 @@ This plugin provides a basic preview of documents written in several markup form
 * HTML and Markdown are supported directly
 * Other document formats can be processed with auxiliary programs
 * Each format can have its own stylesheet
+* Preview can be limited to a small portion of large documents
 
 ## Usage
 
-The preview is active by default for documents with a supported file type.  For performance, updates are delayed when the preview is not visible.  To disable the preview completely without unloading the plugin, change the file type to one that is not supported, like a programming language.  The correct file type will be redetected when the document is reopened.
+The preview is active by default for documents with a supported file type.  For performance, updates are disabled when the preview is not visible.  It will be updated again when the document is edited.
 
 To display formats other than HTML or Markdown requires the use of auxiliary programs.  If they are not installed, no preview will be displayed.  If Geany is running in a terminal, a warning message about the missing program will be printed to stderr.
 

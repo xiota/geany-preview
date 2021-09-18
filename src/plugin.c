@@ -45,8 +45,10 @@ static void on_document_signal(GObject *obj, GeanyDocument *doc,
 static void on_document_filetype_set(GObject *obj, GeanyDocument *doc,
                                      GeanyFiletype *ft_old, gpointer user_data);
 
-static gboolean update_preview_timeout_callback(gpointer user_data);
+static gboolean update_timeout_callback(gpointer user_data);
 static void update_preview();
+
+static void tab_switch_callback(GtkNotebook *nb);
 
 /* ********************
  * Globals
@@ -64,7 +66,8 @@ static gint g_page_num = 0;
 static gint32 g_scrollY = 0;
 static gulong g_load_handle = 0;
 static guint g_timeout_handle = 0;
-gboolean g_snippet = FALSE;
+static gboolean g_snippet = FALSE;
+static gulong g_tab_handle = 0;
 
 extern struct PreviewSettings settings;
 
@@ -110,7 +113,7 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
                                           settings.default_font_family);
 
   g_viewer = webkit_web_view_new_with_settings(wv_settings);
-  g_wv_context = webkit_web_view_get_context (WEBKIT_WEB_VIEW(g_viewer));
+  g_wv_context = webkit_web_view_get_context(WEBKIT_WEB_VIEW(g_viewer));
 
   g_scrolled_win = gtk_scrolled_window_new(NULL, NULL);
   gtk_container_add(GTK_CONTAINER(g_scrolled_win), g_viewer);
@@ -124,12 +127,16 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
   gtk_widget_show_all(g_scrolled_win);
   gtk_notebook_set_current_page(nb, g_page_num);
 
+  // signal handler to update when notebook selected
+  g_tab_handle = g_signal_connect(GTK_WIDGET(nb), "switch_page",
+                                  G_CALLBACK(tab_switch_callback), NULL);
+
   WEBVIEW_WARN("Loading.");
 
   // preview may need to be updated after a delay on first use
   if (g_timeout_handle == 0) {
     g_timeout_handle = g_timeout_add(settings.background_interval / 2,
-                                     update_preview_timeout_callback, NULL);
+                                     update_timeout_callback, NULL);
   }
   return TRUE;
 }
@@ -141,13 +148,25 @@ static void preview_cleanup(GeanyPlugin *plugin, gpointer data) {
 
   gtk_widget_destroy(g_viewer);
   gtk_widget_destroy(g_scrolled_win);
+
+  g_clear_signal_handler(&g_tab_handle, GTK_WIDGET(nb));
 }
 
 /* ********************
  * Functions
  */
+static void tab_switch_callback(GtkNotebook *nb) {
+  //GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
+  if (gtk_notebook_get_current_page(nb) == g_page_num) {
+    if (g_timeout_handle == 0) {
+      g_timeout_handle = g_timeout_add(settings.update_interval_fast,
+                                       update_timeout_callback, NULL);
+    }
+  }
+}
+
 static void wv_save_position_callback(GObject *object, GAsyncResult *result,
-                                        gpointer user_data) {
+                                      gpointer user_data) {
   WebKitJavascriptResult *js_result;
   JSCValue *value;
   GError *error = NULL;
@@ -180,10 +199,13 @@ static void wv_save_position() {
 
 static void wv_load_position() {
   char *script;
-  script = g_strdup_printf("window.scrollTo(0, %d);", g_scrollY);
-
-  webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(g_viewer), script, NULL,
-                                 NULL, NULL);
+  if (g_snippet) {
+    script = g_strdup("window.scrollTo(0, 0.2*document.documentElement.scrollHeight);");
+  } else {
+    script = g_strdup_printf("window.scrollTo(0, %d);", g_scrollY);
+  }
+  webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(g_viewer), script, NULL, NULL,
+                                 NULL);
   g_free(script);
 }
 
@@ -201,6 +223,14 @@ static void update_preview() {
     return;
   }
 
+  // save scroll position and set callback if needed
+  wv_save_position();
+  if (g_load_handle == 0) {
+    g_load_handle =
+        g_signal_connect_swapped(WEBKIT_WEB_VIEW(g_viewer), "load-changed",
+                                 G_CALLBACK(wv_loading_callback), NULL);
+  }
+
   char *uri = g_filename_to_uri(DOC_FILENAME(doc), NULL, NULL);
   char *basename = g_path_get_basename(DOC_FILENAME(doc));
   char *work_dir = g_path_get_dirname(DOC_FILENAME(doc));
@@ -210,14 +240,30 @@ static void update_preview() {
   char *plain = NULL;
   GString *output = NULL;
 
-  // save scroll position
-  wv_save_position();
+  int position = 0;
+  int line = sci_get_current_line(doc->editor->sci);
 
-  // callback to restore scroll position
-  if (g_load_handle == 0) {
-    g_load_handle =
-        g_signal_connect_swapped(WEBKIT_WEB_VIEW(g_viewer), "load-changed",
-                                 G_CALLBACK(wv_loading_callback), NULL);
+  int length = sci_get_length(doc->editor->sci);
+  if (g_snippet) {
+    if (line > 0) {
+      position = sci_get_position_from_line(doc->editor->sci, line);
+    }
+    int start = 0;
+    int end = 0;
+    int amount = settings.snippet_window / 3;
+    // get beginning and end and set scroll position
+    if (position > amount) {
+      start = position - amount;
+    } else {
+      start = 0;
+    }
+    if (position + 2 * amount > length) {
+      end = length;
+    } else {
+      end = position + 2 * amount;
+    }
+
+    text = sci_get_contents_range(doc->editor->sci, start, end);
   }
 
   switch (doc->file_type->id) {
@@ -317,6 +363,10 @@ static void update_preview() {
     } break;
   }
 
+  if (g_snippet) {
+    g_free(text);
+  }
+
   if (html) {
     webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), html, uri);
     g_free(html);
@@ -342,7 +392,7 @@ static void update_preview() {
   wv_load_position();
 }
 
-static gboolean update_preview_timeout_callback(gpointer user_data) {
+static gboolean update_timeout_callback(gpointer user_data) {
   update_preview();
   g_timeout_handle = 0;
   return FALSE;
@@ -355,42 +405,52 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
     WEBVIEW_WARN("Unknown document type.");
     return FALSE;
   }
+
+  int length = sci_get_length(doc->editor->sci);
+  if (length > settings.snippet_trigger) {
+    g_snippet = TRUE;
+  } else {
+    g_snippet = FALSE;
+  }
+
+  gboolean need_update = FALSE;
+  if (notif->nmhdr.code == SCN_UPDATEUI && g_snippet &&
+      (notif->updated & (SC_UPDATE_CONTENT | SC_UPDATE_SELECTION))) {
+    need_update = TRUE;
+  }
+
   if (notif->nmhdr.code == SCN_MODIFIED && notif->length > 0) {
     if (notif->modificationType & (SC_MOD_INSERTTEXT | SC_MOD_DELETETEXT)) {
-      GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
-      if (gtk_notebook_get_current_page(nb) != g_page_num &&
-          g_timeout_handle == 0) {
-        // delay updates when preview is not visible,
-        // but still need to update in case user switches tabs
-        // TODO: Stop updates entirely when not visible
-        g_timeout_handle = g_timeout_add(settings.background_interval,
-                                         update_preview_timeout_callback, NULL);
-      } else if (doc->file_type->id != GEANY_FILETYPES_ASCIIDOC &&
-                 doc->file_type->id != GEANY_FILETYPES_NONE) {
-        // delay for fast programs
-        int length = (int)scintilla_send_message(doc->editor->sci,
-                                                 SCI_GETTEXTLENGTH, 0, 0);
-        double _tt = (double)length * settings.size_factor_fast;
-        int timeout = (int)_tt > settings.update_interval_fast
-                          ? (int)_tt
-                          : settings.update_interval_fast;
-
-        g_timeout_handle =
-            g_timeout_add(timeout, update_preview_timeout_callback, NULL);
-      } else if (g_timeout_handle == 0) {
-        // delay for slow external programs
-        int length = (int)scintilla_send_message(doc->editor->sci,
-                                                 SCI_GETTEXTLENGTH, 0, 0);
-        double _tt = (double)length * settings.size_factor_slow;
-        int timeout = (int)_tt > settings.update_interval_slow
-                          ? (int)_tt
-                          : settings.update_interval_slow;
-
-        g_timeout_handle =
-            g_timeout_add(timeout, update_preview_timeout_callback, NULL);
-      }
+      need_update = TRUE;
     }
   }
+
+  GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
+  if (gtk_notebook_get_current_page(nb) != g_page_num ||
+      !gtk_widget_is_visible(GTK_WIDGET(nb))) {
+    // no updates when preview pane is hidden
+    return FALSE;
+  }
+
+  if (need_update && g_timeout_handle == 0) {
+    if (doc->file_type->id != GEANY_FILETYPES_ASCIIDOC &&
+        doc->file_type->id != GEANY_FILETYPES_NONE) {
+      // delay for faster programs
+      double _tt = (double)length * settings.size_factor_fast;
+      int timeout = (int)_tt > settings.update_interval_fast
+                        ? (int)_tt
+                        : settings.update_interval_fast;
+      g_timeout_handle = g_timeout_add(timeout, update_timeout_callback, NULL);
+    } else {
+      // delay for slower programs
+      double _tt = (double)length * settings.size_factor_slow;
+      int timeout = (int)_tt > settings.update_interval_slow
+                        ? (int)_tt
+                        : settings.update_interval_slow;
+      g_timeout_handle = g_timeout_add(timeout, update_timeout_callback, NULL);
+    }
+  }
+
   return FALSE;
 }
 
