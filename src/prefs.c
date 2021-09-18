@@ -104,6 +104,9 @@ void save_settings() {
   SET_KEY(boolean, "verbatim_plain_text", settings.verbatim_plain_text);
   SET_KEY(boolean, "extended_types", settings.extended_types);
 
+  SET_KEY(integer, "snippet_window", settings.snippet_window);
+  SET_KEY(integer, "snippet_trigger", settings.snippet_trigger);
+
   // Store back on disk
   contents = g_key_file_to_data(kf, &length, NULL);
   if (contents) {
@@ -141,6 +144,9 @@ void load_settings(GKeyFile *kf) {
 
   LOAD_KEY_BOOLEAN(verbatim_plain_text, FALSE);
   LOAD_KEY_BOOLEAN(extended_types, TRUE);
+
+  LOAD_KEY_INTEGER(snippet_window, 5000, 5);
+  LOAD_KEY_INTEGER(snippet_trigger, 100000, 5);
 }
 
 void init_settings() {
@@ -161,4 +167,6 @@ void init_settings() {
   settings.default_font_family = g_strdup("serif");
   settings.verbatim_plain_text = FALSE;
   settings.extended_types = TRUE;
+  settings.snippet_window = 5000;
+  settings.snippet_trigger = 100000;
 }

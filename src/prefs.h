@@ -43,6 +43,8 @@ struct PreviewSettings {
   char *default_font_family;
   gboolean verbatim_plain_text;
   gboolean extended_types;
+  int snippet_window;
+  int snippet_trigger;
 };
 
 void init_settings();
