@@ -1,167 +1,219 @@
-/* Reset */
-html, body, div, span, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, abbr, address, cite, code, del, dfn, em, img, ins, kbd, q, samp, small, strong, sub, sup, var, b, i, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, figcaption, figure, footer, header, hgroup, menu, nav, section, summary, time, mark, audio, video {
-	margin: 0;
-	padding: 0;
-	border: 0;
-	font-size: 100%;
-	font: inherit;
-	vertical-align: baseline;
-}
-article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
-	display: block;
-}
-/* Styles for Screenplain */
+/* https://www.nfi.edu/screenplay-format/ */
+/* http://www.scriptwritingsecrets.com/DualDialogue.htm */
+
 html {
 	font-size: 8pt;
 }
+/* Styles for Screenplain */
 #wrapper {
-	font-family: "Courier Prime", "Courier Final Draft", "Courier Screenplay", Courier, monospace;
-	font-size: 1rem;
+	font-family: "Courier Prime", "Courier Screenplay", Courier, monospace;
+	font-size: 1em;
+	line-height: 1.0;
 	text-align: left;
-	width: 34.074rem;
+	width: 36.05em; /* 60 char; 6in */
 	background: #fff;
-	padding-left: 0.5rem;
-	padding-right: 0.5rem;
-	padding-top: 0.25rem;
-	padding-bottom: 1rem;
+	/*padding-left: 5.9em;*/   /* 1.0in - add 0.5in when printing */
+	/*padding-right: 2.9em;*/  /* 0.5in - add 0.5in when printing */
+	padding-left: 1em;
+	padding-right: 1em;
+	padding-top: 1em;      /* Use 1.0in margin when printing */
+	padding-bottom: 1em;   /* Use 1.0in margin when printing */
 	position: relative;
 	margin: 0 auto;
-	border: none;
-}
-header {
-	margin-bottom: 1rem;
-	border-bottom: 1px solid black;
-}
-footer {
-	margin-top: 1rem;
-}
-em {
-	font-style: italic;
-}
-strong {
-	font-weight: bold;
-}
-br {
-	clear: both;
+	orphans: 3; /* try to prevent strange page breaks */
+	widows: 3;
 }
 /* Slug */
-div {
+.dialog {
+	break-inside: avoid;
+	margin-top: 1em;
+	margin-bottom: 1em;
+	width: 100%
+}
+.dialog * {
+	margin-top: 0;
+	margin-bottom: 0;
+}
+.dialog > p {
+	width: 21.05em; /* 35 char */
+	margin-top: 0;
+	margin-bottom: 0;
+	margin-left: 6.05em; /* 10 char */
+}
+.dialog > p.character {
+	break-after: avoid;
+	break-inside: avoid;
+	width: auto;
+	margin-top: 0;
+	margin-bottom: 0;
+	margin-left: 13.25em; /* 22 char */
+	margin-right: 0;
+}
+.dialog > .parenthetical {
+	break-after: avoid;
+	break-before: avoid;
+	break-inside: avoid;
+	width: auto;
+	margin-top: 0;
+	margin-bottom: 0;
+	margin-left: 9.65em; /* 16 char */
+	margin-right: 13.15em; /* 22 char */
+}
+.character + p {
+	break-before: avoid;
+	break-inside: avoid;
+	margin-top: 0;
+	margin-bottom: 0;
+}
+.dual {
+	break-inside: avoid;
+	width: 100%;
+	display:block;
+	margin-top: 1em;
+	margin-bottom: 0;
+}
+.dual::after {
+  content: "";
+  clear: both;
+  margin-top: 0;
+  margin-bottom: 0;
+  display: table;
+}
+.dual * {
+	margin-top: 0;
+	margin-bottom: 0;
+}
+.dual .character {
+	break-after: avoid;
+	break-before: avoid;
+	break-inside: avoid;
+	margin-top: 0;
+	margin-bottom: 0;
+	margin-left: 5.45em; /* 9 char */
+}
+.dual .parenthetical {
+	break-after: avoid;
+	break-before: avoid;
+	break-inside: avoid;
+	margin-top: 0;
+	margin-bottom: 0;
+	margin-left: 3.55em; /* 7 char */
+}
+.dual > .left {
+	display: inline;
+	float: left;
+	width: 14.95em; /* 25 char */
+	margin-left: 2.95em; /* 5 char */
+	margin-top: 0;
+	margin-bottom: 0;
+}
+.dual > .right {
+	display: inline;
+	float: left;
+	width: 14.95em; /* 25 char */
+	margin-left: 2.95em; /* 5 char */
+	margin-top: 0;
+	margin-bottom: 0;
+}
+.action {
+	break-after: avoid;
+	break-inside: avoid;
+	margin-top: 1em;
+	margin-bottom: 1em;
 	width: 100%;
 }
-h1:before, h2:before, h3:before, h4:before, h5:before {
-	content: "◦ ";
-	margin-left: -0.667rem;
+.action * {
+	break-after: avoid;
+	break-inside: avoid;
+	margin-top: 0;
+	margin-bottom: 0;
 }
-h1, h2, h3, h4, h5 {
-	font-family: "Gill Sans", "Helvetiva Neue", Helvetica, sans-serif;
-	margin-top: 1.778rem;
-	font-weight: normal;
-	color: rgb(110, 110, 110);
-	border-top: dotted 1px rgb(199, 199, 199);
-	font-size: 0.815rem;
+.action + * {
+	break-before: avoid;
+	break-inside: avoid;
 }
-h1, .h1-synopsis {
-	margin-left: -5.259rem;
-}
-h2, .h2-synopsis {
-	margin-left: -4.519rem;
-}
-h3, .h3-synopsis {
-	margin-left: -3.037rem;
-}
-h4, .h4-synopsis {
-	margin-left: -1.556rem;
-}
-h5, .h5-synopsis {
-	margin-left: -0.074rem;
-}
-.h1-synopsis, .h2-synopsis, .h3-synopsis, .h4-synopsis, .h5-synopsis, .h6-synopsis {
-	font-family: "Gill Sans", "Helvetiva Neue", Helvetica, sans-serif;
-	font-size: 0.741rem;
-	font-style: italic;
-	color: rgb(145, 145, 145);
-	display: block;
-	margin-bottom: 0.370rem;
-}
-h6 {
-	margin-top: 2rem;
-	text-transform: uppercase;
-	font-weight: bold;
-}
-div.block {
-	position: relative;
-	background: #fff;
-}
-div.action p {
-	margin-top: 1rem;
-}
+/* half the time, centering will be off by 0.5 chars */
+/* would need to add an nbsp in html to fix */
 .centered {
 	text-align: center;
 }
-div.dialog, div.dual {
-	margin-top: 1rem;
-}
-div.transition {
-	margin-top: 1rem;
-	margin-bottom: 0.889rem;
+.transition {
+	break-after: avoid;
+	break-inside: avoid;
+	margin-top: 1em;
+	margin-bottom: 1em;
+	width: 100%;
 	text-align: right;
 }
-.dialog p.character {
-	padding-left: 11.358rem;
+.transition * {
+	break-after: avoid;
+	break-inside: avoid;
+	margin-top: 0;
+	margin-bottom: 0;
 }
-.dialog p.parenthetical {
-	padding-left: 8.519rem;
+.transition + * {
+	break-before: avoid;
+	break-inside: avoid;
 }
-.dialog p {
-	padding-left: 5.679rem;
-	width: 22.716rem;
+h1:before, h2:before, h3:before, h4:before, h5:before {
+	content: "◦ ";
+	margin-left: -0.667em;
 }
-.dual > div {
-	float: left;
-	width: 48% !important;
+h1, h2, h3, h4, h5 {
+	font-family: "Gill Sans", "Helvetiva Neue", Helvetica, sans-serif;
+	font-size: 0.85em;
+	font-weight: normal;
+	padding-top: 0.25em;
+	margin-top: 1.5em;
+	color: rgb(110, 110, 110);
+	border-top: dotted 1px rgb(199, 199, 199);
 }
-.dual p.character {
-	padding-left: 6rem;
+.h1-synopsis, .h2-synopsis, .h3-synopsis, .h4-synopsis, .h5-synopsis, .h6-synopsis {
+	font-family: "Gill Sans", "Helvetiva Neue", Helvetica, sans-serif;
+	font-size: 0.741em;
+	font-style: italic;
+	color: rgb(145, 145, 145);
+	display: block;
 }
-.dual p.parenthetical {
-	padding-left: 3rem;
+h1, .h1-synopsis {
+	margin-left: -13.33%;
 }
-.dual p {
-	padding-left: 0;
-	width: 19rem;
+h2, .h2-synopsis {
+	margin-left: -10%;
 }
-.dual .right {
-	margin-left: 1rem;
+h3, .h3-synopsis {
+	margin-left: -6.67%;
 }
-.dual .right p.character {
-	padding-left: 6rem;
+h4, .h4-synopsis {
+	margin-left: -3.33%;
 }
+h5, .h5-synopsis {
+	margin-left: 0;
+}
+h6 {
+	break-after: avoid;
+	break-inside: avoid;
+	font-size: 1em;
+	margin-top: 1em;
+	margin-bottom: 1em;
+	text-transform: uppercase;
+	font-weight: bold;
+}
+.page-break {
+	break-before: always;
+}
+
 span.scnuml {
 	display: block;
 	float: left;
-	margin-left: -4.52rem;
+	margin-left: -4.25em; /* 4 char */
 	font-weight: inherit;
-	-webkit-touch-callout: none;
-	-webkit-user-select: none;
-	-khtml-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	-o-user-select: none;
 	user-select: none;
 }
 span.scnumr {
 	display: block;
 	float: right;
-	margin-right: 0.72rem;
+	margin-right: 0.65em; /* 1 char */
 	font-weight: inherit;
-	-webkit-touch-callout: none;
-	-webkit-user-select: none;
-	-khtml-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	-o-user-select: none;
 	user-select: none;
-}
-.page-break {
-	page-break-before: always;
 }
