@@ -107,6 +107,12 @@ void save_settings() {
   SET_KEY(integer, "snippet_window", settings.snippet_window);
   SET_KEY(integer, "snippet_trigger", settings.snippet_trigger);
 
+  SET_KEY(boolean, "snippet_html", settings.snippet_html);
+  SET_KEY(boolean, "snippet_markdown", settings.snippet_markdown);
+  SET_KEY(boolean, "snippet_asciidoctor", settings.snippet_asciidoctor);
+  SET_KEY(boolean, "snippet_pandoc", settings.snippet_pandoc);
+  SET_KEY(boolean, "snippet_screenplain", settings.snippet_screenplain);
+
   // Store back on disk
   contents = g_key_file_to_data(kf, &length, NULL);
   if (contents) {
@@ -147,6 +153,12 @@ void load_settings(GKeyFile *kf) {
 
   LOAD_KEY_INTEGER(snippet_window, 5000, 5);
   LOAD_KEY_INTEGER(snippet_trigger, 100000, 5);
+
+  LOAD_KEY_BOOLEAN(snippet_html, FALSE);
+  LOAD_KEY_BOOLEAN(snippet_markdown, TRUE);
+  LOAD_KEY_BOOLEAN(snippet_asciidoctor, TRUE);
+  LOAD_KEY_BOOLEAN(snippet_pandoc, TRUE);
+  LOAD_KEY_BOOLEAN(snippet_screenplain, TRUE);
 }
 
 void init_settings() {
@@ -169,4 +181,9 @@ void init_settings() {
   settings.extended_types = TRUE;
   settings.snippet_window = 5000;
   settings.snippet_trigger = 100000;
+  settings.snippet_html = FALSE;
+  settings.snippet_markdown = TRUE;
+  settings.snippet_asciidoctor = TRUE;
+  settings.snippet_pandoc = TRUE;
+  settings.snippet_screenplain = TRUE;
 }

@@ -45,6 +45,11 @@ struct PreviewSettings {
   gboolean extended_types;
   int snippet_window;
   int snippet_trigger;
+  gboolean snippet_html;
+  gboolean snippet_markdown;
+  gboolean snippet_asciidoctor;
+  gboolean snippet_pandoc;
+  gboolean snippet_screenplain;
 };
 
 void init_settings();

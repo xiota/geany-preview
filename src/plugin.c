@@ -156,7 +156,7 @@ static void preview_cleanup(GeanyPlugin *plugin, gpointer data) {
  * Functions
  */
 static void tab_switch_callback(GtkNotebook *nb) {
-  //GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
+  // GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
   if (gtk_notebook_get_current_page(nb) == g_page_num) {
     if (g_timeout_handle == 0) {
       g_timeout_handle = g_timeout_add(settings.update_interval_fast,
@@ -200,7 +200,8 @@ static void wv_save_position() {
 static void wv_load_position() {
   char *script;
   if (g_snippet) {
-    script = g_strdup("window.scrollTo(0, 0.2*document.documentElement.scrollHeight);");
+    script = g_strdup(
+        "window.scrollTo(0, 0.2*document.documentElement.scrollHeight);");
   } else {
     script = g_strdup_printf("window.scrollTo(0, %d);", g_scrollY);
   }
@@ -304,63 +305,58 @@ static void update_preview() {
     case GEANY_FILETYPES_TXT2TAGS:
       output = pandoc(work_dir, text, "t2t");
       break;
-
-#define CHECK_TYPE(_type) \
-  g_regex_match_simple((_type), basename, G_REGEX_CASELESS, 0)
-
     case GEANY_FILETYPES_NONE:
       if (!settings.extended_types) {
         plain = g_strdup("Extended file type detection has been disabled.");
         break;
-      } else if (CHECK_TYPE("gfm")) {
+      } else if (REGEX_CHK("gfm", basename)) {
         output = pandoc(work_dir, text, "gfm");
-      } else if (CHECK_TYPE("fountain") || CHECK_TYPE("spmd")) {
+      } else if (REGEX_CHK("fountain", basename) ||
+                 REGEX_CHK("spmd", basename)) {
         if (REGEX_CHK("disable", settings.fountain_processor)) {
           plain =
               g_strdup("Preview of Fountain screenplays has been disabled.");
         } else {
           output = screenplain(work_dir, text, "html");
         }
-      } else if (CHECK_TYPE("textile")) {
+      } else if (REGEX_CHK("textile", basename)) {
         output = pandoc(work_dir, text, "textile");
-      } else if (CHECK_TYPE("txt")) {
-        if (CHECK_TYPE("gfm")) {
+      } else if (REGEX_CHK("txt", basename)) {
+        if (REGEX_CHK("gfm", basename)) {
           output = pandoc(work_dir, text, "gfm");
-        } else if (CHECK_TYPE("pandoc")) {
+        } else if (REGEX_CHK("pandoc", basename)) {
           output = pandoc(work_dir, text, "markdown");
         } else if (settings.verbatim_plain_text) {
           plain = g_strdup(text);
         } else {
           plain = g_strdup("Verbatim text has been disabled.");
         }
-      } else if (CHECK_TYPE("wiki")) {
+      } else if (REGEX_CHK("wiki", basename)) {
         if (REGEX_CHK("disable", settings.wiki_default)) {
           plain = g_strdup("Preview of wiki documents has been disabled.");
-        } else if (CHECK_TYPE("dokuwiki")) {
+        } else if (REGEX_CHK("dokuwiki", basename)) {
           output = pandoc(work_dir, text, "dokuwiki");
-        } else if (CHECK_TYPE("tikiwiki")) {
+        } else if (REGEX_CHK("tikiwiki", basename)) {
           output = pandoc(work_dir, text, "tikiwiki");
-        } else if (CHECK_TYPE("vimwiki")) {
+        } else if (REGEX_CHK("vimwiki", basename)) {
           output = pandoc(work_dir, text, "vimwiki");
-        } else if (CHECK_TYPE("twiki")) {
+        } else if (REGEX_CHK("twiki", basename)) {
           output = pandoc(work_dir, text, "twiki");
-        } else if (CHECK_TYPE("mediawiki") || CHECK_TYPE("wikipedia")) {
+        } else if (REGEX_CHK("mediawiki", basename) ||
+                   REGEX_CHK("wikipedia", basename)) {
           output = pandoc(work_dir, text, "mediawiki");
         } else {
           output = pandoc(work_dir, text, settings.wiki_default);
         }
-      } else if (CHECK_TYPE("muse")) {
+      } else if (REGEX_CHK("muse", basename)) {
         output = pandoc(work_dir, text, "muse");
-      } else if (CHECK_TYPE("org")) {
+      } else if (REGEX_CHK("org", basename)) {
         output = pandoc(work_dir, text, "org");
       }
       break;
-#undef CHECK_TYPE
-
     // case GEANY_FILETYPES_XML:
-    default: {
-      // html = NULL;
-    } break;
+    default:
+      break;
   }
 
   if (g_snippet) {
@@ -411,6 +407,41 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
     g_snippet = TRUE;
   } else {
     g_snippet = FALSE;
+  }
+
+  switch (doc->file_type->id) {
+    case GEANY_FILETYPES_ASCIIDOC:
+      if (!settings.snippet_asciidoctor) {
+        g_snippet = FALSE;
+      }
+      break;
+    case GEANY_FILETYPES_HTML:
+      if (!settings.snippet_html) {
+        g_snippet = FALSE;
+      }
+      break;
+    case GEANY_FILETYPES_LATEX:
+    case GEANY_FILETYPES_MARKDOWN:
+      if (!settings.snippet_markdown) {
+        g_snippet = FALSE;
+      }
+      break;
+    case GEANY_FILETYPES_NONE: {
+      char *basename = g_path_get_basename(DOC_FILENAME(doc));
+      if (REGEX_CHK("fountain", basename) || REGEX_CHK("spmd", basename)) {
+        if (!settings.snippet_screenplain) {
+          g_snippet = FALSE;
+        }
+      }
+    }  // no break; need to check pandoc
+    case GEANY_FILETYPES_DOCBOOK:
+    case GEANY_FILETYPES_REST:
+    case GEANY_FILETYPES_TXT2TAGS:
+    default:
+      if (!settings.snippet_pandoc) {
+        g_snippet = FALSE;
+      }
+      break;
   }
 
   gboolean need_update = FALSE;
