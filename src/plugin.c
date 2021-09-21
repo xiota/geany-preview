@@ -76,20 +76,15 @@ extern struct PreviewSettings settings;
 /* ********************
  * Plugin Setup
  */
-void geany_load_module(GeanyPlugin *plugin) {
-  plugin->info->name = _("Preview");
-  plugin->info->description =
-      _("Quick previews of HTML, Markdown, and other formats.");
-  plugin->info->version = "0.1";
-  plugin->info->author = _("xiota");
+PLUGIN_VERSION_CHECK(211)
 
-  plugin->funcs->init = preview_init;
-  plugin->funcs->configure = preview_configure;
-  plugin->funcs->help = NULL;
-  plugin->funcs->cleanup = preview_cleanup;
+PLUGIN_SET_INFO("Preview",
+                "Quick previews of HTML, Markdown, and other formats.", "0.1",
+                "xiota")
 
+void plugin_init(G_GNUC_UNUSED GeanyData *data) {
 #define PREVIEW_PSC(sig, cb) \
-  plugin_signal_connect(plugin, NULL, (sig), TRUE, G_CALLBACK(cb), NULL)
+  plugin_signal_connect(geany_plugin, NULL, (sig), TRUE, G_CALLBACK(cb), NULL)
 
   PREVIEW_PSC("geany-startup-complete", on_document_signal);
   PREVIEW_PSC("editor-notify", on_editor_notify);
@@ -100,9 +95,18 @@ void geany_load_module(GeanyPlugin *plugin) {
   PREVIEW_PSC("document-reload", on_document_signal);
 #undef CONNECT
 
-  GEANY_PLUGIN_REGISTER(plugin, 225);
-  geany_plugin_set_data(plugin, plugin, NULL);
+  preview_init(geany_plugin, geany_data);
 }
+
+void plugin_cleanup(void) {
+  preview_cleanup(geany_plugin, geany_data);
+}
+
+GtkWidget *plugin_configure(GtkDialog *dlg) {
+  return preview_configure(geany_plugin, dlg, geany_data);
+}
+
+//void plugin_help(void) { }
 
 static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
   geany_plugin = plugin;
@@ -173,7 +177,9 @@ static void on_pref_open_config_folder(GtkButton *button, GtkWidget *dialog) {
 
   char *command;
   command = g_strdup_printf("xdg-open \"%s\"", conf_dn);
-  system(command);
+  if (system(command)) {
+    // ignore;
+  }
 
   g_free(conf_dn);
   g_free(command);
