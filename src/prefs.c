@@ -33,11 +33,10 @@ void open_settings() {
 
   GKeyFile *kf = g_key_file_new();
 
-  // if file does not exist, create it with default settings
+  // if file does not exist, create it and initialize settings
   if (!g_file_test(conf_fn, G_FILE_TEST_EXISTS)) {
     save_default_settings();
     init_settings();
-    save_settings();
   }
 
   g_key_file_load_from_file(
@@ -57,16 +56,22 @@ void save_default_settings() {
   char *conf_dn = g_path_get_dirname(conf_fn);
   g_mkdir_with_parents(conf_dn, 0755);
 
-  if (!g_file_test(conf_fn, G_FILE_TEST_EXISTS)) {
-    if (g_file_test(PREVIEW_CONFIG, G_FILE_TEST_EXISTS)) {
-      char *contents = NULL;
-      size_t length = 0;
-      if (g_file_get_contents(PREVIEW_CONFIG, &contents, &length, NULL)) {
-        g_file_set_contents(conf_fn, contents, length, NULL);
-        g_free(contents);
-      }
+  // delete if file exists
+  GFile *file = g_file_new_for_path(conf_fn);
+  if (!g_file_trash(file, NULL, NULL)) {
+    g_file_delete(file, NULL, NULL);
+  }
+
+  // copy default config
+  if (g_file_test(PREVIEW_CONFIG, G_FILE_TEST_EXISTS)) {
+    char *contents = NULL;
+    size_t length = 0;
+    if (g_file_get_contents(PREVIEW_CONFIG, &contents, &length, NULL)) {
+      g_file_set_contents(conf_fn, contents, length, NULL);
+      g_free(contents);
     }
   }
+
   g_free(conf_dn);
   g_free(conf_fn);
 }

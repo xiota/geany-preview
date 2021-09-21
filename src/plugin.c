@@ -38,6 +38,11 @@
 /* ********************
  * Declarations
  */
+static gboolean preview_init(GeanyPlugin *plugin, gpointer data);
+static void preview_cleanup(GeanyPlugin *plugin, gpointer data);
+static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
+                                    gpointer pdata);
+
 static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
                                  SCNotification *notif, gpointer user_data);
 static void on_document_signal(GObject *obj, GeanyDocument *doc,
@@ -55,9 +60,6 @@ static void tab_switch_callback(GtkNotebook *nb);
  */
 GeanyPlugin *geany_plugin;
 GeanyData *geany_data;
-
-static gboolean preview_init(GeanyPlugin *plugin, gpointer data);
-static void preview_cleanup(GeanyPlugin *plugin, gpointer data);
 
 static GtkWidget *g_viewer = NULL;
 static WebKitWebContext *g_wv_context = NULL;
@@ -82,7 +84,7 @@ void geany_load_module(GeanyPlugin *plugin) {
   plugin->info->author = _("xiota");
 
   plugin->funcs->init = preview_init;
-  plugin->funcs->configure = NULL;
+  plugin->funcs->configure = preview_configure;
   plugin->funcs->help = NULL;
   plugin->funcs->cleanup = preview_cleanup;
 
@@ -150,6 +152,58 @@ static void preview_cleanup(GeanyPlugin *plugin, gpointer data) {
   gtk_widget_destroy(g_scrolled_win);
 
   g_clear_signal_handler(&g_tab_handle, GTK_WIDGET(nb));
+}
+
+static void on_pref_open_config_file(GtkButton *button, GtkWidget *dialog) {
+  gtk_widget_destroy(GTK_WIDGET(dialog));
+  open_settings();
+
+  char *conf_fn = g_build_filename(geany_data->app->configdir, "plugins",
+                                   "preview", "preview.conf", NULL);
+  GeanyDocument* doc = document_open_file(conf_fn, FALSE, NULL, NULL);
+  document_reload_force(doc, NULL);
+  g_free(conf_fn);
+}
+
+static void on_pref_open_config_folder(GtkButton *button, GtkWidget *dialog) {
+  gtk_widget_destroy(GTK_WIDGET(dialog));
+
+  char *conf_dn =
+      g_build_filename(geany_data->app->configdir, "plugins", "preview", NULL);
+
+  char *command;
+  command = g_strdup_printf("xdg-open \"%s\"", conf_dn);
+  system(command);
+
+  g_free(conf_dn);
+  g_free(command);
+}
+
+static void on_pref_reset_config(GtkButton *button, GtkWidget *dialog) {
+  save_default_settings();
+  on_pref_open_config_file(button, dialog);
+}
+
+static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
+                                    gpointer pdata) {
+  GtkWidget *box, *btn;
+
+  box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+  btn = gtk_button_new_with_label("Open Configuration File");
+  g_signal_connect(btn, "clicked", G_CALLBACK(on_pref_open_config_file),
+                   dialog);
+  gtk_box_pack_start(GTK_BOX(box), btn, FALSE, FALSE, 6);
+
+  btn = gtk_button_new_with_label("Reset Configuration File");
+  g_signal_connect(btn, "clicked", G_CALLBACK(on_pref_reset_config), dialog);
+  gtk_box_pack_start(GTK_BOX(box), btn, FALSE, FALSE, 6);
+
+  btn = gtk_button_new_with_label("Open Configuration Folder");
+  g_signal_connect(btn, "clicked", G_CALLBACK(on_pref_open_config_folder),
+                   dialog);
+  gtk_box_pack_start(GTK_BOX(box), btn, FALSE, FALSE, 6);
+
+  return box;
 }
 
 /* ********************
@@ -373,9 +427,8 @@ static void update_preview() {
     WEBVIEW_WARN(plain);
     g_free(plain);
   } else {
-    plain = g_malloc(64);
-    sprintf(plain, "Unable to process type: %s, %s.", doc->file_type->name,
-            doc->encoding);
+    plain = g_strdup_printf("Unable to process type: %s, %s.",
+                            doc->file_type->name, doc->encoding);
     WEBVIEW_WARN(plain);
     g_free(plain);
   }
