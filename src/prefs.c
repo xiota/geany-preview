@@ -33,16 +33,16 @@ void open_settings() {
 
   GKeyFile *kf = g_key_file_new();
 
-  // if file does not exist, create it and initialize settings
+  // if file does not exist, create it
   if (!g_file_test(conf_fn, G_FILE_TEST_EXISTS)) {
     save_default_settings();
-    init_settings();
   }
 
   g_key_file_load_from_file(
       kf, conf_fn, G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS,
       NULL);
 
+  init_settings();
   load_settings(kf);
 
   g_free(conf_fn);
@@ -63,13 +63,11 @@ void save_default_settings() {
   }
 
   // copy default config
-  if (g_file_test(PREVIEW_CONFIG, G_FILE_TEST_EXISTS)) {
-    char *contents = NULL;
-    size_t length = 0;
-    if (g_file_get_contents(PREVIEW_CONFIG, &contents, &length, NULL)) {
-      g_file_set_contents(conf_fn, contents, length, NULL);
-      g_free(contents);
-    }
+  char *contents = NULL;
+  size_t length = 0;
+  if (g_file_get_contents(PREVIEW_CONFIG, &contents, &length, NULL)) {
+    g_file_set_contents(conf_fn, contents, length, NULL);
+    g_free(contents);
   }
 
   g_free(conf_dn);
