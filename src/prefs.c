@@ -90,7 +90,6 @@ void save_settings() {
   SET_KEY(double, "size_factor_slow", settings.size_factor_slow);
   SET_KEY(integer, "update_interval_fast", settings.update_interval_fast);
   SET_KEY(double, "size_factor_fast", settings.size_factor_fast);
-  SET_KEY(integer, "background_interval", settings.background_interval);
 
   SET_KEY(string, "html_processor", settings.html_processor);
   SET_KEY(string, "markdown_processor", settings.markdown_processor);
@@ -104,7 +103,6 @@ void save_settings() {
   SET_KEY(string, "pandoc_markdown", settings.pandoc_markdown);
   SET_KEY(string, "default_font_family", settings.default_font_family);
 
-  SET_KEY(boolean, "verbatim_plain_text", settings.verbatim_plain_text);
   SET_KEY(boolean, "extended_types", settings.extended_types);
 
   SET_KEY(integer, "snippet_window", settings.snippet_window);
@@ -136,7 +134,6 @@ void load_settings(GKeyFile *kf) {
   LOAD_KEY_DOUBLE(size_factor_slow, 0.004, 0);
   LOAD_KEY_INTEGER(update_interval_fast, 25, 5);
   LOAD_KEY_DOUBLE(size_factor_fast, 0.001, 0);
-  LOAD_KEY_INTEGER(background_interval, 5000, 5);
 
   LOAD_KEY_STRING(html_processor, "native");
   LOAD_KEY_STRING(markdown_processor, "native");
@@ -151,7 +148,6 @@ void load_settings(GKeyFile *kf) {
   LOAD_KEY_STRING(pandoc_markdown, "markdown");
   LOAD_KEY_STRING(default_font_family, "serif");
 
-  LOAD_KEY_BOOLEAN(verbatim_plain_text, FALSE);
   LOAD_KEY_BOOLEAN(extended_types, TRUE);
 
   LOAD_KEY_INTEGER(snippet_window, 5000, 5);
@@ -169,7 +165,6 @@ void init_settings() {
   settings.size_factor_slow = 0.004;
   settings.update_interval_fast = 25;
   settings.size_factor_fast = 0.001;
-  settings.background_interval = 5000;
   settings.html_processor = g_strdup("native");
   settings.markdown_processor = g_strdup("native");
   settings.asciidoc_processor = g_strdup("asciidoctor");
@@ -180,7 +175,6 @@ void init_settings() {
   settings.pandoc_toc = FALSE;
   settings.pandoc_markdown = g_strdup("markdown");
   settings.default_font_family = g_strdup("serif");
-  settings.verbatim_plain_text = FALSE;
   settings.extended_types = TRUE;
   settings.snippet_window = 5000;
   settings.snippet_trigger = 100000;

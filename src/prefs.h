@@ -30,7 +30,6 @@ struct PreviewSettings {
   double size_factor_slow;
   int update_interval_fast;
   double size_factor_fast;
-  int background_interval;
   char *html_processor;
   char *markdown_processor;
   char *asciidoc_processor;
@@ -41,7 +40,6 @@ struct PreviewSettings {
   gboolean pandoc_toc;
   char *pandoc_markdown;
   char *default_font_family;
-  gboolean verbatim_plain_text;
   gboolean extended_types;
   int snippet_window;
   int snippet_trigger;

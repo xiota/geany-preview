@@ -50,7 +50,7 @@ static void on_document_signal(GObject *obj, GeanyDocument *doc,
 static void on_document_filetype_set(GObject *obj, GeanyDocument *doc,
                                      GeanyFiletype *ft_old, gpointer user_data);
 static void on_document_activate(GObject *obj, GeanyDocument *doc,
-                                     GeanyFiletype *ft_old, gpointer user_data);
+                                 GeanyFiletype *ft_old, gpointer user_data);
 
 static gboolean update_timeout_callback(gpointer user_data);
 static void update_preview();
@@ -369,11 +369,10 @@ static void update_preview() {
   static GRegex *re_is_header = NULL;
   static GRegex *re_format = NULL;
   if (!re_has_header) {
-    re_has_header =
-        g_regex_new("^[^\\s:]+:\\s.*$", G_REGEX_MULTILINE, 0, NULL);
+    re_has_header = g_regex_new("^[^\\s:]+:\\s.*$", G_REGEX_MULTILINE, 0, NULL);
     re_is_header = g_regex_new("^([^\\s:]+:.*)|([\\ \\t].*)$", 0, 0, NULL);
     re_format = g_regex_new("(?i)^(content-type|format):\\s*([^\\n]*)$",
-                              G_REGEX_MULTILINE, 0, NULL);
+                            G_REGEX_MULTILINE, 0, NULL);
   }
 
   // get format and split head/body
@@ -495,11 +494,7 @@ static void update_preview() {
       break;
     case PLAIN:
     case EMAIL: {
-      if (settings.verbatim_plain_text) {
-        plain = g_strdup(text);
-      } else {
-        plain = g_strdup("Verbatim text has been disabled.");
-      }
+      plain = g_strdup(text);
     } break;
     case NONE:
     default:
@@ -642,13 +637,12 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
 static inline enum PreviewFileType get_filetype(char *format) {
   if (REGEX_CHK("gfm", format)) {
     return GFM;
-  } else if (REGEX_CHK("fountain", format) ||
-             REGEX_CHK("spmd", format)) {
+  } else if (REGEX_CHK("fountain", format) || REGEX_CHK("spmd", format)) {
     return FOUNTAIN;
   } else if (REGEX_CHK("textile", format)) {
     return TEXTILE;
   } else if (REGEX_CHK("txt", format) || REGEX_CHK("plain", format)) {
-      return PLAIN;
+    return PLAIN;
   } else if (REGEX_CHK("eml", format)) {
     return EMAIL;
   } else if (REGEX_CHK("wiki", format)) {
@@ -673,19 +667,20 @@ static inline enum PreviewFileType get_filetype(char *format) {
   } else if (REGEX_CHK("org", format)) {
     return ORG;
   } else if (REGEX_CHK("html", format)) {
-      return HTML;
+    return HTML;
   } else if (REGEX_CHK("markdown", format)) {
-      return MARKDOWN;
+    return MARKDOWN;
   } else if (REGEX_CHK("asciidoc", format)) {
-      return ASCIIDOC;
+    return ASCIIDOC;
   } else if (REGEX_CHK("docbook", format)) {
-      return DOCBOOK;
+    return DOCBOOK;
   } else if (REGEX_CHK("latex", format)) {
-      return LATEX;
-  } else if (REGEX_CHK("rest", format) || REGEX_CHK("restructuredtext", format)) {
-      return REST;
+    return LATEX;
+  } else if (REGEX_CHK("rest", format) ||
+             REGEX_CHK("restructuredtext", format)) {
+    return REST;
   } else if (REGEX_CHK("txt2tags", format) || REGEX_CHK("t2t", format)) {
-      return TXT2TAGS;
+    return TXT2TAGS;
   }
   return NONE;
 }
@@ -744,8 +739,7 @@ static void on_document_filetype_set(GObject *obj, GeanyDocument *doc,
 }
 
 static void on_document_activate(GObject *obj, GeanyDocument *doc,
-                                     GeanyFiletype *ft_old,
-                                     gpointer user_data) {
+                                 GeanyFiletype *ft_old, gpointer user_data) {
   webkit_web_context_clear_cache(g_wv_context);
   update_preview();
 }
