@@ -1,7 +1,7 @@
 * {
 	margin: 0;
 }
-p+p {
+body > p+p {
 	text-indent: 1rem;
 }
 body {
@@ -92,12 +92,17 @@ body > ol, body > ul {
 	margin-top: 1rem;
 	margin-bottom: 1rem;
 }
-
 ul, ol {
 	margin-top: 0;
 	margin-bottom: 0.5rem;
 }
 
+em, em em em, em em em em em {
+	font-style: italic;
+}
+em em, em em em em {
+	font-style: normal;
+}
 figure {
 	width: 100%;
 	margin: 0 ;
@@ -109,11 +114,22 @@ figcaption {
 	padding: 0;
 }
 
-a.footnote-ref { vertical-align: super; }
-em, em em em, em em em em em { font-style: italic;}
-em em, em em em em { font-style: normal; }
-span.smallcaps{ font-variant: small-caps; }
-span.underline{ text-decoration: underline; }
+table, td, th {
+    border-collapse: collapse;
+    border: 1px solid gray;
+}
+table {
+	margin-top: 1rem;
+	margin-bottom: 1rem;
+}
+td {
+	padding: 0.25rem;
+}
 q { quotes: "“" "”" "‘" "’"; }
-div.column{ display: inline-block; vertical-align: top; width: 50%; }
-div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+.footnote-ref {
+	vertical-align: super;
+}
+.smallcaps{
+	font-variant: small-caps;
+}

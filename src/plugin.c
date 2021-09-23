@@ -388,8 +388,10 @@ static void update_preview() {
       format = g_match_info_fetch(match_info, 2);
     }
     g_match_info_free(match_info);
-    g_filetype = get_filetype(format);
-
+    if (format) {
+      g_filetype = get_filetype(format);
+      g_free(format);
+    }
     // split head and body)
     gchar **texts = g_strsplit(text, "\n", -1);
     gboolean state_h = TRUE;
