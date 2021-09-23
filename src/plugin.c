@@ -49,11 +49,15 @@ static void on_document_signal(GObject *obj, GeanyDocument *doc,
                                gpointer user_data);
 static void on_document_filetype_set(GObject *obj, GeanyDocument *doc,
                                      GeanyFiletype *ft_old, gpointer user_data);
+static void on_document_activate(GObject *obj, GeanyDocument *doc,
+                                     GeanyFiletype *ft_old, gpointer user_data);
 
 static gboolean update_timeout_callback(gpointer user_data);
 static void update_preview();
 
 static void tab_switch_callback(GtkNotebook *nb);
+static inline void set_filetype();
+static inline enum PreviewFileType get_filetype(char *format);
 
 /* ********************
  * Globals
@@ -72,6 +76,7 @@ static gboolean g_snippet = FALSE;
 static gulong g_tab_handle = 0;
 
 extern struct PreviewSettings settings;
+enum PreviewFileType g_filetype = NONE;
 
 /* ********************
  * Plugin Setup
@@ -88,7 +93,7 @@ void plugin_init(G_GNUC_UNUSED GeanyData *data) {
 
   PREVIEW_PSC("geany-startup-complete", on_document_signal);
   PREVIEW_PSC("editor-notify", on_editor_notify);
-  PREVIEW_PSC("document-activate", on_document_signal);
+  PREVIEW_PSC("document-activate", on_document_activate);
   PREVIEW_PSC("document-filetype-set", on_document_filetype_set);
   PREVIEW_PSC("document-new", on_document_signal);
   PREVIEW_PSC("document-open", on_document_signal);
@@ -139,7 +144,7 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
 
   // preview may need to be updated after a delay on first use
   if (g_timeout_handle == 0) {
-    g_timeout_handle = g_timeout_add(settings.background_interval / 2,
+    g_timeout_handle = g_timeout_add(2000,
                                      update_timeout_callback, NULL);
   }
   return TRUE;
@@ -198,8 +203,7 @@ static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
 
   box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
 
-  tooltip = g_strdup(
-      "Save the active settings to the config file.");
+  tooltip = g_strdup("Save the active settings to the config file.");
   btn = gtk_button_new_with_label("Save Config");
   g_signal_connect(btn, "clicked", G_CALLBACK(on_pref_save_config), dialog);
   gtk_box_pack_start(GTK_BOX(box), btn, FALSE, FALSE, 3);
@@ -333,6 +337,7 @@ static void update_preview() {
   char *plain = NULL;
   GString *output = NULL;
 
+  // extract snippet for large document
   int position = 0;
   int line = sci_get_current_line(doc->editor->sci);
 
@@ -359,95 +364,147 @@ static void update_preview() {
     text = sci_get_contents_range(doc->editor->sci, start, end);
   }
 
-  switch (doc->file_type->id) {
-    case GEANY_FILETYPES_HTML:
+  // setup reg expressions to split head and body
+  static GRegex *re_has_header = NULL;
+  static GRegex *re_is_header = NULL;
+  static GRegex *re_format = NULL;
+  if (!re_has_header) {
+    re_has_header =
+        g_regex_new("^[^\\s:]+:\\s.*$", G_REGEX_MULTILINE, 0, NULL);
+    re_is_header = g_regex_new("^([^\\s:]+:.*)|([\\ \\t].*)$", 0, 0, NULL);
+    re_format = g_regex_new("(?i)^(content-type|format):\\s*([^\\n]*)$",
+                              G_REGEX_MULTILINE, 0, NULL);
+  }
+
+  // get format and split head/body
+  GString *head = g_string_new(NULL);
+  GString *body = g_string_new(NULL);
+
+  char *format = NULL;
+  if (g_regex_match(re_has_header, text, 0, NULL)) {
+    GMatchInfo *match_info = NULL;
+
+    // get format header
+    if (g_regex_match(re_format, text, 0, &match_info)) {
+      format = g_match_info_fetch(match_info, 2);
+    }
+    g_match_info_free(match_info);
+    g_filetype = get_filetype(format);
+
+    // split head and body)
+    gchar **texts = g_strsplit(text, "\n", -1);
+    gboolean state_h = TRUE;
+    int i = 0;
+    while (TRUE && texts[i] != NULL) {
+      if (state_h) {
+        if (g_regex_match(re_is_header, texts[i], 0, NULL)) {
+          g_string_append(head, texts[i]);
+          g_string_append(head, "\n");
+          i++;
+        } else {
+          state_h = FALSE;
+        }
+      } else {
+        g_string_append(body, texts[i]);
+        g_string_append(body, "\n");
+        i++;
+      }
+    }
+    g_strfreev(texts);
+  } else {
+    g_string_free(body, TRUE);
+    body = g_string_new(text);
+  }
+
+  switch (g_filetype) {
+    case HTML:
       if (REGEX_CHK("disable", settings.html_processor)) {
         plain = g_strdup("Preview of HTML documents has been disabled.");
       } else if (REGEX_CHK("pandoc", settings.html_processor)) {
-        output = pandoc(work_dir, text, "html");
+        output = pandoc(work_dir, body->str, "html");
       } else {
-        html = g_strdup(text);
+        output = g_string_new(body->str);
       }
       break;
-    case GEANY_FILETYPES_MARKDOWN:
+    case MARKDOWN:
       if (REGEX_CHK("disable", settings.markdown_processor)) {
         plain = g_strdup("Preview of Markdown documents has been disabled.");
       } else if (REGEX_CHK("pandoc", settings.markdown_processor)) {
-        output = pandoc(work_dir, text, settings.pandoc_markdown);
+        output = pandoc(work_dir, body->str, settings.pandoc_markdown);
       } else {
-        html = cmark_markdown_to_html(text, strlen(text), 0);
+        html = cmark_markdown_to_html(body->str, strlen(text), 0);
+        output = g_string_new(html);
+        g_free(html);
       }
       break;
-    case GEANY_FILETYPES_ASCIIDOC:
+    case ASCIIDOC:
       if (REGEX_CHK("disable", settings.asciidoc_processor)) {
         plain = g_strdup("Preview of AsciiDoc documents has been disabled.");
       } else {
-        output = asciidoctor(work_dir, text);
+        output = asciidoctor(work_dir, body->str);
       }
       break;
-    case GEANY_FILETYPES_DOCBOOK:
-      output = pandoc(work_dir, text, "docbook");
+    case DOCBOOK:
+      output = pandoc(work_dir, body->str, "docbook");
       break;
-    case GEANY_FILETYPES_LATEX:
-      output = pandoc(work_dir, text, "latex");
+    case LATEX:
+      output = pandoc(work_dir, body->str, "latex");
       break;
-    case GEANY_FILETYPES_REST:
-      output = pandoc(work_dir, text, "rst");
+    case REST:
+      output = pandoc(work_dir, body->str, "rst");
       break;
-    case GEANY_FILETYPES_TXT2TAGS:
-      output = pandoc(work_dir, text, "t2t");
+    case TXT2TAGS:
+      output = pandoc(work_dir, body->str, "t2t");
       break;
-    case GEANY_FILETYPES_NONE:
-      if (!settings.extended_types) {
-        plain = g_strdup("Extended file type detection has been disabled.");
-        break;
-      } else if (REGEX_CHK("gfm", basename)) {
-        output = pandoc(work_dir, text, "gfm");
-      } else if (REGEX_CHK("fountain", basename) ||
-                 REGEX_CHK("spmd", basename)) {
-        if (REGEX_CHK("disable", settings.fountain_processor)) {
-          plain =
-              g_strdup("Preview of Fountain screenplays has been disabled.");
-        } else {
-          output = screenplain(work_dir, text, "html");
-        }
-      } else if (REGEX_CHK("textile", basename)) {
-        output = pandoc(work_dir, text, "textile");
-      } else if (REGEX_CHK("txt", basename)) {
-        if (REGEX_CHK("gfm", basename)) {
-          output = pandoc(work_dir, text, "gfm");
-        } else if (REGEX_CHK("pandoc", basename)) {
-          output = pandoc(work_dir, text, "markdown");
-        } else if (settings.verbatim_plain_text) {
-          plain = g_strdup(text);
-        } else {
-          plain = g_strdup("Verbatim text has been disabled.");
-        }
-      } else if (REGEX_CHK("wiki", basename)) {
-        if (REGEX_CHK("disable", settings.wiki_default)) {
-          plain = g_strdup("Preview of wiki documents has been disabled.");
-        } else if (REGEX_CHK("dokuwiki", basename)) {
-          output = pandoc(work_dir, text, "dokuwiki");
-        } else if (REGEX_CHK("tikiwiki", basename)) {
-          output = pandoc(work_dir, text, "tikiwiki");
-        } else if (REGEX_CHK("vimwiki", basename)) {
-          output = pandoc(work_dir, text, "vimwiki");
-        } else if (REGEX_CHK("twiki", basename)) {
-          output = pandoc(work_dir, text, "twiki");
-        } else if (REGEX_CHK("mediawiki", basename) ||
-                   REGEX_CHK("wikipedia", basename)) {
-          output = pandoc(work_dir, text, "mediawiki");
-        } else {
-          output = pandoc(work_dir, text, settings.wiki_default);
-        }
-      } else if (REGEX_CHK("muse", basename)) {
-        output = pandoc(work_dir, text, "muse");
-      } else if (REGEX_CHK("org", basename)) {
-        output = pandoc(work_dir, text, "org");
+    case GFM:
+      output = pandoc(work_dir, body->str, "gfm");
+      break;
+    case FOUNTAIN:
+      if (REGEX_CHK("disable", settings.fountain_processor)) {
+        plain = g_strdup("Preview of Fountain screenplays has been disabled.");
+      } else {
+        output = screenplain(work_dir, body->str, "html");
       }
       break;
-    // case GEANY_FILETYPES_XML:
+    case TEXTILE:
+      output = pandoc(work_dir, body->str, "textile");
+      break;
+    case DOKUWIKI:
+      output = pandoc(work_dir, body->str, "dokuwiki");
+      break;
+    case TIKIWIKI:
+      output = pandoc(work_dir, body->str, "tikiwiki");
+      break;
+    case VIMWIKI:
+      output = pandoc(work_dir, body->str, "vimwiki");
+      break;
+    case TWIKI:
+      output = pandoc(work_dir, body->str, "twiki");
+      break;
+    case MEDIAWIKI:
+      output = pandoc(work_dir, body->str, "mediawiki");
+      break;
+    case WIKI:
+      output = pandoc(work_dir, body->str, settings.wiki_default);
+      break;
+    case MUSE:
+      output = pandoc(work_dir, body->str, "muse");
+      break;
+    case ORG:
+      output = pandoc(work_dir, body->str, "org");
+      break;
+    case PLAIN:
+    case EMAIL: {
+      if (settings.verbatim_plain_text) {
+        plain = g_strdup(text);
+      } else {
+        plain = g_strdup("Verbatim text has been disabled.");
+      }
+    } break;
+    case NONE:
     default:
+      plain = g_strdup_printf("Unable to process type: %s, %s.",
+                              doc->file_type->name, doc->encoding);
       break;
   }
 
@@ -455,21 +512,25 @@ static void update_preview() {
     g_free(text);
   }
 
-  if (html) {
-    webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), html, uri);
-    g_free(html);
+  if (plain) {
+    WEBVIEW_WARN(plain);
+    g_free(plain);
   } else if (output) {
+    if (g_strcmp0(head->str, "") != 0 && g_strcmp0(head->str, "\n") != 0) {
+      g_string_prepend(head, "<body><div class='headers'>");
+      g_string_append(head, "</div>");
+      if (REGEX_CHK("<body>", output->str)) {
+        g_string_replace(output, "<body>", head->str, 1);
+      } else {
+        g_string_prepend(output, head->str);
+      }
+    }
     webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), output->str, uri);
     g_string_free(output, TRUE);
-  } else if (plain) {
-    WEBVIEW_WARN(plain);
-    g_free(plain);
-  } else {
-    plain = g_strdup_printf("Unable to process type: %s, %s.",
-                            doc->file_type->name, doc->encoding);
-    WEBVIEW_WARN(plain);
-    g_free(plain);
   }
+
+  g_string_free(head, TRUE);
+  g_string_free(body, TRUE);
 
   g_free(uri);
   g_free(basename);
@@ -493,6 +554,8 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
     return FALSE;
   }
 
+  set_filetype();
+
   int length = sci_get_length(doc->editor->sci);
   if (length > settings.snippet_trigger) {
     g_snippet = TRUE;
@@ -511,7 +574,6 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
         g_snippet = FALSE;
       }
       break;
-    case GEANY_FILETYPES_LATEX:
     case GEANY_FILETYPES_MARKDOWN:
       if (!settings.snippet_markdown) {
         g_snippet = FALSE;
@@ -524,7 +586,8 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
           g_snippet = FALSE;
         }
       }
-    }  // no break; need to check pandoc
+    }  // no break; need to check pandoc setting
+    case GEANY_FILETYPES_LATEX:
     case GEANY_FILETYPES_DOCBOOK:
     case GEANY_FILETYPES_REST:
     case GEANY_FILETYPES_TXT2TAGS:
@@ -576,6 +639,97 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
   return FALSE;
 }
 
+static inline enum PreviewFileType get_filetype(char *format) {
+  if (REGEX_CHK("gfm", format)) {
+    return GFM;
+  } else if (REGEX_CHK("fountain", format) ||
+             REGEX_CHK("spmd", format)) {
+    return FOUNTAIN;
+  } else if (REGEX_CHK("textile", format)) {
+    return TEXTILE;
+  } else if (REGEX_CHK("txt", format) || REGEX_CHK("plain", format)) {
+      return PLAIN;
+  } else if (REGEX_CHK("eml", format)) {
+    return EMAIL;
+  } else if (REGEX_CHK("wiki", format)) {
+    if (REGEX_CHK("disable", settings.wiki_default)) {
+      return NONE;
+    } else if (REGEX_CHK("dokuwiki", format)) {
+      return DOKUWIKI;
+    } else if (REGEX_CHK("tikiwiki", format)) {
+      return TIKIWIKI;
+    } else if (REGEX_CHK("vimwiki", format)) {
+      return VIMWIKI;
+    } else if (REGEX_CHK("twiki", format)) {
+      return TWIKI;
+    } else if (REGEX_CHK("mediawiki", format) ||
+               REGEX_CHK("wikipedia", format)) {
+      return MEDIAWIKI;
+    } else {
+      return WIKI;
+    }
+  } else if (REGEX_CHK("muse", format)) {
+    return MUSE;
+  } else if (REGEX_CHK("org", format)) {
+    return ORG;
+  } else if (REGEX_CHK("html", format)) {
+      return HTML;
+  } else if (REGEX_CHK("markdown", format)) {
+      return MARKDOWN;
+  } else if (REGEX_CHK("asciidoc", format)) {
+      return ASCIIDOC;
+  } else if (REGEX_CHK("docbook", format)) {
+      return DOCBOOK;
+  } else if (REGEX_CHK("latex", format)) {
+      return LATEX;
+  } else if (REGEX_CHK("rest", format) || REGEX_CHK("restructuredtext", format)) {
+      return REST;
+  } else if (REGEX_CHK("txt2tags", format) || REGEX_CHK("t2t", format)) {
+      return TXT2TAGS;
+  }
+  return NONE;
+}
+
+static inline void set_filetype() {
+  GeanyDocument *doc = document_get_current();
+  char *basename = g_path_get_basename(DOC_FILENAME(doc));
+
+  switch (doc->file_type->id) {
+    case GEANY_FILETYPES_HTML:
+      g_filetype = HTML;
+      break;
+    case GEANY_FILETYPES_MARKDOWN:
+      g_filetype = MARKDOWN;
+      break;
+    case GEANY_FILETYPES_ASCIIDOC:
+      g_filetype = ASCIIDOC;
+      break;
+    case GEANY_FILETYPES_DOCBOOK:
+      g_filetype = DOCBOOK;
+      break;
+    case GEANY_FILETYPES_LATEX:
+      g_filetype = LATEX;
+      break;
+    case GEANY_FILETYPES_REST:
+      g_filetype = REST;
+      break;
+    case GEANY_FILETYPES_TXT2TAGS:
+      g_filetype = TXT2TAGS;
+      break;
+    case GEANY_FILETYPES_NONE:
+      if (!settings.extended_types) {
+        g_filetype = NONE;
+        break;
+      } else {
+        g_filetype = get_filetype(basename);
+      }
+      break;
+    default:
+      g_filetype = NONE;
+      break;
+  }
+}
+
 static void on_document_signal(GObject *obj, GeanyDocument *doc,
                                gpointer user_data) {
   webkit_web_context_clear_cache(g_wv_context);
@@ -583,6 +737,13 @@ static void on_document_signal(GObject *obj, GeanyDocument *doc,
 }
 
 static void on_document_filetype_set(GObject *obj, GeanyDocument *doc,
+                                     GeanyFiletype *ft_old,
+                                     gpointer user_data) {
+  webkit_web_context_clear_cache(g_wv_context);
+  update_preview();
+}
+
+static void on_document_activate(GObject *obj, GeanyDocument *doc,
                                      GeanyFiletype *ft_old,
                                      gpointer user_data) {
   webkit_web_context_clear_cache(g_wv_context);

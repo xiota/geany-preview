@@ -1,23 +1,117 @@
-/* This defines styles and classes used in the book */
-body { margin: 5%; font-size: medium; }
-code { font-family: monospace; }
-h1 { text-align: left; }
-h2 { text-align: left; }
-h3 { text-align: left; }
-h4 { text-align: left; }
-h5 { text-align: left; }
-h6 { text-align: left; }
-h1.title { }
-h2.author { }
-h3.date { }
-nav#toc ol,
-nav#landmarks ol { padding: 0; margin-left: 1em; }
-nav#toc ol li,
-nav#landmarks ol li { list-style-type: none; margin: 0; padding: 0; }
+* {
+	margin: 0;
+}
+p+p {
+	text-indent: 1rem;
+}
+body {
+	margin: 1rem;
+	font-size: medium;
+}
+code {
+	font-family: monospace;
+	white-space: pre-wrap;
+}
+pre {
+	font-family: monospace;
+	white-space: pre-wrap;
+}
+
+div.headers {
+	font-size: small;
+	font-family: monospace;
+	white-space: pre-wrap;
+	background: lightgray;
+	margin-left: -0.5rem;
+	margin-right: -0.5rem;
+	margin-top: -0.5rem;
+	padding-left: 0.5rem;
+	padding-right: 0.5rem;
+	padding-top: 0.5rem;
+	padding-bottom: 0.5rem;
+}
+div.headers + * {
+	padding-top: 0.5em;
+}
+h1 {
+	text-align: left;
+	font-size: 1.6rem;
+	margin-bottom: 0.5rem;
+}
+h2 {
+	text-align: left;
+	font-size: 1.4rem;
+	margin-top: 1rem;
+	margin-bottom: 0.5rem;
+}
+h3 {
+	text-align: left;
+	font-size: 1.2rem;
+	margin-top: 1rem;
+	margin-bottom: 0.5rem;
+}
+h4 {
+	text-align: left;
+	font-size: 1.0rem;
+	margin-top: 1rem;
+	margin-bottom: 0.5rem;
+}
+h5 {
+	text-align: left;
+	font-size: 1.0rem;
+	font-style: italic;
+	margin-top: 1rem;
+	margin-bottom: 0.5rem;
+}
+h6 {
+	text-align: left;
+	font-size: 1.0rem;
+	font-style: italic;
+	margin-top: 1rem;
+	margin-bottom: 0.5rem;
+	display: inline;
+}
+h6:after {
+	content: " — ";
+}
+
+h6 + p {
+	display: inline;
+}
+
+img {
+	width: 100%;
+	padding: 0;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 1rem;
+	margin-bottom: 0.5rem;
+}
+
+body > ol, body > ul {
+	margin-top: 1rem;
+	margin-bottom: 1rem;
+}
+
+ul, ol {
+	margin-top: 0;
+	margin-bottom: 0.5rem;
+}
+
+figure {
+	width: 100%;
+	margin: 0 ;
+	padding: 0;
+}
+figcaption {
+	display: none;
+	margin: 0 ;
+	padding: 0;
+}
+
 a.footnote-ref { vertical-align: super; }
 em, em em em, em em em em em { font-style: italic;}
 em em, em em em em { font-style: normal; }
-code{ white-space: pre-wrap; }
 span.smallcaps{ font-variant: small-caps; }
 span.underline{ text-decoration: underline; }
 q { quotes: "“" "”" "‘" "’"; }

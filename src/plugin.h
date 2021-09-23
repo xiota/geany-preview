@@ -51,6 +51,30 @@ G_BEGIN_DECLS
 extern GeanyPlugin *geany_plugin;
 extern GeanyData *geany_data;
 
+enum PreviewFileType {
+  NONE,
+  ASCIIDOC,
+  DOCBOOK,
+  DOKUWIKI,
+  EMAIL,
+  FOUNTAIN,
+  GFM,
+  HTML,
+  LATEX,
+  MARKDOWN,
+  MEDIAWIKI,
+  MUSE,
+  ORG,
+  PLAIN,
+  REST,
+  TEXTILE,
+  TIKIWIKI,
+  TWIKI,
+  TXT2TAGS,
+  VIMWIKI,
+  WIKI
+};
+
 #define REGEX_CHK(_tp, _str) \
   g_regex_match_simple((_tp), (_str), G_REGEX_CASELESS, 0)
 
