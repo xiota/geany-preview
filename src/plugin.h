@@ -76,9 +76,9 @@ enum PreviewFileType {
 };
 
 #define GFREE(_z_) \
-  do {            \
-    g_free(_z_);  \
-    _z_ = NULL;   \
+  do {             \
+    g_free(_z_);   \
+    _z_ = NULL;    \
   } while (0)
 
 #define GSTRING_FREE(_z_)     \
@@ -94,9 +94,9 @@ enum PreviewFileType {
   } while (0)
 
 #define GKEY_FILE_FREE(_z_) \
-  do {                   \
+  do {                      \
     g_key_file_free(_z_);   \
-    _z_ = NULL;          \
+    _z_ = NULL;             \
   } while (0)
 
 #define REGEX_CHK(_tp, _str) \

@@ -66,8 +66,8 @@ static GtkWidget *g_viewer = NULL;
 static WebKitWebContext *g_wv_context = NULL;
 static GtkWidget *g_scrolled_win = NULL;
 static gint g_nb_page_num = 0;
-static GArray* g_scrollY = NULL;
-//static gint32 g_scrollY = 0;
+static GArray *g_scrollY = NULL;
+// static gint32 g_scrollY = 0;
 static gulong g_load_handle = 0;
 static guint g_timeout_handle = 0;
 static gboolean g_snippet = FALSE;
@@ -113,7 +113,7 @@ GtkWidget *plugin_configure(GtkDialog *dlg) {
 static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
   geany_plugin = plugin;
   geany_data = plugin->geany_data;
-  g_scrollY = g_array_new (TRUE, TRUE, sizeof(gint32));
+  g_scrollY = g_array_new(TRUE, TRUE, sizeof(gint32));
 
   open_settings();
 
@@ -144,8 +144,7 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
 
   // preview may need to be updated after a delay on first use
   if (g_timeout_handle == 0) {
-    g_timeout_handle = g_timeout_add(2000,
-                                     update_timeout_callback, NULL);
+    g_timeout_handle = g_timeout_add(2000, update_timeout_callback, NULL);
   }
   return TRUE;
 }
@@ -357,7 +356,7 @@ static void update_preview() {
 
   char *uri = g_filename_to_uri(DOC_FILENAME(doc), NULL, NULL);
   if (!REGEX_CHK("file://", uri)) {
-    GFREE (uri);
+    GFREE(uri);
     uri = g_strdup("file:///tmp/blank.html");
   }
 
@@ -469,7 +468,8 @@ static void update_preview() {
       } else {
         html = cmark_markdown_to_html(body->str, body->len, 0);
         char *css_fn = find_copy_css("markdown.css", PREVIEW_CSS_MARKDOWN);
-        plain = g_strjoin(NULL,
+        plain = g_strjoin(
+            NULL,
             "<html><head><link rel='stylesheet' type='text/css' href='file://",
             css_fn, "'></head><body>", html, "</body></html>", NULL);
 
@@ -538,10 +538,10 @@ static void update_preview() {
       break;
     case PLAIN:
     case EMAIL: {
-      g_string_prepend (body, "<pre>");
-      g_string_append (body, "</pre>");
+      g_string_prepend(body, "<pre>");
+      g_string_append(body, "</pre>");
       output = g_string_new(body->str);
-      //plain = g_strdup(text);
+      // plain = g_strdup(text);
     } break;
     case NONE:
     default:
