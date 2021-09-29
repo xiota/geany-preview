@@ -52,8 +52,9 @@ static gboolean update_timeout_callback(gpointer user_data);
 static void update_preview();
 
 static void tab_switch_callback(GtkNotebook *nb);
-static inline void set_filetype();
 static inline enum PreviewFileType get_filetype(char *format);
+static inline void set_filetype();
+static inline void set_snippets();
 
 /* ********************
  * Globals
@@ -71,6 +72,7 @@ static gulong g_load_handle = 0;
 static guint g_timeout_handle = 0;
 static gboolean g_snippet = FALSE;
 static gulong g_tab_handle = 0;
+static GeanyDocument *g_current_doc = NULL;
 
 extern struct PreviewSettings settings;
 enum PreviewFileType g_filetype = NONE;
@@ -339,6 +341,12 @@ static void update_preview() {
     return;
   }
 
+  if (doc != g_current_doc) {
+    g_current_doc = doc;
+    set_filetype();
+    set_snippets();
+  }
+
   // save scroll position and set callback if needed
   wv_save_position();
   if (g_load_handle == 0) {
@@ -559,6 +567,7 @@ static void update_preview() {
         g_string_prepend(output, head->str);
       }
     }
+    webkit_web_context_clear_cache(g_wv_context);
     webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), output->str, uri);
     GSTRING_FREE(output);
   }
@@ -588,49 +597,7 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
     return FALSE;
   }
 
-  set_filetype();
-
   int length = sci_get_length(doc->editor->sci);
-  if (length > settings.snippet_trigger) {
-    g_snippet = TRUE;
-  } else {
-    g_snippet = FALSE;
-  }
-
-  switch (doc->file_type->id) {
-    case GEANY_FILETYPES_ASCIIDOC:
-      if (!settings.snippet_asciidoctor) {
-        g_snippet = FALSE;
-      }
-      break;
-    case GEANY_FILETYPES_HTML:
-      if (!settings.snippet_html) {
-        g_snippet = FALSE;
-      }
-      break;
-    case GEANY_FILETYPES_MARKDOWN:
-      if (!settings.snippet_markdown) {
-        g_snippet = FALSE;
-      }
-      break;
-    case GEANY_FILETYPES_NONE: {
-      char *basename = g_path_get_basename(DOC_FILENAME(doc));
-      if (REGEX_CHK("fountain", basename) || REGEX_CHK("spmd", basename)) {
-        if (!settings.snippet_screenplain) {
-          g_snippet = FALSE;
-        }
-      }
-    }  // no break; need to check pandoc setting
-    case GEANY_FILETYPES_LATEX:
-    case GEANY_FILETYPES_DOCBOOK:
-    case GEANY_FILETYPES_REST:
-    case GEANY_FILETYPES_TXT2TAGS:
-    default:
-      if (!settings.snippet_pandoc) {
-        g_snippet = FALSE;
-      }
-      break;
-  }
 
   gboolean need_update = FALSE;
   if (notif->nmhdr.code == SCN_UPDATEUI && g_snippet &&
@@ -726,7 +693,6 @@ static inline enum PreviewFileType get_filetype(char *format) {
 
 static inline void set_filetype() {
   GeanyDocument *doc = document_get_current();
-  char *basename = g_path_get_basename(DOC_FILENAME(doc));
 
   switch (doc->file_type->id) {
     case GEANY_FILETYPES_HTML:
@@ -755,7 +721,9 @@ static inline void set_filetype() {
         g_filetype = NONE;
         break;
       } else {
+        char *basename = g_path_get_basename(DOC_FILENAME(doc));
         g_filetype = get_filetype(basename);
+        GFREE(basename);
       }
       break;
     default:
@@ -764,8 +732,54 @@ static inline void set_filetype() {
   }
 }
 
+static inline void set_snippets() {
+  GeanyDocument *doc = document_get_current();
+
+  int length = sci_get_length(doc->editor->sci);
+  if (length > settings.snippet_trigger) {
+    g_snippet = TRUE;
+  } else {
+    g_snippet = FALSE;
+  }
+
+  switch (doc->file_type->id) {
+    case GEANY_FILETYPES_ASCIIDOC:
+      if (!settings.snippet_asciidoctor) {
+        g_snippet = FALSE;
+      }
+      break;
+    case GEANY_FILETYPES_HTML:
+      if (!settings.snippet_html) {
+        g_snippet = FALSE;
+      }
+      break;
+    case GEANY_FILETYPES_MARKDOWN:
+      if (!settings.snippet_markdown) {
+        g_snippet = FALSE;
+      }
+      break;
+    case GEANY_FILETYPES_NONE: {
+      char *basename = g_path_get_basename(DOC_FILENAME(doc));
+      if (REGEX_CHK("fountain", basename) || REGEX_CHK("spmd", basename)) {
+        if (!settings.snippet_screenplain) {
+          g_snippet = FALSE;
+        }
+      }
+      GFREE(basename);
+    }  // no break; need to check pandoc setting
+    case GEANY_FILETYPES_LATEX:
+    case GEANY_FILETYPES_DOCBOOK:
+    case GEANY_FILETYPES_REST:
+    case GEANY_FILETYPES_TXT2TAGS:
+    default:
+      if (!settings.snippet_pandoc) {
+        g_snippet = FALSE;
+      }
+      break;
+  }
+}
+
 static void on_document_signal(GObject *obj, GeanyDocument *doc,
                                gpointer user_data) {
-  webkit_web_context_clear_cache(g_wv_context);
   update_preview();
 }
