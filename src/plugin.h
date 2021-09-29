@@ -75,6 +75,30 @@ enum PreviewFileType {
   WIKI
 };
 
+#define GFREE(_z_) \
+  do {            \
+    g_free(_z_);  \
+    _z_ = NULL;   \
+  } while (0)
+
+#define GSTRING_FREE(_z_)     \
+  do {                        \
+    g_string_free(_z_, TRUE); \
+    _z_ = NULL;               \
+  } while (0)
+
+#define GERROR_FREE(_z_) \
+  do {                   \
+    g_error_free(_z_);   \
+    _z_ = NULL;          \
+  } while (0)
+
+#define GKEY_FILE_FREE(_z_) \
+  do {                   \
+    g_key_file_free(_z_);   \
+    _z_ = NULL;          \
+  } while (0)
+
 #define REGEX_CHK(_tp, _str) \
   g_regex_match_simple((_tp), (_str), G_REGEX_CASELESS, 0)
 

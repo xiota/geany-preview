@@ -28,7 +28,7 @@ char *find_css(const char *css) {
                                   "preview", css, NULL);
   char *css_dn = g_path_get_dirname(css_fn);
   g_mkdir_with_parents(css_dn, 0755);
-  g_free(css_dn);
+  GFREE(css_dn);
 
   if (g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
     return css_fn;
@@ -42,7 +42,7 @@ char *find_copy_css(const char *css, const char *src) {
                                   "preview", css, NULL);
   char *css_dn = g_path_get_dirname(css_fn);
   g_mkdir_with_parents(css_dn, 0755);
-  g_free(css_dn);
+  GFREE(css_dn);
 
   if (!g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
     if (g_file_test(src, G_FILE_TEST_EXISTS)) {
@@ -50,7 +50,7 @@ char *find_copy_css(const char *css, const char *src) {
       size_t length = 0;
       if (g_file_get_contents(src, &contents, &length, NULL)) {
         g_file_set_contents(css_fn, contents, length, NULL);
-        g_free(contents);
+        GFREE(contents);
       }
     }
   }
@@ -98,8 +98,8 @@ GString *pandoc(const char *work_dir, const char *input,
   if (css_fn) {
     g_ptr_array_add(args, g_strdup_printf("--css=%s", css_fn));
   }
-  g_free(css_fn);
-  g_free(css);
+  GFREE(css_fn);
+  GFREE(css);
 
   // end of args
   g_ptr_array_add(args, NULL);
@@ -116,7 +116,7 @@ GString *pandoc(const char *work_dir, const char *input,
   GString *output = g_string_sized_new(strlen(input));
   if (!fmt_process_run(proc, input, strlen(input), output)) {
     g_warning("Failed to format document range");
-    g_string_free(output, TRUE);
+    GSTRING_FREE(output);
     fmt_process_close(proc);
     return NULL;
   }
@@ -152,7 +152,7 @@ GString *asciidoctor(const char *work_dir, const char *input) {
   GString *output = g_string_sized_new(strlen(input));
   if (!fmt_process_run(proc, input, strlen(input), output)) {
     g_warning("Failed to format document range");
-    g_string_free(output, TRUE);
+    GSTRING_FREE(output);
     fmt_process_close(proc);
     return NULL;
   }
@@ -182,8 +182,8 @@ GString *screenplain(const char *work_dir, const char *input,
   if (css_fn) {
     g_ptr_array_add(args, g_strdup_printf("--css=%s", css_fn));
   }
-  g_free(css_fn);
-  g_free(css);
+  GFREE(css_fn);
+  GFREE(css);
 
   // end of args
   g_ptr_array_add(args, NULL);
@@ -201,7 +201,7 @@ GString *screenplain(const char *work_dir, const char *input,
   GString *output = g_string_sized_new(strlen(input));
   if (!fmt_process_run(proc, input, strlen(input), output)) {
     g_warning("Failed to format document range");
-    g_string_free(output, TRUE);
+    GSTRING_FREE(output);
     fmt_process_close(proc);
     return NULL;
   }

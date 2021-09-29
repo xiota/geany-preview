@@ -47,10 +47,6 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
                                  SCNotification *notif, gpointer user_data);
 static void on_document_signal(GObject *obj, GeanyDocument *doc,
                                gpointer user_data);
-static void on_document_filetype_set(GObject *obj, GeanyDocument *doc,
-                                     GeanyFiletype *ft_old, gpointer user_data);
-static void on_document_activate(GObject *obj, GeanyDocument *doc,
-                                 GeanyFiletype *ft_old, gpointer user_data);
 
 static gboolean update_timeout_callback(gpointer user_data);
 static void update_preview();
@@ -68,8 +64,9 @@ GeanyData *geany_data;
 static GtkWidget *g_viewer = NULL;
 static WebKitWebContext *g_wv_context = NULL;
 static GtkWidget *g_scrolled_win = NULL;
-static gint g_page_num = 0;
-static gint32 g_scrollY = 0;
+static gint g_nb_page_num = 0;
+static GArray* g_scrollY = NULL;
+//static gint32 g_scrollY = 0;
 static gulong g_load_handle = 0;
 static guint g_timeout_handle = 0;
 static gboolean g_snippet = FALSE;
@@ -93,8 +90,8 @@ void plugin_init(G_GNUC_UNUSED GeanyData *data) {
 
   PREVIEW_PSC("geany-startup-complete", on_document_signal);
   PREVIEW_PSC("editor-notify", on_editor_notify);
-  PREVIEW_PSC("document-activate", on_document_activate);
-  PREVIEW_PSC("document-filetype-set", on_document_filetype_set);
+  PREVIEW_PSC("document-activate", on_document_signal);
+  PREVIEW_PSC("document-filetype-set", on_document_signal);
   PREVIEW_PSC("document-new", on_document_signal);
   PREVIEW_PSC("document-open", on_document_signal);
   PREVIEW_PSC("document-reload", on_document_signal);
@@ -114,6 +111,7 @@ GtkWidget *plugin_configure(GtkDialog *dlg) {
 static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
   geany_plugin = plugin;
   geany_data = plugin->geany_data;
+  g_scrollY = g_array_new (TRUE, TRUE, sizeof(gint32));
 
   open_settings();
 
@@ -130,11 +128,11 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
                                  GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 
   GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
-  g_page_num =
+  g_nb_page_num =
       gtk_notebook_append_page(nb, g_scrolled_win, gtk_label_new("Preview"));
 
   gtk_widget_show_all(g_scrolled_win);
-  gtk_notebook_set_current_page(nb, g_page_num);
+  gtk_notebook_set_current_page(nb, g_nb_page_num);
 
   // signal handler to update when notebook selected
   g_tab_handle = g_signal_connect(GTK_WIDGET(nb), "switch_page",
@@ -153,7 +151,7 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
 static void preview_cleanup(GeanyPlugin *plugin, gpointer data) {
   // fmt_prefs_deinit();
   GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
-  gtk_notebook_remove_page(nb, g_page_num);
+  gtk_notebook_remove_page(nb, g_nb_page_num);
 
   gtk_widget_destroy(g_viewer);
   gtk_widget_destroy(g_scrolled_win);
@@ -170,8 +168,8 @@ static void on_pref_open_config_folder(GtkButton *button, GtkWidget *dialog) {
   if (system(command)) {
     // ignore;
   }
-  g_free(conf_dn);
-  g_free(command);
+  GFREE(conf_dn);
+  GFREE(command);
 }
 
 static void on_pref_edit_config(GtkButton *button, GtkWidget *dialog) {
@@ -180,7 +178,7 @@ static void on_pref_edit_config(GtkButton *button, GtkWidget *dialog) {
                                    "preview", "preview.conf", NULL);
   GeanyDocument *doc = document_open_file(conf_fn, FALSE, NULL, NULL);
   document_reload_force(doc, NULL);
-  g_free(conf_fn);
+  GFREE(conf_fn);
   gtk_widget_destroy(GTK_WIDGET(dialog));
 }
 
@@ -208,7 +206,7 @@ static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
   g_signal_connect(btn, "clicked", G_CALLBACK(on_pref_save_config), dialog);
   gtk_box_pack_start(GTK_BOX(box), btn, FALSE, FALSE, 3);
   gtk_widget_set_tooltip_text(btn, tooltip);
-  g_free(tooltip);
+  GFREE(tooltip);
 
   tooltip = g_strdup(
       "Reload settings from the config file.  May be used "
@@ -217,7 +215,7 @@ static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
   g_signal_connect(btn, "clicked", G_CALLBACK(on_pref_reload_config), dialog);
   gtk_box_pack_start(GTK_BOX(box), btn, FALSE, FALSE, 3);
   gtk_widget_set_tooltip_text(btn, tooltip);
-  g_free(tooltip);
+  GFREE(tooltip);
 
   tooltip = g_strdup(
       "Delete the current config file and restore the default "
@@ -226,14 +224,14 @@ static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
   g_signal_connect(btn, "clicked", G_CALLBACK(on_pref_reset_config), dialog);
   gtk_box_pack_start(GTK_BOX(box), btn, FALSE, FALSE, 3);
   gtk_widget_set_tooltip_text(btn, tooltip);
-  g_free(tooltip);
+  GFREE(tooltip);
 
   tooltip = g_strdup("Open the config file in Geany for editing.");
   btn = gtk_button_new_with_label("Edit Config");
   g_signal_connect(btn, "clicked", G_CALLBACK(on_pref_edit_config), dialog);
   gtk_box_pack_start(GTK_BOX(box), btn, FALSE, FALSE, 3);
   gtk_widget_set_tooltip_text(btn, tooltip);
-  g_free(tooltip);
+  GFREE(tooltip);
 
   tooltip = g_strdup(
       "Open the config folder in the default file manager.  The config folder "
@@ -243,7 +241,7 @@ static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
                    dialog);
   gtk_box_pack_start(GTK_BOX(box), btn, FALSE, FALSE, 3);
   gtk_widget_set_tooltip_text(btn, tooltip);
-  g_free(tooltip);
+  GFREE(tooltip);
 
   return box;
 }
@@ -253,7 +251,7 @@ static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
  */
 static void tab_switch_callback(GtkNotebook *nb) {
   // GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
-  if (gtk_notebook_get_current_page(nb) == g_page_num) {
+  if (gtk_notebook_get_current_page(nb) == g_nb_page_num) {
     if (g_timeout_handle == 0) {
       g_timeout_handle = g_timeout_add(settings.update_interval_fast,
                                        update_timeout_callback, NULL);
@@ -263,6 +261,13 @@ static void tab_switch_callback(GtkNotebook *nb) {
 
 static void wv_save_position_callback(GObject *object, GAsyncResult *result,
                                       gpointer user_data) {
+  GeanyDocument *doc = document_get_current();
+  if (!DOC_VALID(doc)) {
+    WEBVIEW_WARN("Unknown document type.");
+    return;
+  }
+  int idx = document_get_notebook_page(doc);
+
   WebKitJavascriptResult *js_result;
   JSCValue *value;
   GError *error = NULL;
@@ -271,14 +276,18 @@ static void wv_save_position_callback(GObject *object, GAsyncResult *result,
                                                     result, &error);
   if (!js_result) {
     g_warning("Error running javascript: %s", error->message);
-    g_error_free(error);
+    GERROR_FREE(error);
     return;
   }
 
   value = webkit_javascript_result_get_js_value(js_result);
-  gint32 temp = jsc_value_to_int32(value);
-  if (temp > 0) {
-    g_scrollY = temp;
+  guint temp = jsc_value_to_int32(value);
+  if (g_scrollY->len < idx) {
+    g_array_insert_val(g_scrollY, idx, temp);
+  } else {
+    if (temp > 0) {
+      g_array_insert_val(g_scrollY, idx, temp);
+    }
   }
 
   webkit_javascript_result_unref(js_result);
@@ -290,20 +299,30 @@ static void wv_save_position() {
 
   webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(g_viewer), script, NULL,
                                  wv_save_position_callback, NULL);
-  g_free(script);
+  GFREE(script);
 }
 
 static void wv_load_position() {
+  GeanyDocument *doc = document_get_current();
+  if (!DOC_VALID(doc)) {
+    WEBVIEW_WARN("Unknown document type.");
+    return;
+  }
+  int idx = document_get_notebook_page(doc);
+
   char *script;
   if (g_snippet) {
     script = g_strdup(
         "window.scrollTo(0, 0.2*document.documentElement.scrollHeight);");
+  } else if (g_scrollY->len >= idx) {
+    guint *temp = &g_array_index(g_scrollY, guint, idx);
+    script = g_strdup_printf("window.scrollTo(0, %d);", *temp);
   } else {
-    script = g_strdup_printf("window.scrollTo(0, %d);", g_scrollY);
+    return;
   }
   webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(g_viewer), script, NULL, NULL,
                                  NULL);
-  g_free(script);
+  GFREE(script);
 }
 
 static void wv_loading_callback(WebKitWebView *web_view,
@@ -329,6 +348,11 @@ static void update_preview() {
   }
 
   char *uri = g_filename_to_uri(DOC_FILENAME(doc), NULL, NULL);
+  if (!REGEX_CHK("file://", uri)) {
+    GFREE (uri);
+    uri = g_strdup("file:///tmp/blank.html");
+  }
+
   char *basename = g_path_get_basename(DOC_FILENAME(doc));
   char *work_dir = g_path_get_dirname(DOC_FILENAME(doc));
   char *text = (char *)scintilla_send_message(doc->editor->sci,
@@ -388,22 +412,23 @@ static void update_preview() {
       format = g_match_info_fetch(match_info, 2);
     }
     g_match_info_free(match_info);
+    match_info = NULL;
     if (format) {
       g_filetype = get_filetype(format);
-      g_free(format);
+      GFREE(format);
     }
     // split head and body)
     gchar **texts = g_strsplit(text, "\n", -1);
-    gboolean state_h = TRUE;
+    gboolean state_head = TRUE;
     int i = 0;
-    while (TRUE && texts[i] != NULL) {
-      if (state_h) {
+    while (texts[i] != NULL) {
+      if (state_head) {
         if (g_regex_match(re_is_header, texts[i], 0, NULL)) {
           g_string_append(head, texts[i]);
           g_string_append(head, "\n");
           i++;
         } else {
-          state_h = FALSE;
+          state_head = FALSE;
         }
       } else {
         g_string_append(body, texts[i]);
@@ -412,8 +437,9 @@ static void update_preview() {
       }
     }
     g_strfreev(texts);
+    texts = NULL;
   } else {
-    g_string_free(body, TRUE);
+    GSTRING_FREE(body);
     body = g_string_new(text);
   }
 
@@ -433,9 +459,17 @@ static void update_preview() {
       } else if (REGEX_CHK("pandoc", settings.markdown_processor)) {
         output = pandoc(work_dir, body->str, settings.pandoc_markdown);
       } else {
-        html = cmark_markdown_to_html(body->str, strlen(text), 0);
-        output = g_string_new(html);
-        g_free(html);
+        html = cmark_markdown_to_html(body->str, body->len, 0);
+        char *css_fn = find_copy_css("markdown.css", PREVIEW_CSS_MARKDOWN);
+        plain = g_strjoin(NULL,
+            "<html><head><link rel='stylesheet' type='text/css' href='file://",
+            css_fn, "'></head><body>", html, "</body></html>", NULL);
+
+        output = g_string_new(plain);
+
+        GFREE(css_fn);
+        GFREE(html);
+        GFREE(plain);
       }
       break;
     case ASCIIDOC:
@@ -496,7 +530,10 @@ static void update_preview() {
       break;
     case PLAIN:
     case EMAIL: {
-      plain = g_strdup(text);
+      g_string_prepend (body, "<pre>");
+      g_string_append (body, "</pre>");
+      output = g_string_new(body->str);
+      //plain = g_strdup(text);
     } break;
     case NONE:
     default:
@@ -506,16 +543,16 @@ static void update_preview() {
   }
 
   if (g_snippet) {
-    g_free(text);
+    GFREE(text);
   }
 
   if (plain) {
     WEBVIEW_WARN(plain);
-    g_free(plain);
+    GFREE(plain);
   } else if (output) {
     if (g_strcmp0(head->str, "") != 0 && g_strcmp0(head->str, "\n") != 0) {
-      g_string_prepend(head, "<body><div class='headers'>");
-      g_string_append(head, "</div>");
+      g_string_prepend(head, "<body><pre class='headers'>");
+      g_string_append(head, "</pre>");
       if (REGEX_CHK("<body>", output->str)) {
         g_string_replace(output, "<body>", head->str, 1);
       } else {
@@ -523,15 +560,15 @@ static void update_preview() {
       }
     }
     webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), output->str, uri);
-    g_string_free(output, TRUE);
+    GSTRING_FREE(output);
   }
 
-  g_string_free(head, TRUE);
-  g_string_free(body, TRUE);
+  GSTRING_FREE(head);
+  GSTRING_FREE(body);
 
-  g_free(uri);
-  g_free(basename);
-  g_free(work_dir);
+  GFREE(uri);
+  GFREE(basename);
+  GFREE(work_dir);
 
   // restore scroll position
   wv_load_position();
@@ -608,7 +645,7 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
   }
 
   GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
-  if (gtk_notebook_get_current_page(nb) != g_page_num ||
+  if (gtk_notebook_get_current_page(nb) != g_nb_page_num ||
       !gtk_widget_is_visible(GTK_WIDGET(nb))) {
     // no updates when preview pane is hidden
     return FALSE;
@@ -729,19 +766,6 @@ static inline void set_filetype() {
 
 static void on_document_signal(GObject *obj, GeanyDocument *doc,
                                gpointer user_data) {
-  webkit_web_context_clear_cache(g_wv_context);
-  update_preview();
-}
-
-static void on_document_filetype_set(GObject *obj, GeanyDocument *doc,
-                                     GeanyFiletype *ft_old,
-                                     gpointer user_data) {
-  webkit_web_context_clear_cache(g_wv_context);
-  update_preview();
-}
-
-static void on_document_activate(GObject *obj, GeanyDocument *doc,
-                                 GeanyFiletype *ft_old, gpointer user_data) {
   webkit_web_context_clear_cache(g_wv_context);
   update_preview();
 }

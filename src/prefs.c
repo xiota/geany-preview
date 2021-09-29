@@ -45,9 +45,9 @@ void open_settings() {
   init_settings();
   load_settings(kf);
 
-  g_free(conf_fn);
-  g_free(conf_dn);
-  g_key_file_free(kf);
+  GFREE(conf_fn);
+  GFREE(conf_dn);
+  GKEY_FILE_FREE(kf);
 }
 
 void save_default_settings() {
@@ -67,11 +67,11 @@ void save_default_settings() {
   size_t length = 0;
   if (g_file_get_contents(PREVIEW_CONFIG, &contents, &length, NULL)) {
     g_file_set_contents(conf_fn, contents, length, NULL);
-    g_free(contents);
+    GFREE(contents);
   }
 
-  g_free(conf_dn);
-  g_free(conf_fn);
+  GFREE(conf_dn);
+  GFREE(conf_fn);
 }
 
 void save_settings() {
@@ -118,11 +118,11 @@ void save_settings() {
   contents = g_key_file_to_data(kf, &length, NULL);
   if (contents) {
     g_file_set_contents(fn, contents, length, NULL);
-    g_free(contents);
+    GFREE(contents);
   }
 
-  g_free(fn);
-  g_key_file_free(kf);
+  GFREE(fn);
+  GKEY_FILE_FREE(kf);
 }
 
 void load_settings(GKeyFile *kf) {

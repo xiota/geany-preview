@@ -35,4 +35,16 @@ bool fmt_process_run(FmtProcess *proc, const char *str_in, size_t in_len,
 
 G_END_DECLS
 
+#define GFREE(_z_) \
+  do {            \
+    g_free(_z_);  \
+    _z_ = NULL;   \
+  } while (0)
+
+#define GERROR_FREE(_z_) \
+  do {                   \
+    g_error_free(_z_);   \
+    _z_ = NULL;          \
+  } while (0)
+
 #endif  // FMT_PROCESS_H
