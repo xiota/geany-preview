@@ -3,7 +3,7 @@ ACLOCAL_AMFLAGS = -I m4
 cf_docdir = $(docdir)
 cf_doc_DATA = README.md
 
-cf_datadir = $(pkgdatadir)
+cf_datadir = $(datadir)/geany-plugins/@PACKAGE@
 cf_data_DATA = \
 	data/preview.conf \
 	data/markdown.css \
