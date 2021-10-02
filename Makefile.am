@@ -1,7 +1,12 @@
 ACLOCAL_AMFLAGS = -I m4
 
 cf_docdir = $(docdir)
-cf_doc_DATA = README.md
+cf_doc_DATA = \
+	docs/Building_and_Installing.md \
+	docs/geany-plugin-preferences.png \
+	docs/Questions_and_Answers.md \
+	docs/screenshot-908.jpg \
+	Readme.md
 
 cf_datadir = $(datadir)/geany-plugins/@PACKAGE@
 cf_data_DATA = \
@@ -19,6 +24,7 @@ geany_plugin_LTLIBRARIES = preview.la
 preview_la_CFLAGS = $(GEANY_CFLAGS) $(WEBKIT_CFLAGS) $(CMARK_CFLAGS) \
 	-DG_LOG_DOMAIN=\""Preview"\" \
 	-DPREVIEW_README=\""$(cf_docdir)/README.md"\" \
+	-DPREVIEW_FAQ=\""$(cf_docdir)/README.md"\" \
 	-DPREVIEW_CONFIG=\""$(cf_datadir)/preview.conf"\" \
 	-DPREVIEW_CSS_PANDOC=\""$(cf_datadir)/pandoc.css"\" \
 	-DPREVIEW_CSS_ASCIIDOCTOR=\""$(cf_datadir)/markdown.css"\" \
