@@ -29,6 +29,15 @@ The Preview plugin uses external programs to process other document types.
 
 * [Screenplain](https://github.com/vilcans/screenplain) is used to process screenplays written in [Fountain](https://www.fountain.io/).
 
+> Some Markdown editors autosave the document as it is edited.  Can the Preview plugin do that?
+
+That is outside the scope of this plugin, but there is another plugin that may do what you want: *Save Actions*.  However, I advise caution:
+
+* Continuous autosave can reduce overall system performance by increasing disk activity.
+* Saving continuously makes it more likely that the editor will close or crash in the middle of a save.
+* Most editors and word processors don't save continously.  You risk losing unsaved work by closing documents that you think are saved, but aren't.
+* Not all changes are worth keeping.  Continuous autosave makes it difficult to go back to the previous save state.  (Not a problem if you use [version control](https://en.wikipedia.org/wiki/Version_control).)
+
 ## Configuration
 
 > Are there any configuration options?
@@ -70,6 +79,10 @@ Change the `extra_css` option in the config file.
 ```
 extra_css=dark.css
 ```
+
+To allow plain text messages to be styled, the stylesheet is applied directly to the webview when the plugin is loaded.  If the stylesheet is changed, click the "Reload Config" button in *Edit/Plugin Preferences/Preview*.
+
+When developing new `css` rules, it's more convenient to use one of the other stylesheets that's refreshed more frequently, like `markdown.css`. Then when you're done, copy the rules to the file you want to use for the `extra_css` option.
 
 > Can Preview show changes without having to scroll?
 
