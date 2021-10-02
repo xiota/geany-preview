@@ -157,6 +157,28 @@ GString *asciidoctor(const char *work_dir, const char *input) {
     return NULL;
   }
 
+  // attach asciidoctor.css if it exists
+  char *css_fn = find_copy_css("asciidoctor.css", PREVIEW_CSS_ASCIIDOCTOR);
+  if (css_fn) {
+    if (REGEX_CHK("</head>", output->str)) {
+      char *plain = g_strdup_printf(
+          "\n<link rel='stylesheet' type='text/css' "
+          "href='file://%s'>\n</head>\n",
+          css_fn);
+      g_string_replace(output, "</head>", plain, 1);
+      GFREE(plain);
+    } else {
+      char *html = g_string_free(output, FALSE);
+      char *plain = g_strjoin(
+          NULL,
+          "<html><head><link rel='stylesheet' type='text/css' href='file://",
+          css_fn, "'></head><body>", html, "</body></html>", NULL);
+      output = g_string_new(plain);
+      GFREE(html);
+      GFREE(plain);
+    }
+  }
+
   return output;
 }
 

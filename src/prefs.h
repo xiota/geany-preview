@@ -48,6 +48,7 @@ struct PreviewSettings {
   gboolean snippet_asciidoctor;
   gboolean snippet_pandoc;
   gboolean snippet_screenplain;
+  char *extra_css;
 };
 
 void init_settings();

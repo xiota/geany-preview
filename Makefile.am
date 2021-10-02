@@ -6,6 +6,7 @@ cf_doc_DATA = README.md
 cf_datadir = $(datadir)/geany-plugins/@PACKAGE@
 cf_data_DATA = \
 	data/preview.conf \
+	data/asciidoctor.css \
 	data/markdown.css \
 	data/pandoc.css \
 	data/screenplain.css \
@@ -20,9 +21,10 @@ preview_la_CFLAGS = $(GEANY_CFLAGS) $(WEBKIT_CFLAGS) $(CMARK_CFLAGS) \
 	-DPREVIEW_README=\""$(cf_docdir)/README.md"\" \
 	-DPREVIEW_CONFIG=\""$(cf_datadir)/preview.conf"\" \
 	-DPREVIEW_CSS_PANDOC=\""$(cf_datadir)/pandoc.css"\" \
+	-DPREVIEW_CSS_ASCIIDOCTOR=\""$(cf_datadir)/markdown.css"\" \
 	-DPREVIEW_CSS_MARKDOWN=\""$(cf_datadir)/markdown.css"\" \
-	-DPREVIEW_CSS_SCREENPLAIN=\""$(cf_datadir)/screenplain.css"\"
-	-DPREVIEW_CSS_DARK=\""$(cf_datadir)/dark.css"\"
+	-DPREVIEW_CSS_SCREENPLAIN=\""$(cf_datadir)/screenplain.css"\" \
+	-DPREVIEW_CSS_DARK=\""$(cf_datadir)/dark.css"\" \
 	-DPREVIEW_CSS_INVERT=\""$(cf_datadir)/invert.css"\"
 preview_la_LIBADD = $(GEANY_LIBS) $(WEBKIT_LIBS) $(CMARK_LIBS)
 preview_la_LDFLAGS = -module -avoid-version

@@ -114,6 +114,8 @@ void save_settings() {
   SET_KEY(boolean, "snippet_pandoc", settings.snippet_pandoc);
   SET_KEY(boolean, "snippet_screenplain", settings.snippet_screenplain);
 
+  SET_KEY(string, "extra_css", settings.extra_css);
+
   // Store back on disk
   contents = g_key_file_to_data(kf, &length, NULL);
   if (contents) {
@@ -158,6 +160,8 @@ void load_settings(GKeyFile *kf) {
   LOAD_KEY_BOOLEAN(snippet_asciidoctor, TRUE);
   LOAD_KEY_BOOLEAN(snippet_pandoc, TRUE);
   LOAD_KEY_BOOLEAN(snippet_screenplain, TRUE);
+
+  LOAD_KEY_STRING(extra_css, "disabled");
 }
 
 void init_settings() {
@@ -183,4 +187,5 @@ void init_settings() {
   settings.snippet_asciidoctor = TRUE;
   settings.snippet_pandoc = TRUE;
   settings.snippet_screenplain = TRUE;
+  settings.extra_css = g_strdup("disabled");
 }

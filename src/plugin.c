@@ -401,7 +401,7 @@ static void update_preview() {
   static GRegex *re_format = NULL;
   if (!re_has_header) {
     re_has_header = g_regex_new("^[^\\s:]+:\\s.*$", G_REGEX_MULTILINE, 0, NULL);
-    re_is_header = g_regex_new("^([^\\s:]+:.*)|([\\ \\t].*)$", 0, 0, NULL);
+    re_is_header = g_regex_new("^(([^\\s:]+:.*)|([\\ \\t].*))$", 0, 0, NULL);
     re_format = g_regex_new("(?i)^(content-type|format):\\s*([^\\n]*)$",
                             G_REGEX_MULTILINE, 0, NULL);
   }
@@ -411,7 +411,10 @@ static void update_preview() {
   GString *body = g_string_new(NULL);
 
   char *format = NULL;
-  if (g_regex_match(re_has_header, text, 0, NULL)) {
+  if (!g_regex_match(re_has_header, text, 0, NULL)) {
+    GSTRING_FREE(body);
+    body = g_string_new(text);
+  } else {
     GMatchInfo *match_info = NULL;
 
     // get format header
@@ -445,9 +448,6 @@ static void update_preview() {
     }
     g_strfreev(texts);
     texts = NULL;
-  } else {
-    GSTRING_FREE(body);
-    body = g_string_new(text);
   }
 
   switch (g_filetype) {
@@ -468,12 +468,16 @@ static void update_preview() {
       } else {
         html = cmark_markdown_to_html(body->str, body->len, 0);
         char *css_fn = find_copy_css("markdown.css", PREVIEW_CSS_MARKDOWN);
-        plain = g_strjoin(
-            NULL,
-            "<html><head><link rel='stylesheet' type='text/css' href='file://",
-            css_fn, "'></head><body>", html, "</body></html>", NULL);
-
-        output = g_string_new(plain);
+        if (css_fn) {
+          plain = g_strjoin(NULL,
+                            "<html><head><link rel='stylesheet' "
+                            "type='text/css' href='file://",
+                            css_fn, "'></head><body>", html, "</body></html>",
+                            NULL);
+          output = g_string_new(plain);
+        } else {
+          output = g_string_new(html);
+        }
 
         GFREE(css_fn);
         GFREE(html);
@@ -558,15 +562,57 @@ static void update_preview() {
     WEBVIEW_WARN(plain);
     GFREE(plain);
   } else if (output) {
+    // combine head and body
     if (g_strcmp0(head->str, "") != 0 && g_strcmp0(head->str, "\n") != 0) {
-      g_string_prepend(head, "<body><pre class='headers'>");
-      g_string_append(head, "</pre>");
-      if (REGEX_CHK("<body>", output->str)) {
-        g_string_replace(output, "<body>", head->str, 1);
+      static GRegex *re_body = NULL;
+      if (!re_body) {
+        re_body = g_regex_new("(?i)(<body[^>]*>)", G_REGEX_MULTILINE, 0, NULL);
+      }
+
+      if (g_regex_match(re_body, output->str, 0, NULL)) {
+        g_string_append(head, "</pre>\n");
+        g_string_prepend(head, "\\1\n<pre class='headers'>");
+        html = g_regex_replace(re_body, output->str, -1, 0, head->str, 0, NULL);
+        GSTRING_FREE(output);
+        output = g_string_new(html);
+        GFREE(html);
       } else {
+        g_string_append(head, "</pre>\n");
+        g_string_prepend(head, "<pre class='headers'>");
         g_string_prepend(output, head->str);
       }
     }
+
+    // attach extra_css
+    char *css_fn = find_css(settings.extra_css);
+    if (!css_fn) {
+      if (g_strcmp0("dark.css", settings.extra_css) == 0) {
+        css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_DARK);
+      } else if (g_strcmp0("invert.css", settings.extra_css) == 0) {
+        css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_INVERT);
+      }
+    }
+    if (css_fn) {
+      if (REGEX_CHK("</head>", output->str)) {
+        plain = g_strdup_printf(
+            "\n<link rel='stylesheet' type='text/css' "
+            "href='file://%s'>\n</head>\n",
+            css_fn);
+        g_string_replace(output, "</head>", plain, 1);
+        GFREE(plain);
+      } else {
+        char *html = g_string_free(output, FALSE);
+        plain = g_strjoin(
+            NULL,
+            "<html><head><link rel='stylesheet' type='text/css' href='file://",
+            css_fn, "'></head><body>", html, "</body></html>", NULL);
+        output = g_string_new(plain);
+        GFREE(html);
+        GFREE(plain);
+      }
+    }
+
+    // output to webview
     webkit_web_context_clear_cache(g_wv_context);
     webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), output->str, uri);
     GSTRING_FREE(output);
