@@ -1,0 +1,18 @@
+pre.geany_preview_headers {
+	font-size: smaller;
+	font-family: monospace;
+	white-space: pre-wrap;
+	background: lightgray;
+	color: black;
+	margin-left: -0.5rem;
+	margin-right: -1rem;
+	margin-top: -0.5rem;
+	margin-bottom: -1rem;
+	padding-left: 0.5rem;
+	padding-right: 1rem;
+	padding-top: 0.5rem;
+	padding-bottom: 0.5rem;
+}
+pre.geany_preview_headers + * {
+	padding-top: 1.5em;
+}

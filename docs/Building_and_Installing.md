@@ -10,7 +10,7 @@ The Preview plugin for Geany can be built and installed on Linux-based operating
 On Debian/Ubuntu, the following command will install the build dependencies:
 
 ```
-  sudo apt install geany libgtk-3-dev libwebkit2gtk-4.0-dev \
+  sudo apt install autoreconf geany libgtk-3-dev libwebkit2gtk-4.0-dev \
     libcmark-gfm-dev libcmark-gfm-extensions-dev
 ```
 
@@ -19,7 +19,6 @@ Then to build, run the following in a terminal from the source directory:
 ```
   ./autogen.sh
   cd build-aux
-  ../configure
   make
 ```
 

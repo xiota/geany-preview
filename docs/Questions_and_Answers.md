@@ -89,7 +89,7 @@ sudo apt-get update
 
 > How do I build from source?
 
-There is a separate [document](docs/Building_and_Installing.md) with details to build on Linux. The plugin cannot be built on Windows because WebKit2GTK is not available, and I do not have a Mac to test with MacOS.
+There is a separate [document](Building_and_Installing.md) with details to build on Linux. The plugin cannot be built on Windows because WebKit2GTK is not available, and I do not have a Mac to test with MacOS.
 
 ## Problems
 

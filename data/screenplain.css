@@ -11,7 +11,7 @@ html {
 	line-height: 1.0;
 	text-align: left;
 	width: 36.05em; /* 60 char; 6in */
-	background: #fff;
+	/* background: #fff; */
 	/*padding-left: 5.9em;*/   /* 1.0in - add 0.5in when printing */
 	/*padding-right: 2.9em;*/  /* 0.5in - add 0.5in when printing */
 	padding-left: 1em;

@@ -55,6 +55,7 @@ static void tab_switch_callback(GtkNotebook *nb);
 static inline enum PreviewFileType get_filetype(char *format);
 static inline void set_filetype();
 static inline void set_snippets();
+static void wv_apply_settings();
 
 /* ********************
  * Globals
@@ -63,7 +64,9 @@ GeanyPlugin *geany_plugin;
 GeanyData *geany_data;
 
 static GtkWidget *g_viewer = NULL;
+static WebKitSettings *g_wv_settings = NULL;
 static WebKitWebContext *g_wv_context = NULL;
+WebKitUserContentManager *g_wv_content_manager = NULL;
 static GtkWidget *g_scrolled_win = NULL;
 static gint g_nb_page_num = 0;
 static GArray *g_scrollY = NULL;
@@ -117,12 +120,12 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
 
   open_settings();
 
-  WebKitSettings *wv_settings = webkit_settings_new();
-  webkit_settings_set_default_font_family(wv_settings,
-                                          settings.default_font_family);
+  g_wv_settings = webkit_settings_new();
+  g_viewer = webkit_web_view_new_with_settings(g_wv_settings);
 
-  g_viewer = webkit_web_view_new_with_settings(wv_settings);
   g_wv_context = webkit_web_view_get_context(WEBKIT_WEB_VIEW(g_viewer));
+  g_wv_content_manager =
+      webkit_web_view_get_user_content_manager(WEBKIT_WEB_VIEW(g_viewer));
 
   g_scrolled_win = gtk_scrolled_window_new(NULL, NULL);
   gtk_container_add(GTK_CONTAINER(g_scrolled_win), g_viewer);
@@ -139,6 +142,8 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
   // signal handler to update when notebook selected
   g_tab_handle = g_signal_connect(GTK_WIDGET(nb), "switch_page",
                                   G_CALLBACK(tab_switch_callback), NULL);
+
+  wv_apply_settings();
 
   WEBVIEW_WARN("Loading.");
 
@@ -185,6 +190,7 @@ static void on_pref_edit_config(GtkButton *button, GtkWidget *dialog) {
 
 static void on_pref_reload_config(GtkButton *button, GtkWidget *dialog) {
   open_settings();
+  wv_apply_settings();
 }
 
 static void on_pref_save_config(GtkButton *button, GtkWidget *dialog) {
@@ -295,12 +301,60 @@ static void wv_save_position_callback(GObject *object, GAsyncResult *result,
 }
 
 static void wv_save_position() {
-  char *script;
-  script = g_strdup("window.scrollY");
+  char *script = g_strdup("window.scrollY");
 
   webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(g_viewer), script, NULL,
                                  wv_save_position_callback, NULL);
   GFREE(script);
+}
+
+static void wv_apply_settings() {
+  char *css_fn = NULL;
+  webkit_user_content_manager_remove_all_style_sheets(g_wv_content_manager);
+
+  webkit_settings_set_default_font_family(g_wv_settings,
+                                          settings.default_font_family);
+
+  // attach headers css
+  css_fn = find_copy_css("preview-headers.css", PREVIEW_CSS_HEADERS);
+  if (css_fn) {
+    char *contents = NULL;
+    size_t length = 0;
+    if (g_file_get_contents(css_fn, &contents, &length, NULL)) {
+      WebKitUserStyleSheet *stylesheet = webkit_user_style_sheet_new(
+          contents, WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES,
+          WEBKIT_USER_STYLE_LEVEL_AUTHOR, NULL, NULL);
+      webkit_user_content_manager_add_style_sheet(g_wv_content_manager,
+                                                  stylesheet);
+      webkit_user_style_sheet_unref(stylesheet);
+      GFREE(contents);
+    }
+    GFREE(css_fn);
+  }
+
+  // attach extra_css
+  css_fn = find_css(settings.extra_css);
+  if (!css_fn) {
+    if (g_strcmp0("dark.css", settings.extra_css) == 0) {
+      css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_DARK);
+    } else if (g_strcmp0("invert.css", settings.extra_css) == 0) {
+      css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_INVERT);
+    }
+  }
+  if (css_fn) {
+    char *contents = NULL;
+    size_t length = 0;
+    if (g_file_get_contents(css_fn, &contents, &length, NULL)) {
+      WebKitUserStyleSheet *stylesheet = webkit_user_style_sheet_new(
+          contents, WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES,
+          WEBKIT_USER_STYLE_LEVEL_AUTHOR, NULL, NULL);
+      webkit_user_content_manager_add_style_sheet(g_wv_content_manager,
+                                                  stylesheet);
+      webkit_user_style_sheet_unref(stylesheet);
+      GFREE(contents);
+    }
+    GFREE(css_fn);
+  }
 }
 
 static void wv_load_position() {
@@ -571,44 +625,15 @@ static void update_preview() {
 
       if (g_regex_match(re_body, output->str, 0, NULL)) {
         g_string_append(head, "</pre>\n");
-        g_string_prepend(head, "\\1\n<pre class='headers'>");
+        g_string_prepend(head, "\\1\n<pre class='geany_preview_headers'>");
         html = g_regex_replace(re_body, output->str, -1, 0, head->str, 0, NULL);
         GSTRING_FREE(output);
         output = g_string_new(html);
         GFREE(html);
       } else {
         g_string_append(head, "</pre>\n");
-        g_string_prepend(head, "<pre class='headers'>");
+        g_string_prepend(head, "<pre class='geany_preview_headers'>");
         g_string_prepend(output, head->str);
-      }
-    }
-
-    // attach extra_css
-    char *css_fn = find_css(settings.extra_css);
-    if (!css_fn) {
-      if (g_strcmp0("dark.css", settings.extra_css) == 0) {
-        css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_DARK);
-      } else if (g_strcmp0("invert.css", settings.extra_css) == 0) {
-        css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_INVERT);
-      }
-    }
-    if (css_fn) {
-      if (REGEX_CHK("</head>", output->str)) {
-        plain = g_strdup_printf(
-            "\n<link rel='stylesheet' type='text/css' "
-            "href='file://%s'>\n</head>\n",
-            css_fn);
-        g_string_replace(output, "</head>", plain, 1);
-        GFREE(plain);
-      } else {
-        char *html = g_string_free(output, FALSE);
-        plain = g_strjoin(
-            NULL,
-            "<html><head><link rel='stylesheet' type='text/css' href='file://",
-            css_fn, "'></head><body>", html, "</body></html>", NULL);
-        output = g_string_new(plain);
-        GFREE(html);
-        GFREE(plain);
       }
     }
 
