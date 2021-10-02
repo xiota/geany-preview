@@ -15,6 +15,10 @@ code {
 pre {
 	font-family: monospace;
 	white-space: pre-wrap;
+	margin-left: 1rem;
+	margin-right: 0rem;
+	margin-top: 1rem;
+	margin-bottom: 1rem;
 }
 
 pre.headers {
