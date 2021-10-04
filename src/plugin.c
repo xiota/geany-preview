@@ -49,7 +49,7 @@ static void on_document_signal(GObject *obj, GeanyDocument *doc,
                                gpointer user_data);
 
 static gboolean update_timeout_callback(gpointer user_data);
-static void update_preview();
+static char *update_preview(const gboolean get_contents);
 
 static void tab_switch_callback(GtkNotebook *nb);
 static inline enum PreviewFileType get_filetype(char *format);
@@ -387,11 +387,13 @@ static void wv_loading_callback(WebKitWebView *web_view,
   wv_load_position();
 }
 
-static void update_preview() {
+static char *update_preview(const gboolean get_contents) {
+  char *contents = NULL;
+
   GeanyDocument *doc = document_get_current();
   if (!DOC_VALID(doc)) {
     WEBVIEW_WARN("Unknown document type.");
-    return;
+    return NULL;
   }
 
   if (doc != g_current_doc) {
@@ -614,7 +616,11 @@ static void update_preview() {
 
   if (plain) {
     WEBVIEW_WARN(plain);
-    GFREE(plain);
+    if (!get_contents) {
+      GFREE(plain);
+    } else {
+      contents = plain;
+    }
   } else if (output) {
     // combine head and body
     if (g_strcmp0(head->str, "") != 0 && g_strcmp0(head->str, "\n") != 0) {
@@ -640,7 +646,11 @@ static void update_preview() {
     // output to webview
     webkit_web_context_clear_cache(g_wv_context);
     webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), output->str, uri);
-    GSTRING_FREE(output);
+
+    if (!get_contents) {
+      GSTRING_FREE(output);
+    } else
+      contents = g_string_free(output, FALSE);
   }
 
   GSTRING_FREE(head);
@@ -652,62 +662,12 @@ static void update_preview() {
 
   // restore scroll position
   wv_load_position();
+  return contents;
 }
 
 static gboolean update_timeout_callback(gpointer user_data) {
-  update_preview();
+  update_preview(FALSE);
   g_timeout_handle = 0;
-  return FALSE;
-}
-
-static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
-                                 SCNotification *notif, gpointer user_data) {
-  GeanyDocument *doc = document_get_current();
-  if (!DOC_VALID(doc)) {
-    WEBVIEW_WARN("Unknown document type.");
-    return FALSE;
-  }
-
-  int length = sci_get_length(doc->editor->sci);
-
-  gboolean need_update = FALSE;
-  if (notif->nmhdr.code == SCN_UPDATEUI && g_snippet &&
-      (notif->updated & (SC_UPDATE_CONTENT | SC_UPDATE_SELECTION))) {
-    need_update = TRUE;
-  }
-
-  if (notif->nmhdr.code == SCN_MODIFIED && notif->length > 0) {
-    if (notif->modificationType & (SC_MOD_INSERTTEXT | SC_MOD_DELETETEXT)) {
-      need_update = TRUE;
-    }
-  }
-
-  GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
-  if (gtk_notebook_get_current_page(nb) != g_nb_page_num ||
-      !gtk_widget_is_visible(GTK_WIDGET(nb))) {
-    // no updates when preview pane is hidden
-    return FALSE;
-  }
-
-  if (need_update && g_timeout_handle == 0) {
-    if (doc->file_type->id != GEANY_FILETYPES_ASCIIDOC &&
-        doc->file_type->id != GEANY_FILETYPES_NONE) {
-      // delay for faster programs
-      double _tt = (double)length * settings.size_factor_fast;
-      int timeout = (int)_tt > settings.update_interval_fast
-                        ? (int)_tt
-                        : settings.update_interval_fast;
-      g_timeout_handle = g_timeout_add(timeout, update_timeout_callback, NULL);
-    } else {
-      // delay for slower programs
-      double _tt = (double)length * settings.size_factor_slow;
-      int timeout = (int)_tt > settings.update_interval_slow
-                        ? (int)_tt
-                        : settings.update_interval_slow;
-      g_timeout_handle = g_timeout_add(timeout, update_timeout_callback, NULL);
-    }
-  }
-
   return FALSE;
 }
 
@@ -850,7 +810,73 @@ static inline void set_snippets() {
   }
 }
 
+static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
+                                 SCNotification *notif, gpointer user_data) {
+  GeanyDocument *doc = document_get_current();
+  if (!DOC_VALID(doc)) {
+    WEBVIEW_WARN("Unknown document type.");
+    return FALSE;
+  }
+
+  int length = sci_get_length(doc->editor->sci);
+
+  gboolean need_update = FALSE;
+  if (notif->nmhdr.code == SCN_UPDATEUI && g_snippet &&
+      (notif->updated & (SC_UPDATE_CONTENT | SC_UPDATE_SELECTION))) {
+    need_update = TRUE;
+  }
+
+  if (notif->nmhdr.code == SCN_MODIFIED && notif->length > 0) {
+    if (notif->modificationType & (SC_MOD_INSERTTEXT | SC_MOD_DELETETEXT)) {
+      need_update = TRUE;
+    }
+  }
+
+  GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
+  if (gtk_notebook_get_current_page(nb) != g_nb_page_num ||
+      !gtk_widget_is_visible(GTK_WIDGET(nb))) {
+    // no updates when preview pane is hidden
+    return FALSE;
+  }
+
+  if (need_update && g_timeout_handle == 0) {
+    if (doc->file_type->id != GEANY_FILETYPES_ASCIIDOC &&
+        doc->file_type->id != GEANY_FILETYPES_NONE) {
+      // delay for faster programs
+      double _tt = (double)length * settings.size_factor_fast;
+      int timeout = (int)_tt > settings.update_interval_fast
+                        ? (int)_tt
+                        : settings.update_interval_fast;
+      g_timeout_handle = g_timeout_add(timeout, update_timeout_callback, NULL);
+    } else {
+      // delay for slower programs
+      double _tt = (double)length * settings.size_factor_slow;
+      int timeout = (int)_tt > settings.update_interval_slow
+                        ? (int)_tt
+                        : settings.update_interval_slow;
+      g_timeout_handle = g_timeout_add(timeout, update_timeout_callback, NULL);
+    }
+  }
+
+  return FALSE;
+}
+
 static void on_document_signal(GObject *obj, GeanyDocument *doc,
                                gpointer user_data) {
-  update_preview();
+  if (settings.column_marker_enable && DOC_VALID(doc)) {
+    scintilla_send_message(doc->editor->sci, SCI_SETEDGEMODE, 3, 3);
+    scintilla_send_message(doc->editor->sci, SCI_MULTIEDGECLEARALL, 0, 0);
+
+    if (settings.column_marker_columns != NULL &&
+        settings.column_marker_colors != NULL) {
+      for (int i = 0; i < settings.column_marker_count; i++) {
+        scintilla_send_message(doc->editor->sci, SCI_MULTIEDGEADDLINE,
+                               settings.column_marker_columns[i],
+                               settings.column_marker_colors[i]);
+      }
+    }
+  }
+
+  g_current_doc = NULL;
+  update_preview(FALSE);
 }

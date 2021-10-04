@@ -116,6 +116,16 @@ void save_settings() {
 
   SET_KEY(string, "extra_css", settings.extra_css);
 
+  SET_KEY(boolean, "column_marker_enable", settings.column_marker_enable);
+
+  g_key_file_set_integer_list(kf, PLUGIN_GROUP, "column_marker_columns",
+                              settings.column_marker_columns,
+                              settings.column_marker_count);
+
+  g_key_file_set_integer_list(kf, PLUGIN_GROUP, "column_marker_colors",
+                              settings.column_marker_colors,
+                              settings.column_marker_count);
+
   // Store back on disk
   contents = g_key_file_to_data(kf, &length, NULL);
   if (contents) {
@@ -162,6 +172,38 @@ void load_settings(GKeyFile *kf) {
   LOAD_KEY_BOOLEAN(snippet_screenplain, TRUE);
 
   LOAD_KEY_STRING(extra_css, "disabled");
+
+  LOAD_KEY_BOOLEAN(column_marker_enable, TRUE);
+
+  if (settings.column_marker_columns != NULL ||
+      settings.column_marker_colors != NULL) {
+    settings.column_marker_count = 0;
+    GFREE(settings.column_marker_columns);
+    GFREE(settings.column_marker_colors);
+  }
+
+  gsize len_a = 0;
+  gsize len_b = 0;
+
+  int *tmp_columns = g_key_file_get_integer_list(
+      kf, PLUGIN_GROUP, "column_marker_columns", &len_a, NULL);
+
+  int *tmp_colors = g_key_file_get_integer_list(
+      kf, PLUGIN_GROUP, "column_marker_colors", &len_b, NULL);
+
+  int tmp_count = len_a < len_b ? len_a : len_b;
+
+  if (tmp_count > 0 || tmp_columns != NULL || tmp_colors != NULL) {
+    GFREE(settings.column_marker_columns);
+    GFREE(settings.column_marker_colors);
+
+    settings.column_marker_count = tmp_count;
+    settings.column_marker_columns = tmp_columns;
+    settings.column_marker_colors = tmp_colors;
+  } else {
+    GFREE(tmp_columns);
+    GFREE(tmp_colors);
+  }
 }
 
 void init_settings() {
@@ -188,4 +230,23 @@ void init_settings() {
   settings.snippet_pandoc = TRUE;
   settings.snippet_screenplain = TRUE;
   settings.extra_css = g_strdup("disabled");
+
+  settings.column_marker_count = 13;
+  settings.column_marker_columns = g_malloc(13 * sizeof(int));
+  settings.column_marker_colors = g_malloc(13 * sizeof(int));
+
+  // Colors are in BGR order
+  ADD_COLUMN_MARKER(0, 60, 0xe5e5e5);
+  ADD_COLUMN_MARKER(1, 72, 0xffd0b0);  // blue
+  ADD_COLUMN_MARKER(2, 80, 0xffc0ff);  // purple
+  ADD_COLUMN_MARKER(3, 88, 0xe5e5e5);
+  ADD_COLUMN_MARKER(4, 96, 0xa0b0ff);  // red
+  ADD_COLUMN_MARKER(5, 104, 0xe5e5e5);
+  ADD_COLUMN_MARKER(6, 112, 0xe5e5e5);
+  ADD_COLUMN_MARKER(7, 120, 0xe5e5e5);
+  ADD_COLUMN_MARKER(8, 128, 0xe5e5e5);
+  ADD_COLUMN_MARKER(9, 136, 0xe5e5e5);
+  ADD_COLUMN_MARKER(10, 144, 0xe5e5e5);
+  ADD_COLUMN_MARKER(11, 152, 0xe5e5e5);
+  ADD_COLUMN_MARKER(12, 160, 0xe5e5e5);
 }

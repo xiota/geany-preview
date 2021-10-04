@@ -49,6 +49,10 @@ struct PreviewSettings {
   gboolean snippet_pandoc;
   gboolean snippet_screenplain;
   char *extra_css;
+  gboolean column_marker_enable;
+  int column_marker_count;
+  int *column_marker_columns;
+  int *column_marker_colors;
 };
 
 void init_settings();
@@ -119,6 +123,12 @@ G_END_DECLS
         settings.key = (def);          \
       }                                \
     }                                  \
+  } while (0)
+
+#define ADD_COLUMN_MARKER(idx, col, bgr)           \
+  do {                                             \
+    settings.column_marker_columns[(idx)] = (col); \
+    settings.column_marker_colors[(idx)] = (bgr);  \
   } while (0)
 
 #endif  // PREVIEW_PREFS_H
