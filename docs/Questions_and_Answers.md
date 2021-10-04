@@ -38,6 +38,10 @@ That is outside the scope of this plugin, but there is another plugin that may d
 * Most editors and word processors don't save continously.  You risk losing unsaved work by closing documents that you think are saved, but aren't.
 * Not all changes are worth keeping.  Continuous autosave makes it difficult to go back to the previous save state.  (Not a problem if you use [version control](https://en.wikipedia.org/wiki/Version_control).)
 
+> Is it possible to hide/show the sidebar based on document type, rather than display a message that the document is not supported?
+
+Since the sidebar includes other functionality, it would not be appropriate for a single plugin to hijack it.  However, the sidebar can be auto-hidden based on file type with a GeanyLua script: [auto-tabbar](https://github.com/xiota/geanylua-scripts).
+
 ## Configuration
 
 > Are there any configuration options?
@@ -88,7 +92,7 @@ When developing new `css` rules, it's more convenient to use one of the other st
 
 I would like to synchronize the scrollbars, but don't currently know how.
 
-For long documents, there is a snippets mode that shows a preview for only a small section of the document. You can edit the settings in the config file to determine how long the document is before snippets activates and how much of the document it shows.
+For long documents, there is a snippets mode that shows a preview for only a small section of the document. You can edit the settings in the config file to determine how long the document is before snippets mode activates and how much of the document it shows.
 
 ## Installation
 
@@ -102,7 +106,7 @@ sudo apt-get update
 
 > How do I build from source?
 
-There is a separate [document](Building_and_Installing.md) with details to build on Linux. The plugin cannot be built on Windows because WebKit2GTK is not available, and I do not have a Mac to test with MacOS.
+There is a separate [document](Building_and_Installing.md) with details to build on Debian-based Linux systems. The plugin cannot be built on Windows because WebKit2GTK is not available.  I do not have a Mac to test with MacOS.
 
 ## Problems
 
