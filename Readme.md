@@ -24,8 +24,9 @@ More about usage and configuration is available in a [separate document](docs/Qu
 
 The Preview plugin for Geany can be installed on Ubuntu 21.04 and 21.10 via PPA.
 ```
-sudo add-apt-repository ppa:xiota/geany-plugins
-sudo apt-get update
+  sudo add-apt-repository ppa:xiota/geany-plugins
+  sudo apt-get update
+  sudo apt-get install geany-plugin-preview
 ```
 
 Preview can also be [built and installed](docs/Building_and_Installing.md), but does not currently work on Windows because WebKit2GTK is not available.  I also do not have a Mac to test.

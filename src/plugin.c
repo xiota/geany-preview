@@ -48,6 +48,14 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
 static void on_document_signal(GObject *obj, GeanyDocument *doc,
                                gpointer user_data);
 
+static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog);
+static void on_pref_edit_config(GtkWidget *self, GtkWidget *dialog);
+static void on_pref_reload_config(GtkWidget *self, GtkWidget *dialog);
+static void on_pref_save_config(GtkWidget *self, GtkWidget *dialog);
+static void on_pref_reset_config(GtkWidget *self, GtkWidget *dialog);
+
+static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog);
+
 static gboolean update_timeout_callback(gpointer user_data);
 static char *update_preview(const gboolean get_contents);
 
@@ -63,6 +71,7 @@ static void wv_apply_settings();
 GeanyPlugin *geany_plugin;
 GeanyData *geany_data;
 
+static GtkWidget *g_preview_menu;
 static GtkWidget *g_viewer = NULL;
 static WebKitSettings *g_wv_settings = NULL;
 static WebKitWebContext *g_wv_context = NULL;
@@ -120,6 +129,38 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
 
   open_settings();
 
+  // set up menu
+  GeanyKeyGroup *group;
+  GtkWidget *item;
+
+  g_preview_menu = gtk_menu_item_new_with_label("Preview");
+  ui_add_document_sensitive(g_preview_menu);
+
+  GtkWidget *submenu = gtk_menu_new();
+  gtk_menu_item_set_submenu(GTK_MENU_ITEM(g_preview_menu), submenu);
+
+  item = gtk_menu_item_new_with_label("Edit Config File");
+  g_signal_connect(item, "activate", G_CALLBACK(on_pref_edit_config), NULL);
+  gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
+
+  item = gtk_menu_item_new_with_label("Open Config Folder");
+  g_signal_connect(item, "activate", G_CALLBACK(on_pref_open_config_folder),
+                   NULL);
+  gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
+
+  item = gtk_separator_menu_item_new();
+  gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
+
+  item = gtk_menu_item_new_with_label("Preferences");
+  g_signal_connect(item, "activate", G_CALLBACK(on_menu_preferences), NULL);
+  gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
+
+  gtk_widget_show_all(g_preview_menu);
+
+  gtk_menu_shell_append(GTK_MENU_SHELL(geany_data->main_widgets->tools_menu),
+                        g_preview_menu);
+
+  // set up webview
   g_wv_settings = webkit_settings_new();
   g_viewer = webkit_web_view_new_with_settings(g_wv_settings);
 
@@ -162,10 +203,12 @@ static void preview_cleanup(GeanyPlugin *plugin, gpointer data) {
   gtk_widget_destroy(g_viewer);
   gtk_widget_destroy(g_scrolled_win);
 
+  gtk_widget_destroy(g_preview_menu);
+
   g_clear_signal_handler(&g_tab_handle, GTK_WIDGET(nb));
 }
 
-static void on_pref_open_config_folder(GtkButton *button, GtkWidget *dialog) {
+static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog) {
   char *conf_dn =
       g_build_filename(geany_data->app->configdir, "plugins", "preview", NULL);
 
@@ -178,27 +221,34 @@ static void on_pref_open_config_folder(GtkButton *button, GtkWidget *dialog) {
   GFREE(command);
 }
 
-static void on_pref_edit_config(GtkButton *button, GtkWidget *dialog) {
+static void on_pref_edit_config(GtkWidget *self, GtkWidget *dialog) {
   open_settings();
   char *conf_fn = g_build_filename(geany_data->app->configdir, "plugins",
                                    "preview", "preview.conf", NULL);
   GeanyDocument *doc = document_open_file(conf_fn, FALSE, NULL, NULL);
   document_reload_force(doc, NULL);
   GFREE(conf_fn);
-  gtk_widget_destroy(GTK_WIDGET(dialog));
+
+  if (dialog != NULL) {
+    gtk_widget_destroy(GTK_WIDGET(dialog));
+  }
 }
 
-static void on_pref_reload_config(GtkButton *button, GtkWidget *dialog) {
+static void on_pref_reload_config(GtkWidget *self, GtkWidget *dialog) {
   open_settings();
   wv_apply_settings();
 }
 
-static void on_pref_save_config(GtkButton *button, GtkWidget *dialog) {
+static void on_pref_save_config(GtkWidget *self, GtkWidget *dialog) {
   save_settings();
 }
 
-static void on_pref_reset_config(GtkButton *button, GtkWidget *dialog) {
+static void on_pref_reset_config(GtkWidget *self, GtkWidget *dialog) {
   save_default_settings();
+}
+
+static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog) {
+  plugin_show_configure(geany_plugin);
 }
 
 static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
