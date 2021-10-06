@@ -2,7 +2,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 cf_docdir = $(docdir)
 cf_doc_DATA = \
-	docs/Building_and_Installing.md \
+	docs/Building_on_Linux.md \
 	docs/geany-plugin-preferences.png \
 	docs/Questions_and_Answers.md \
 	docs/screenshot-908.jpg \

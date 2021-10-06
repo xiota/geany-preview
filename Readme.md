@@ -3,7 +3,7 @@
 This plugin provides a preview pane for Geany to view the formatting of several light-weight markup languages as they are edited.
 
 Supported document types include AsciiDoc, DocBook, Fountain, HTML, LaTeX, Markdown, MediaWiki, reStructuredText, Textile, and Txt2Tags.
- 
+
 ![screenshot](docs/screenshot-908.jpg)
 
 ## Features
@@ -18,18 +18,20 @@ Supported document types include AsciiDoc, DocBook, Fountain, HTML, LaTeX, Markd
 
 The preview is active by default for documents with supported file types.  To display formats other than HTML or Markdown, auxiliary programs are needed.  If they are unavailable, no preview will be displayed for their respective formats.
 
-More about usage and configuration is available in a [separate document](docs/Questions_and_Answers.md).
+More about usage and configuration is available at [Questions and Answers](docs/Questions_and_Answers.md).
 
 ## Installation
 
 The Preview plugin for Geany can be installed on Ubuntu 21.04 and 21.10 via PPA.
 ```
-  sudo add-apt-repository ppa:xiota/geany-plugins
-  sudo apt-get update
-  sudo apt-get install geany-plugin-preview
+sudo add-apt-repository ppa:xiota/geany-plugins
+sudo apt-get update
+sudo apt-get install geany-plugin-preview
 ```
 
-Preview can also be [built and installed](docs/Building_and_Installing.md), but does not currently work on Windows because WebKit2GTK is not available.  I also do not have a Mac to test.
+The plugin can then be enabled in the Plugin Manager (*Tools/Plugin Manager*).  Since this plugin adds a pane to the sidebar, the sidebar must also be shown (*View/Show Sidebar*).
+
+Those interested may try [Building on Linux](docs/Building_on_Linux.md).  Unfortunately, this plugin does not currently work on Windows because WebKit2GTK is not available.  I also do not have a Mac to test.
 
 ## Requirements
 

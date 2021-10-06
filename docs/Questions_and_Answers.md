@@ -31,12 +31,7 @@ The Preview plugin uses external programs to process other document types.
 
 > Some Markdown editors autosave the document as it is edited.  Can the Preview plugin do that?
 
-That is outside the scope of this plugin, but there is another plugin that may do what you want: *Save Actions*.  However, I advise caution:
-
-* Continuous autosave can reduce overall system performance by increasing disk activity.
-* Saving continuously makes it more likely that the editor will close or crash in the middle of a save.
-* Most editors and word processors don't save continously.  You risk losing unsaved work by closing documents that you think are saved, but aren't.
-* Not all changes are worth keeping.  Continuous autosave makes it difficult to go back to the previous save state.  (Not a problem if you use [version control](https://en.wikipedia.org/wiki/Version_control).)
+That function is outside the scope of this plugin.  However, there is another plugin that may do what you want: *Save Actions*
 
 > Is it possible to hide/show the sidebar based on document type, rather than display a message that the document is not supported?
 
@@ -90,7 +85,7 @@ When developing new `css` rules, it's more convenient to use one of the other st
 
 > Can Preview show changes without having to scroll?
 
-I would like to synchronize the scrollbars, but don't currently know how.
+I would like the preview to automatically scroll to the section being edited, but don't currently know how to program this.
 
 For long documents, there is a snippets mode that shows a preview for only a small section of the document. You can edit the settings in the config file to determine how long the document is before snippets mode activates and how much of the document it shows.
 
@@ -102,14 +97,17 @@ The Preview plugin for Geany can be installed on Ubuntu 21.04 and 21.10 via PPA.
 ```
 sudo add-apt-repository ppa:xiota/geany-plugins
 sudo apt-get update
+sudo apt-get install geany-plugin-preview
 ```
+
+The plugin can then be enabled in the Plugin Manager (*Tools/Plugin Manager*).  Since this plugin adds a pane to the sidebar, the sidebar must also be shown (*View/Show Sidebar*).
 
 > How do I build from source?
 
-There is a separate [document](Building_and_Installing.md) with details to build on Debian-based Linux systems. The plugin cannot be built on Windows because WebKit2GTK is not available.  I do not have a Mac to test with MacOS.
+Those interested may try [Building on Linux](docs/Building_on_Linux.md).  Unfortunately, this plugin does not currently work on Windows because WebKit2GTK is not available.  I also do not have a Mac to test.
 
 ## Problems
 
 > Why does the plugin sometimes say "Unable to process type" or display files with strange formatting?
 
-For performance, updates are disabled when the preview is not visible or the document is not actively being edited.  This sometimes results in the glitches you've noticed.  The Preview will update normally when the document is edited.  Sometimes switching documents also helps.
+For performance, updates are disabled when the preview is not visible or the document is not actively being edited.  This sometimes results in glitches.  The Preview will update normally when the document is edited.  Sometimes switching documents also helps.
