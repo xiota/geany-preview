@@ -75,6 +75,10 @@ enum PreviewFileType {
   WIKI
 };
 
+enum PreviewShortcuts {
+  PREVIEW_KEY_TOGGLE_EDITOR,
+};
+
 #define GFREE(_z_) \
   do {             \
     g_free(_z_);   \
