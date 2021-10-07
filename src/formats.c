@@ -19,7 +19,6 @@
  */
 
 #include "formats.h"
-
 #include "prefs.h"
 #include "process.h"
 
@@ -67,7 +66,8 @@ GString *pandoc(const char *work_dir, const char *input,
     return NULL;
   }
   if (settings.pandoc_disabled) {
-    GString *output = g_string_new("<pre>Pandoc has been disabled.</pre>");
+    GString *output =
+        g_string_new("<pre>" _("Pandoc has been disabled.") "</pre>");
     return output;
   }
 
@@ -115,7 +115,7 @@ GString *pandoc(const char *work_dir, const char *input,
 
   GString *output = g_string_sized_new(strlen(input));
   if (!fmt_process_run(proc, input, strlen(input), output)) {
-    g_warning("Failed to format document range");
+    g_warning(_("Failed to format document range"));
     GSTRING_FREE(output);
     fmt_process_close(proc);
     return NULL;
@@ -151,7 +151,7 @@ GString *asciidoctor(const char *work_dir, const char *input) {
 
   GString *output = g_string_sized_new(strlen(input));
   if (!fmt_process_run(proc, input, strlen(input), output)) {
-    g_warning("Failed to format document range");
+    g_warning(_("Failed to format document range"));
     GSTRING_FREE(output);
     fmt_process_close(proc);
     return NULL;
@@ -222,7 +222,7 @@ GString *screenplain(const char *work_dir, const char *input,
 
   GString *output = g_string_sized_new(strlen(input));
   if (!fmt_process_run(proc, input, strlen(input), output)) {
-    g_warning("Failed to format document range");
+    g_warning(_("Failed to format document range"));
     GSTRING_FREE(output);
     fmt_process_close(proc);
     return NULL;

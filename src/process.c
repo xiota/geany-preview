@@ -70,7 +70,7 @@ FmtProcess *fmt_process_open(const char *work_dir, const char *const *argv) {
                                 G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD,
                                 NULL, NULL, &proc->child_pid, &fd_in, &fd_out,
                                 NULL, &error)) {
-    g_warning("Failed to create subprocess: %s", error->message);
+    g_warning(_("Failed to create subprocess: %s"), error->message);
     GERROR_FREE(error);
     GFREE(proc);
     return NULL;
@@ -131,7 +131,7 @@ bool fmt_process_run(FmtProcess *proc, const char *str_in, size_t in_len,
       in_off += bytes_written;
 
       if (status == G_IO_STATUS_ERROR) {
-        g_warning("Failed writing to subprocess's stdin: %s", error->message);
+        g_warning(_("Failed writing to subprocess's stdin: %s"), error->message);
         GERROR_FREE(error);
         return false;
       }
@@ -159,7 +159,7 @@ bool fmt_process_run(FmtProcess *proc, const char *str_in, size_t in_len,
     GFREE(tail_string);
 
     if (status == G_IO_STATUS_ERROR) {
-      g_warning("Failed to read rest of subprocess's stdout: %s",
+      g_warning(_("Failed to read rest of subprocess's stdout: %s"),
                 error->message);
       GERROR_FREE(error);
       return false;

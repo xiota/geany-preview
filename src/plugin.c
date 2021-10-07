@@ -54,7 +54,9 @@ static void on_pref_reload_config(GtkWidget *self, GtkWidget *dialog);
 static void on_pref_save_config(GtkWidget *self, GtkWidget *dialog);
 static void on_pref_reset_config(GtkWidget *self, GtkWidget *dialog);
 
+void on_toggle_editor_preview();
 bool on_key_binding(int key_id);
+
 static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog);
 
 static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog);
@@ -102,9 +104,10 @@ GtkNotebook *g_sidebar_notebook = NULL;
  */
 PLUGIN_VERSION_CHECK(211)
 
-PLUGIN_SET_INFO("Preview",
-                "Quick previews of HTML, Markdown, and other formats.", "0.1",
-                "xiota")
+PLUGIN_SET_INFO(
+    "Preview",
+    _("Preview pane for HTML, Markdown, and other lightweight markup formats."),
+    "0.01.1", "xiota")
 
 void plugin_init(G_GNUC_UNUSED GeanyData *data) {
 #define PREVIEW_PSC(sig, cb) \
@@ -123,9 +126,9 @@ void plugin_init(G_GNUC_UNUSED GeanyData *data) {
   GeanyKeyGroup *group = plugin_set_key_group(
       geany_plugin, _("Preview"), 1, (GeanyKeyGroupCallback)on_key_binding);
 
-  keybindings_set_item(group, PREVIEW_KEY_TOGGLE_EDITOR, NULL, 0, 0,
-                       "preview_toggle_editor",
-                       _("Toggle between editor and preview pane."), NULL);
+  keybindings_set_item(
+      group, PREVIEW_KEY_TOGGLE_EDITOR, NULL, 0, 0, "preview_toggle_editor",
+      _("Toggle focus between the editor and preview pane."), NULL);
 
   preview_init(geany_plugin, geany_data);
 }
@@ -155,11 +158,11 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
   GtkWidget *submenu = gtk_menu_new();
   gtk_menu_item_set_submenu(GTK_MENU_ITEM(g_preview_menu), submenu);
 
-  item = gtk_menu_item_new_with_label("Edit Config File");
+  item = gtk_menu_item_new_with_label(_("Edit Config File"));
   g_signal_connect(item, "activate", G_CALLBACK(on_pref_edit_config), NULL);
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
-  item = gtk_menu_item_new_with_label("Open Config Folder");
+  item = gtk_menu_item_new_with_label(_("Open Config Folder"));
   g_signal_connect(item, "activate", G_CALLBACK(on_pref_open_config_folder),
                    NULL);
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
@@ -167,7 +170,7 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
   item = gtk_separator_menu_item_new();
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
-  item = gtk_menu_item_new_with_label("Preferences");
+  item = gtk_menu_item_new_with_label(_("Preferences"));
   g_signal_connect(item, "activate", G_CALLBACK(on_menu_preferences), NULL);
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
@@ -191,7 +194,7 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
 
   g_sidebar_notebook = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
   g_nb_page_num = gtk_notebook_append_page(g_sidebar_notebook, g_scrolled_win,
-                                           gtk_label_new("Preview"));
+                                           gtk_label_new(_("Preview")));
 
   gtk_widget_show_all(g_scrolled_win);
   gtk_notebook_set_current_page(g_sidebar_notebook, g_nb_page_num);
@@ -206,7 +209,7 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
 
   wv_apply_settings();
 
-  WEBVIEW_WARN("Loading.");
+  WEBVIEW_WARN(_("Loading."));
 
   // preview may need to be updated after a delay on first use
   if (g_timeout_handle == 0) {
@@ -236,42 +239,42 @@ static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
 
   box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
 
-  tooltip = g_strdup("Save the active settings to the config file.");
-  btn = gtk_button_new_with_label("Save Config");
+  tooltip = g_strdup(_("Save the active settings to the config file."));
+  btn = gtk_button_new_with_label(_("Save Config"));
   g_signal_connect(btn, "clicked", G_CALLBACK(on_pref_save_config), dialog);
   gtk_box_pack_start(GTK_BOX(box), btn, FALSE, FALSE, 3);
   gtk_widget_set_tooltip_text(btn, tooltip);
   GFREE(tooltip);
 
   tooltip = g_strdup(
-      "Reload settings from the config file.  May be used "
-      "to apply preferences after editing without restarting Geany.");
-  btn = gtk_button_new_with_label("Reload Config");
+      _("Reload settings from the config file.  May be used "
+        "to apply preferences after editing without restarting Geany."));
+  btn = gtk_button_new_with_label(_("Reload Config"));
   g_signal_connect(btn, "clicked", G_CALLBACK(on_pref_reload_config), dialog);
   gtk_box_pack_start(GTK_BOX(box), btn, FALSE, FALSE, 3);
   gtk_widget_set_tooltip_text(btn, tooltip);
   GFREE(tooltip);
 
-  tooltip = g_strdup(
-      "Delete the current config file and restore the default "
-      "file with explanatory comments.");
-  btn = gtk_button_new_with_label("Reset Config");
+  tooltip =
+      g_strdup(_("Delete the current config file and restore the default "
+                 "file with explanatory comments."));
+  btn = gtk_button_new_with_label(_("Reset Config"));
   g_signal_connect(btn, "clicked", G_CALLBACK(on_pref_reset_config), dialog);
   gtk_box_pack_start(GTK_BOX(box), btn, FALSE, FALSE, 3);
   gtk_widget_set_tooltip_text(btn, tooltip);
   GFREE(tooltip);
 
-  tooltip = g_strdup("Open the config file in Geany for editing.");
-  btn = gtk_button_new_with_label("Edit Config");
+  tooltip = g_strdup(_("Open the config file in Geany for editing."));
+  btn = gtk_button_new_with_label(_("Edit Config"));
   g_signal_connect(btn, "clicked", G_CALLBACK(on_pref_edit_config), dialog);
   gtk_box_pack_start(GTK_BOX(box), btn, FALSE, FALSE, 3);
   gtk_widget_set_tooltip_text(btn, tooltip);
   GFREE(tooltip);
 
-  tooltip = g_strdup(
+  tooltip = g_strdup(_(
       "Open the config folder in the default file manager.  The config folder "
-      "contains the stylesheets, which may be edited.");
-  btn = gtk_button_new_with_label("Open Config Folder");
+      "contains the stylesheets, which may be edited."));
+  btn = gtk_button_new_with_label(_("Open Config Folder"));
   g_signal_connect(btn, "clicked", G_CALLBACK(on_pref_open_config_folder),
                    dialog);
   gtk_box_pack_start(GTK_BOX(box), btn, FALSE, FALSE, 3);
@@ -381,7 +384,7 @@ static void wv_save_position_callback(GObject *object, GAsyncResult *result,
                                       gpointer user_data) {
   GeanyDocument *doc = document_get_current();
   if (!DOC_VALID(doc)) {
-    WEBVIEW_WARN("Unknown document type.");
+    WEBVIEW_WARN(_("Unknown document type."));
     return;
   }
   int idx = document_get_notebook_page(doc);
@@ -393,7 +396,7 @@ static void wv_save_position_callback(GObject *object, GAsyncResult *result,
   js_result = webkit_web_view_run_javascript_finish(WEBKIT_WEB_VIEW(object),
                                                     result, &error);
   if (!js_result) {
-    g_warning("Error running javascript: %s", error->message);
+    g_warning(_("Error running javascript: %s"), error->message);
     GERROR_FREE(error);
     return;
   }
@@ -471,7 +474,7 @@ static void wv_apply_settings() {
 static void wv_load_position() {
   GeanyDocument *doc = document_get_current();
   if (!DOC_VALID(doc)) {
-    WEBVIEW_WARN("Unknown document type.");
+    WEBVIEW_WARN(_("Unknown document type."));
     return;
   }
   int idx = document_get_notebook_page(doc);
@@ -513,7 +516,7 @@ static char *update_preview(const gboolean get_contents) {
 
   GeanyDocument *doc = document_get_current();
   if (!DOC_VALID(doc)) {
-    WEBVIEW_WARN("Unknown document type.");
+    WEBVIEW_WARN(_("Unknown document type."));
     return NULL;
   }
 
@@ -630,7 +633,7 @@ static char *update_preview(const gboolean get_contents) {
   switch (g_filetype) {
     case HTML:
       if (REGEX_CHK("disable", settings.html_processor)) {
-        plain = g_strdup("Preview of HTML documents has been disabled.");
+        plain = g_strdup(_("Preview of HTML documents has been disabled."));
       } else if (REGEX_CHK("pandoc", settings.html_processor)) {
         output = pandoc(work_dir, body->str, "html");
       } else {
@@ -639,7 +642,7 @@ static char *update_preview(const gboolean get_contents) {
       break;
     case MARKDOWN:
       if (REGEX_CHK("disable", settings.markdown_processor)) {
-        plain = g_strdup("Preview of Markdown documents has been disabled.");
+        plain = g_strdup(_("Preview of Markdown documents has been disabled."));
       } else if (REGEX_CHK("pandoc", settings.markdown_processor)) {
         output = pandoc(work_dir, body->str, settings.pandoc_markdown);
       } else {
@@ -663,7 +666,7 @@ static char *update_preview(const gboolean get_contents) {
       break;
     case ASCIIDOC:
       if (REGEX_CHK("disable", settings.asciidoc_processor)) {
-        plain = g_strdup("Preview of AsciiDoc documents has been disabled.");
+        plain = g_strdup(_("Preview of AsciiDoc documents has been disabled."));
       } else {
         output = asciidoctor(work_dir, body->str);
       }
@@ -685,7 +688,8 @@ static char *update_preview(const gboolean get_contents) {
       break;
     case FOUNTAIN:
       if (REGEX_CHK("disable", settings.fountain_processor)) {
-        plain = g_strdup("Preview of Fountain screenplays has been disabled.");
+        plain =
+            g_strdup(_("Preview of Fountain screenplays has been disabled."));
       } else {
         output = screenplain(work_dir, body->str, "html");
       }
@@ -929,7 +933,7 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
                                  SCNotification *notif, gpointer user_data) {
   GeanyDocument *doc = document_get_current();
   if (!DOC_VALID(doc)) {
-    WEBVIEW_WARN("Unknown document type.");
+    WEBVIEW_WARN(_("Unknown document type."));
     return FALSE;
   }
 
