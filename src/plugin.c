@@ -59,7 +59,10 @@ static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog);
 static gboolean update_timeout_callback(gpointer user_data);
 static char *update_preview(const gboolean get_contents);
 
-static void tab_switch_callback(GtkNotebook *nb);
+static void on_nb_switch_page(GtkNotebook *nb, GtkWidget *page, guint page_num,
+                              gpointer user_data);
+static void on_nb_show(GtkNotebook *nb, gpointer user_data);
+
 static inline enum PreviewFileType get_filetype(char *format);
 static inline void set_filetype();
 static inline void set_snippets();
@@ -77,13 +80,14 @@ static WebKitSettings *g_wv_settings = NULL;
 static WebKitWebContext *g_wv_context = NULL;
 WebKitUserContentManager *g_wv_content_manager = NULL;
 static GtkWidget *g_scrolled_win = NULL;
-static gint g_nb_page_num = 0;
+static guint g_nb_page_num = 0;
 static GArray *g_scrollY = NULL;
 // static gint32 g_scrollY = 0;
 static gulong g_load_handle = 0;
 static guint g_timeout_handle = 0;
 static gboolean g_snippet = FALSE;
-static gulong g_tab_handle = 0;
+static gulong g_handle_nb_switch_page = 0;
+static gulong g_handle_nb_show = 0;
 static GeanyDocument *g_current_doc = NULL;
 
 extern struct PreviewSettings settings;
@@ -180,9 +184,12 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
   gtk_widget_show_all(g_scrolled_win);
   gtk_notebook_set_current_page(nb, g_nb_page_num);
 
-  // signal handler to update when notebook selected
-  g_tab_handle = g_signal_connect(GTK_WIDGET(nb), "switch_page",
-                                  G_CALLBACK(tab_switch_callback), NULL);
+  // signal handlers to update notebook
+  g_handle_nb_switch_page = g_signal_connect(
+      GTK_WIDGET(nb), "switch_page", G_CALLBACK(on_nb_switch_page), NULL);
+
+  g_handle_nb_show =
+      g_signal_connect(GTK_WIDGET(nb), "show", G_CALLBACK(on_nb_show), NULL);
 
   wv_apply_settings();
 
@@ -205,7 +212,8 @@ static void preview_cleanup(GeanyPlugin *plugin, gpointer data) {
 
   gtk_widget_destroy(g_preview_menu);
 
-  g_clear_signal_handler(&g_tab_handle, GTK_WIDGET(nb));
+  g_clear_signal_handler(&g_handle_nb_switch_page, GTK_WIDGET(nb));
+  g_clear_signal_handler(&g_handle_nb_show, GTK_WIDGET(nb));
 }
 
 static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog) {
@@ -306,13 +314,18 @@ static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
 /* ********************
  * Functions
  */
-static void tab_switch_callback(GtkNotebook *nb) {
-  // GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
+static void on_nb_switch_page(GtkNotebook *nb, GtkWidget *page, guint page_num,
+                              gpointer user_data) {
+  if (g_nb_page_num == page_num) {
+    g_current_doc = NULL;
+    update_preview(FALSE);
+  }
+}
+
+static void on_nb_show(GtkNotebook *nb, gpointer user_data) {
   if (gtk_notebook_get_current_page(nb) == g_nb_page_num) {
-    if (g_timeout_handle == 0) {
-      g_timeout_handle = g_timeout_add(settings.update_interval_fast,
-                                       update_timeout_callback, NULL);
-    }
+    g_current_doc = NULL;
+    update_preview(FALSE);
   }
 }
 
@@ -925,6 +938,13 @@ static void on_document_signal(GObject *obj, GeanyDocument *doc,
                                settings.column_marker_colors[i]);
       }
     }
+  }
+
+  GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
+  if (gtk_notebook_get_current_page(nb) != g_nb_page_num ||
+      !gtk_widget_is_visible(GTK_WIDGET(nb))) {
+    // no updates when preview pane is hidden
+    return;
   }
 
   g_current_doc = NULL;
