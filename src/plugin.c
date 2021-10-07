@@ -926,20 +926,6 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
 
 static void on_document_signal(GObject *obj, GeanyDocument *doc,
                                gpointer user_data) {
-  if (settings.column_marker_enable && DOC_VALID(doc)) {
-    scintilla_send_message(doc->editor->sci, SCI_SETEDGEMODE, 3, 3);
-    scintilla_send_message(doc->editor->sci, SCI_MULTIEDGECLEARALL, 0, 0);
-
-    if (settings.column_marker_columns != NULL &&
-        settings.column_marker_colors != NULL) {
-      for (int i = 0; i < settings.column_marker_count; i++) {
-        scintilla_send_message(doc->editor->sci, SCI_MULTIEDGEADDLINE,
-                               settings.column_marker_columns[i],
-                               settings.column_marker_colors[i]);
-      }
-    }
-  }
-
   GtkNotebook *nb = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
   if (gtk_notebook_get_current_page(nb) != g_nb_page_num ||
       !gtk_widget_is_visible(GTK_WIDGET(nb))) {
