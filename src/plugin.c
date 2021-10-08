@@ -162,6 +162,11 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
   g_signal_connect(item, "activate", G_CALLBACK(on_pref_edit_config), NULL);
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
+  item = gtk_menu_item_new_with_label(_("Reload Config File"));
+  g_signal_connect(item, "activate", G_CALLBACK(on_pref_reload_config),
+                   NULL);
+  gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
+
   item = gtk_menu_item_new_with_label(_("Open Config Folder"));
   g_signal_connect(item, "activate", G_CALLBACK(on_pref_open_config_folder),
                    NULL);
