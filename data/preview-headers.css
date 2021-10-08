@@ -1,3 +1,29 @@
+@media (prefers-color-scheme: dark) {
+	html {
+		color: #eeeeee;
+		background: #2e3436;
+	}
+	a:link {
+		color: #729fcf;
+	}
+	a:visited {
+		color: #cb956d;
+	}
+	a:hover {
+		color: #5db895;
+	}
+	a:active {
+		color: #5db895;
+	}
+	img {
+		opacity: .75;
+		transition: opacity .4s ease-in-out;
+	}
+	img:hover {
+		opacity: 1;
+	}
+}
+
 pre.geany_preview_headers {
 	font-size: smaller;
 	font-family: monospace;

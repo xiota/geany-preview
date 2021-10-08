@@ -1,3 +1,6 @@
 html {
    filter: invert(100%);
 }
+img {
+   filter: invert(100%);
+}
