@@ -35,7 +35,7 @@ That function is outside the scope of this plugin.  However, there is another pl
 
 > Is it possible to hide/show the sidebar based on document type, rather than display a message that the document is not supported?
 
-Since the sidebar includes other functionality, it would not be appropriate for a single plugin to hijack it.  However, the sidebar can be auto-hidden based on file type with a GeanyLua script: [auto-tabbar](https://github.com/xiota/geanylua-scripts).
+Since the sidebar includes other functionality, it would not be appropriate for a single plugin to hijack it.  However, the sidebar can be auto-hidden based on file type with a GeanyLua script: [auto-sidebar](https://github.com/xiota/geanylua-scripts).
 
 ## Configuration
 
@@ -104,7 +104,7 @@ The plugin can then be enabled in the Plugin Manager (*Tools/Plugin Manager*).  
 
 > How do I build from source?
 
-Those interested may try [Building on Linux](docs/Building_on_Linux.md).  Unfortunately, this plugin does not currently work on Windows because WebKit2GTK is not available.  I also do not have a Mac to test.
+Those interested may try [Building on Linux](Building_on_Linux.md).  Unfortunately, this plugin does not currently work on Windows because WebKit2GTK is not available.  I also do not have a Mac to test.
 
 ## Problems
 

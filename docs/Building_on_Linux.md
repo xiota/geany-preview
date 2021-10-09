@@ -1,4 +1,4 @@
-# Building and Installing
+# Building on Linux
 
 The Preview plugin for Geany can be built and installed on Linux-based operating systems.
 
