@@ -54,8 +54,15 @@ static void on_pref_reload_config(GtkWidget *self, GtkWidget *dialog);
 static void on_pref_save_config(GtkWidget *self, GtkWidget *dialog);
 static void on_pref_reset_config(GtkWidget *self, GtkWidget *dialog);
 
-void on_toggle_editor_preview();
-bool on_key_binding(int key_id);
+static GtkWidget *find_focus_widget(GtkWidget *widget);
+static void on_toggle_editor_preview();
+static bool on_key_binding(int key_id);
+static gboolean on_sidebar_focus(GtkWidget *widget, GtkDirectionType direction,
+                                 gpointer user_data);
+static gboolean on_sidebar_focus_in(GtkWidget *widget, GdkEvent *event,
+                                    gpointer user_data);
+static gboolean on_sidebar_focus_out(GtkWidget *widget, GdkEvent *event,
+                                     gpointer user_data);
 
 static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog);
 
@@ -64,9 +71,12 @@ static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog);
 static gboolean update_timeout_callback(gpointer user_data);
 static char *update_preview(const gboolean get_contents);
 
-static void on_sb_switch_page(GtkNotebook *nb, GtkWidget *page, guint page_num,
-                              gpointer user_data);
-static void on_sb_show(GtkNotebook *nb, gpointer user_data);
+static void on_sidebar_switch_page(GtkNotebook *nb, GtkWidget *page,
+                                   guint page_num, gpointer user_data);
+static void on_sidebar_show(GtkNotebook *nb, gpointer user_data);
+static void on_sidebar_state_flags_changed(GtkWidget *widget,
+                                           GtkStateFlags flags,
+                                           gpointer user_data);
 
 static inline enum PreviewFileType get_filetype(char *format);
 static inline void set_filetype();
@@ -91,13 +101,16 @@ static GArray *g_scrollY = NULL;
 static gulong g_load_handle = 0;
 static guint g_timeout_handle = 0;
 static gboolean g_snippet = FALSE;
-static gulong g_handle_nb_switch_page = 0;
-static gulong g_handle_nb_show = 0;
+static gulong g_handle_sidebar_switch_page = 0;
+static gulong g_handle_sidebar_show = 0;
+static gulong g_handle_sidebar_focus = 0;
 static GeanyDocument *g_current_doc = NULL;
 
 extern struct PreviewSettings settings;
 enum PreviewFileType g_filetype = NONE;
 GtkNotebook *g_sidebar_notebook = NULL;
+GtkWidget *g_sidebar_preview_page = NULL;
+GtkWidget *g_sidebar_focus_widget = NULL;
 
 /* ********************
  * Plugin Setup
@@ -110,17 +123,13 @@ PLUGIN_SET_INFO(
     "0.01.1", "xiota")
 
 void plugin_init(G_GNUC_UNUSED GeanyData *data) {
-#define PREVIEW_PSC(sig, cb) \
-  plugin_signal_connect(geany_plugin, NULL, (sig), TRUE, G_CALLBACK(cb), NULL)
-
-  PREVIEW_PSC("geany-startup-complete", on_document_signal);
-  PREVIEW_PSC("editor-notify", on_editor_notify);
-  PREVIEW_PSC("document-activate", on_document_signal);
-  PREVIEW_PSC("document-filetype-set", on_document_signal);
-  PREVIEW_PSC("document-new", on_document_signal);
-  PREVIEW_PSC("document-open", on_document_signal);
-  PREVIEW_PSC("document-reload", on_document_signal);
-#undef CONNECT
+  GEANY_PSC("geany-startup-complete", on_document_signal);
+  GEANY_PSC("editor-notify", on_editor_notify);
+  GEANY_PSC("document-activate", on_document_signal);
+  GEANY_PSC("document-filetype-set", on_document_signal);
+  GEANY_PSC("document-new", on_document_signal);
+  GEANY_PSC("document-open", on_document_signal);
+  GEANY_PSC("document-reload", on_document_signal);
 
   // Set keyboard shortcuts
   GeanyKeyGroup *group = plugin_set_key_group(
@@ -163,8 +172,7 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
   item = gtk_menu_item_new_with_label(_("Reload Config File"));
-  g_signal_connect(item, "activate", G_CALLBACK(on_pref_reload_config),
-                   NULL);
+  g_signal_connect(item, "activate", G_CALLBACK(on_pref_reload_config), NULL);
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
   item = gtk_menu_item_new_with_label(_("Open Config Folder"));
@@ -204,13 +212,24 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
   gtk_widget_show_all(g_scrolled_win);
   gtk_notebook_set_current_page(g_sidebar_notebook, g_nb_page_num);
 
-  // signal handlers to update notebook
-  g_handle_nb_switch_page =
-      g_signal_connect(GTK_WIDGET(g_sidebar_notebook), "switch_page",
-                       G_CALLBACK(on_sb_switch_page), NULL);
+  g_sidebar_preview_page =
+      gtk_notebook_get_nth_page(g_sidebar_notebook, g_nb_page_num);
 
-  g_handle_nb_show = g_signal_connect(GTK_WIDGET(g_sidebar_notebook), "show",
-                                      G_CALLBACK(on_sb_show), NULL);
+  // signal handlers to update notebook
+  g_handle_sidebar_switch_page =
+      g_signal_connect(GTK_WIDGET(g_sidebar_notebook), "switch_page",
+                       G_CALLBACK(on_sidebar_switch_page), NULL);
+
+  g_handle_sidebar_show =
+      g_signal_connect(GTK_WIDGET(g_sidebar_notebook), "show",
+                       G_CALLBACK(on_sidebar_show), NULL);
+
+  if (settings.preview_tab_focus_green || settings.preview_tab_focus_bold) {
+    g_sidebar_focus_widget = find_focus_widget(g_sidebar_preview_page);
+    g_handle_sidebar_focus = g_signal_connect(
+        GTK_WIDGET(g_sidebar_focus_widget), "state-flags-changed",
+        G_CALLBACK(on_sidebar_state_flags_changed), NULL);
+  }
 
   wv_apply_settings();
 
@@ -232,9 +251,12 @@ static void preview_cleanup(GeanyPlugin *plugin, gpointer data) {
 
   gtk_widget_destroy(g_preview_menu);
 
-  g_clear_signal_handler(&g_handle_nb_switch_page,
+  g_clear_signal_handler(&g_handle_sidebar_switch_page,
                          GTK_WIDGET(g_sidebar_notebook));
-  g_clear_signal_handler(&g_handle_nb_show, GTK_WIDGET(g_sidebar_notebook));
+  g_clear_signal_handler(&g_handle_sidebar_show,
+                         GTK_WIDGET(g_sidebar_notebook));
+  g_clear_signal_handler(&g_handle_sidebar_focus,
+                         GTK_WIDGET(g_sidebar_focus_widget));
 }
 
 static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
@@ -292,8 +314,7 @@ static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
 /* ********************
  * Keybinding and Preferences Callbacks
  */
-
-void on_toggle_editor_preview() {
+static void on_toggle_editor_preview() {
   GeanyDocument *doc = document_get_current();
   if (doc != NULL) {
     GtkWidget *sci = GTK_WIDGET(doc->editor->sci);
@@ -309,15 +330,15 @@ void on_toggle_editor_preview() {
   }
 }
 
-bool on_key_binding(int key_id) {
+static bool on_key_binding(int key_id) {
   switch (key_id) {
     case PREVIEW_KEY_TOGGLE_EDITOR:
       on_toggle_editor_preview();
       break;
     default:
-      return false;
+      return FALSE;
   }
-  return true;
+  return TRUE;
 }
 
 static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog) {
@@ -348,6 +369,17 @@ static void on_pref_edit_config(GtkWidget *self, GtkWidget *dialog) {
 
 static void on_pref_reload_config(GtkWidget *self, GtkWidget *dialog) {
   open_settings();
+
+  g_clear_signal_handler(&g_handle_sidebar_focus,
+                         GTK_WIDGET(g_sidebar_focus_widget));
+
+  if (settings.preview_tab_focus_green || settings.preview_tab_focus_bold) {
+    g_sidebar_focus_widget = find_focus_widget(g_sidebar_preview_page);
+    g_handle_sidebar_focus = g_signal_connect(
+        GTK_WIDGET(g_sidebar_focus_widget), "state-flags-changed",
+        G_CALLBACK(on_sidebar_state_flags_changed), NULL);
+  }
+
   wv_apply_settings();
 }
 
@@ -364,21 +396,82 @@ static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog) {
 }
 
 /* ********************
- * Sidebar Callbacks
+ * Sidebar Functions and Callbacks
  */
-static void on_sb_switch_page(GtkNotebook *nb, GtkWidget *page, guint page_num,
-                              gpointer user_data) {
+static void on_sidebar_switch_page(GtkNotebook *nb, GtkWidget *page,
+                                   guint page_num, gpointer user_data) {
   if (g_nb_page_num == page_num) {
     g_current_doc = NULL;
     update_preview(FALSE);
   }
 }
 
-static void on_sb_show(GtkNotebook *nb, gpointer user_data) {
+static void on_sidebar_show(GtkNotebook *nb, gpointer user_data) {
   if (gtk_notebook_get_current_page(nb) == g_nb_page_num) {
     g_current_doc = NULL;
     update_preview(FALSE);
   }
+}
+
+static void on_sidebar_state_flags_changed(GtkWidget *widget,
+                                           GtkStateFlags flags,
+                                           gpointer user_data) {
+  if (!settings.preview_tab_focus_green && !settings.preview_tab_focus_bold) {
+    return;
+  }
+
+  gchar *label_str = g_strdup("Preview");
+  if (settings.preview_tab_focus_bold) {
+    gchar *tmp_str = g_strjoin(NULL, "<b>", label_str, "</b>", NULL);
+    g_free(label_str);
+    label_str = tmp_str;
+  }
+  if (settings.preview_tab_focus_green) {
+    gchar *tmp_str =
+        g_strjoin(NULL, "<span color='green'>", label_str, "</span>", NULL);
+    g_free(label_str);
+    label_str = tmp_str;
+  }
+
+  GtkWidget *label =
+      gtk_notebook_get_tab_label(g_sidebar_notebook, g_sidebar_preview_page);
+  GtkWidget *focus_widget = find_focus_widget(g_sidebar_preview_page);
+
+  if (gtk_widget_has_focus(focus_widget)) {
+    gtk_label_set_markup(GTK_LABEL(label), label_str);
+    gtk_notebook_set_tab_label(g_sidebar_notebook, g_sidebar_preview_page,
+                               label);
+  } else {
+    gtk_label_set_markup(GTK_LABEL(label), "Preview");
+    gtk_notebook_set_tab_label(g_sidebar_notebook, g_sidebar_preview_page,
+                               label);
+  }
+
+  g_free(label_str);
+}
+
+static GtkWidget *find_focus_widget(GtkWidget *widget) {
+  GtkWidget *focus = NULL;
+
+  // optimized simple case
+  if (GTK_IS_BIN(widget)) {
+    focus = find_focus_widget(gtk_bin_get_child(GTK_BIN(widget)));
+  } else if (GTK_IS_CONTAINER(widget)) {
+    GList *children = gtk_container_get_children(GTK_CONTAINER(widget));
+    GList *node;
+
+    for (node = children; node && !focus; node = node->next)
+      focus = find_focus_widget(node->data);
+    g_list_free(children);
+  }
+
+  /* Some containers handled above might not have children and be what we want
+   * to focus (e.g. GtkTreeView), so focus that if possible and we don't have
+   * anything better */
+  if (!focus && gtk_widget_get_can_focus(widget)) {
+    focus = widget;
+  }
+  return focus;
 }
 
 /* ********************
@@ -507,7 +600,7 @@ static void wv_loading_callback(WebKitWebView *web_view,
 }
 
 /* ********************
- * Functions
+ * Other Functions
  */
 
 static gboolean update_timeout_callback(gpointer user_data) {

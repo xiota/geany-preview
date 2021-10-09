@@ -79,6 +79,9 @@ enum PreviewShortcuts {
   PREVIEW_KEY_TOGGLE_EDITOR,
 };
 
+#define GEANY_PSC(sig, cb) \
+  plugin_signal_connect(geany_plugin, NULL, (sig), TRUE, G_CALLBACK(cb), NULL)
+
 #define GFREE(_z_) \
   do {             \
     g_free(_z_);   \

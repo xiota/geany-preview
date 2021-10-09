@@ -49,6 +49,8 @@ struct PreviewSettings {
   gboolean snippet_pandoc;
   gboolean snippet_screenplain;
   char *extra_css;
+  gboolean preview_tab_focus_green;
+  gboolean preview_tab_focus_bold;
 };
 
 void init_settings();
