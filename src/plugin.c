@@ -67,6 +67,8 @@ static gboolean on_sidebar_focus_out(GtkWidget *widget, GdkEvent *event,
 static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog);
 
 static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog);
+static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog);
+static gchar *replace_extension(const gchar *utf8_fn, const gchar *new_ext);
 
 static gboolean update_timeout_callback(gpointer user_data);
 static char *update_preview(const gboolean get_contents);
@@ -97,7 +99,6 @@ WebKitUserContentManager *g_wv_content_manager = NULL;
 static GtkWidget *g_scrolled_win = NULL;
 static guint g_nb_page_num = 0;
 static GArray *g_scrollY = NULL;
-// static gint32 g_scrollY = 0;
 static gulong g_load_handle = 0;
 static guint g_timeout_handle = 0;
 static gboolean g_snippet = FALSE;
@@ -117,10 +118,10 @@ GtkWidget *g_sidebar_focus_widget = NULL;
  */
 PLUGIN_VERSION_CHECK(211)
 
-PLUGIN_SET_INFO(
-    "Preview",
-    _("Preview pane for HTML, Markdown, and other lightweight markup formats."),
-    "0.01.1", "xiota")
+PLUGIN_SET_INFO("Preview",
+                _("Preview pane for HTML, Markdown, and other lightweight "
+                  "markup formats."),
+                "0.01.1", "xiota")
 
 void plugin_init(G_GNUC_UNUSED GeanyData *data) {
   GEANY_PSC("geany-startup-complete", on_document_signal);
@@ -133,7 +134,7 @@ void plugin_init(G_GNUC_UNUSED GeanyData *data) {
 
   // Set keyboard shortcuts
   GeanyKeyGroup *group = plugin_set_key_group(
-      geany_plugin, _("Preview"), 1, (GeanyKeyGroupCallback)on_key_binding);
+      geany_plugin, "Preview", 1, (GeanyKeyGroupCallback)on_key_binding);
 
   keybindings_set_item(
       group, PREVIEW_KEY_TOGGLE_EDITOR, NULL, 0, 0, "preview_toggle_editor",
@@ -161,11 +162,18 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
   GeanyKeyGroup *group;
   GtkWidget *item;
 
-  g_preview_menu = gtk_menu_item_new_with_label("Preview");
+  g_preview_menu = gtk_menu_item_new_with_label(_("Preview"));
   ui_add_document_sensitive(g_preview_menu);
 
   GtkWidget *submenu = gtk_menu_new();
   gtk_menu_item_set_submenu(GTK_MENU_ITEM(g_preview_menu), submenu);
+
+  item = gtk_menu_item_new_with_label(_("Export to HTML..."));
+  g_signal_connect(item, "activate", G_CALLBACK(on_menu_export_html), NULL);
+  gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
+
+  item = gtk_separator_menu_item_new();
+  gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
   item = gtk_menu_item_new_with_label(_("Edit Config File"));
   g_signal_connect(item, "activate", G_CALLBACK(on_pref_edit_config), NULL);
@@ -298,9 +306,10 @@ static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
   gtk_widget_set_tooltip_text(btn, tooltip);
   GFREE(tooltip);
 
-  tooltip = g_strdup(_(
-      "Open the config folder in the default file manager.  The config folder "
-      "contains the stylesheets, which may be edited."));
+  tooltip =
+      g_strdup(_("Open the config folder in the default file manager.  The "
+                 "config folder "
+                 "contains the stylesheets, which may be edited."));
   btn = gtk_button_new_with_label(_("Open Config Folder"));
   g_signal_connect(btn, "clicked", G_CALLBACK(on_pref_open_config_folder),
                    dialog);
@@ -341,7 +350,8 @@ static bool on_key_binding(int key_id) {
   return TRUE;
 }
 
-static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog) {
+static void on_pref_open_config_folder(GtkWidget * /*self*/,
+                                       GtkWidget * /*dialog*/) {
   char *conf_dn =
       g_build_filename(geany_data->app->configdir, "plugins", "preview", NULL);
 
@@ -354,7 +364,7 @@ static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog) {
   GFREE(command);
 }
 
-static void on_pref_edit_config(GtkWidget *self, GtkWidget *dialog) {
+static void on_pref_edit_config(GtkWidget * /*self*/, GtkWidget *dialog) {
   open_settings();
   char *conf_fn = g_build_filename(geany_data->app->configdir, "plugins",
                                    "preview", "preview.conf", NULL);
@@ -367,7 +377,8 @@ static void on_pref_edit_config(GtkWidget *self, GtkWidget *dialog) {
   }
 }
 
-static void on_pref_reload_config(GtkWidget *self, GtkWidget *dialog) {
+static void on_pref_reload_config(GtkWidget * /*self*/,
+                                  GtkWidget * /*dialog*/) {
   open_settings();
 
   g_clear_signal_handler(&g_handle_sidebar_focus,
@@ -383,16 +394,95 @@ static void on_pref_reload_config(GtkWidget *self, GtkWidget *dialog) {
   wv_apply_settings();
 }
 
-static void on_pref_save_config(GtkWidget *self, GtkWidget *dialog) {
+static void on_pref_save_config(GtkWidget * /*self*/, GtkWidget * /*dialog*/) {
   save_settings();
 }
 
-static void on_pref_reset_config(GtkWidget *self, GtkWidget *dialog) {
+static void on_pref_reset_config(GtkWidget * /*self*/, GtkWidget * /*dialog*/) {
   save_default_settings();
 }
 
-static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog) {
+static void on_menu_preferences(GtkWidget * /*self*/, GtkWidget * /*dialog*/) {
   plugin_show_configure(geany_plugin);
+}
+
+// from markdown plugin
+static gchar *replace_extension(const gchar *utf8_fn, const gchar *new_ext) {
+  gchar *fn_noext, *new_fn, *dot;
+  fn_noext = g_filename_from_utf8(utf8_fn, -1, NULL, NULL, NULL);
+  dot = strrchr(fn_noext, '.');
+  if (dot != NULL) {
+    *dot = '\0';
+  }
+  new_fn = g_strconcat(fn_noext, new_ext, NULL);
+  g_free(fn_noext);
+  return new_fn;
+}
+
+// from markdown plugin
+static void on_menu_export_html(GtkWidget * /*self*/, GtkWidget * /*dialog*/) {
+  GtkFileFilter *filter;
+  gchar *fn;
+  gboolean saved = FALSE;
+
+  GeanyDocument *doc = document_get_current();
+  g_return_if_fail(DOC_VALID(doc));
+
+  GtkWidget *dialog = gtk_file_chooser_dialog_new(
+      _("Save As HTML"), GTK_WINDOW(geany_data->main_widgets->window),
+      GTK_FILE_CHOOSER_ACTION_SAVE, _("Cancel"), GTK_RESPONSE_CANCEL, _("Save"),
+      GTK_RESPONSE_ACCEPT, NULL);
+  gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog),
+                                                 TRUE);
+
+  fn = replace_extension(DOC_FILENAME(doc), ".html");
+  if (g_file_test(fn, G_FILE_TEST_EXISTS)) {
+    // If the file exists, GtkFileChooser will change to the correct
+    // directory and show the base name as a suggestion.
+    gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(dialog), fn);
+  } else {
+    // If the file doesn't exist, change the directory and give a
+    // suggested name for the file, since GtkFileChooser won't do it.
+    gchar *dn = g_path_get_dirname(fn);
+    gchar *bn = g_path_get_basename(fn);
+    gchar *utf8_name;
+    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), dn);
+    g_free(dn);
+    utf8_name = g_filename_to_utf8(bn, -1, NULL, NULL, NULL);
+    gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog), utf8_name);
+    g_free(bn);
+    g_free(utf8_name);
+  }
+  g_free(fn);
+
+  // add file type filters to the chooser
+  filter = gtk_file_filter_new();
+  gtk_file_filter_set_name(filter, _("HTML Files"));
+  gtk_file_filter_add_mime_type(filter, "text/html");
+  gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
+
+  filter = gtk_file_filter_new();
+  gtk_file_filter_set_name(filter, _("All Files"));
+  gtk_file_filter_add_pattern(filter, "*");
+  gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
+
+  while (!saved && gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+    gchar *html = update_preview(TRUE);
+    GError *error = NULL;
+    fn = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+    if (!g_file_set_contents(fn, html, -1, &error)) {
+      dialogs_show_msgbox(GTK_MESSAGE_ERROR,
+                          _("Failed to export HTML to file '%s': %s"), fn,
+                          error->message);
+      g_error_free(error);
+    } else {
+      saved = TRUE;
+    }
+    g_free(fn);
+    g_free(html);
+  }
+
+  gtk_widget_destroy(dialog);
 }
 
 /* ********************
@@ -420,7 +510,7 @@ static void on_sidebar_state_flags_changed(GtkWidget *widget,
     return;
   }
 
-  gchar *label_str = g_strdup("Preview");
+  gchar *label_str = g_strdup(_("Preview"));
   if (settings.preview_tab_focus_bold) {
     gchar *tmp_str = g_strjoin(NULL, "<b>", label_str, "</b>", NULL);
     g_free(label_str);
@@ -442,7 +532,7 @@ static void on_sidebar_state_flags_changed(GtkWidget *widget,
     gtk_notebook_set_tab_label(g_sidebar_notebook, g_sidebar_preview_page,
                                label);
   } else {
-    gtk_label_set_markup(GTK_LABEL(label), "Preview");
+    gtk_label_set_markup(GTK_LABEL(label), _("Preview"));
     gtk_notebook_set_tab_label(g_sidebar_notebook, g_sidebar_preview_page,
                                label);
   }
@@ -450,6 +540,7 @@ static void on_sidebar_state_flags_changed(GtkWidget *widget,
   g_free(label_str);
 }
 
+// from geany keybindings.c
 static GtkWidget *find_focus_widget(GtkWidget *widget) {
   GtkWidget *focus = NULL;
 
@@ -465,9 +556,9 @@ static GtkWidget *find_focus_widget(GtkWidget *widget) {
     g_list_free(children);
   }
 
-  /* Some containers handled above might not have children and be what we want
-   * to focus (e.g. GtkTreeView), so focus that if possible and we don't have
-   * anything better */
+  // Some containers handled above might not have children and be what
+  // we want to focus (e.g. GtkTreeView), so focus that if possible and
+  // we don't have anything better
   if (!focus && gtk_widget_get_can_focus(widget)) {
     focus = widget;
   }
@@ -622,6 +713,11 @@ static char *update_preview(const gboolean get_contents) {
     g_current_doc = doc;
     set_filetype();
     set_snippets();
+  }
+
+  // don't use snippets when exporting html
+  if (get_contents) {
+    g_snippet = FALSE;
   }
 
   // save scroll position and set callback if needed
