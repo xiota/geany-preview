@@ -350,8 +350,7 @@ static bool on_key_binding(int key_id) {
   return TRUE;
 }
 
-static void on_pref_open_config_folder(GtkWidget * /*self*/,
-                                       GtkWidget * /*dialog*/) {
+static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog) {
   char *conf_dn =
       g_build_filename(geany_data->app->configdir, "plugins", "preview", NULL);
 
@@ -364,7 +363,7 @@ static void on_pref_open_config_folder(GtkWidget * /*self*/,
   GFREE(command);
 }
 
-static void on_pref_edit_config(GtkWidget * /*self*/, GtkWidget *dialog) {
+static void on_pref_edit_config(GtkWidget *self, GtkWidget *dialog) {
   open_settings();
   char *conf_fn = g_build_filename(geany_data->app->configdir, "plugins",
                                    "preview", "preview.conf", NULL);
@@ -377,8 +376,7 @@ static void on_pref_edit_config(GtkWidget * /*self*/, GtkWidget *dialog) {
   }
 }
 
-static void on_pref_reload_config(GtkWidget * /*self*/,
-                                  GtkWidget * /*dialog*/) {
+static void on_pref_reload_config(GtkWidget *self, GtkWidget *dialog) {
   open_settings();
 
   g_clear_signal_handler(&g_handle_sidebar_focus,
@@ -394,15 +392,15 @@ static void on_pref_reload_config(GtkWidget * /*self*/,
   wv_apply_settings();
 }
 
-static void on_pref_save_config(GtkWidget * /*self*/, GtkWidget * /*dialog*/) {
+static void on_pref_save_config(GtkWidget *self, GtkWidget *dialog) {
   save_settings();
 }
 
-static void on_pref_reset_config(GtkWidget * /*self*/, GtkWidget * /*dialog*/) {
+static void on_pref_reset_config(GtkWidget *self, GtkWidget *dialog) {
   save_default_settings();
 }
 
-static void on_menu_preferences(GtkWidget * /*self*/, GtkWidget * /*dialog*/) {
+static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog) {
   plugin_show_configure(geany_plugin);
 }
 
@@ -420,7 +418,7 @@ static gchar *replace_extension(const gchar *utf8_fn, const gchar *new_ext) {
 }
 
 // from markdown plugin
-static void on_menu_export_html(GtkWidget * /*self*/, GtkWidget * /*dialog*/) {
+static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
   GtkFileFilter *filter;
   gchar *fn;
   gboolean saved = FALSE;
@@ -428,28 +426,28 @@ static void on_menu_export_html(GtkWidget * /*self*/, GtkWidget * /*dialog*/) {
   GeanyDocument *doc = document_get_current();
   g_return_if_fail(DOC_VALID(doc));
 
-  GtkWidget *dialog = gtk_file_chooser_dialog_new(
+  GtkWidget *save_dialog = gtk_file_chooser_dialog_new(
       _("Save As HTML"), GTK_WINDOW(geany_data->main_widgets->window),
       GTK_FILE_CHOOSER_ACTION_SAVE, _("Cancel"), GTK_RESPONSE_CANCEL, _("Save"),
       GTK_RESPONSE_ACCEPT, NULL);
-  gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog),
+  gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(save_dialog),
                                                  TRUE);
 
   fn = replace_extension(DOC_FILENAME(doc), ".html");
   if (g_file_test(fn, G_FILE_TEST_EXISTS)) {
     // If the file exists, GtkFileChooser will change to the correct
     // directory and show the base name as a suggestion.
-    gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(dialog), fn);
+    gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(save_dialog), fn);
   } else {
     // If the file doesn't exist, change the directory and give a
     // suggested name for the file, since GtkFileChooser won't do it.
     gchar *dn = g_path_get_dirname(fn);
     gchar *bn = g_path_get_basename(fn);
     gchar *utf8_name;
-    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), dn);
+    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog), dn);
     g_free(dn);
     utf8_name = g_filename_to_utf8(bn, -1, NULL, NULL, NULL);
-    gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog), utf8_name);
+    gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(save_dialog), utf8_name);
     g_free(bn);
     g_free(utf8_name);
   }
@@ -459,17 +457,18 @@ static void on_menu_export_html(GtkWidget * /*self*/, GtkWidget * /*dialog*/) {
   filter = gtk_file_filter_new();
   gtk_file_filter_set_name(filter, _("HTML Files"));
   gtk_file_filter_add_mime_type(filter, "text/html");
-  gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
+  gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(save_dialog), filter);
 
   filter = gtk_file_filter_new();
   gtk_file_filter_set_name(filter, _("All Files"));
   gtk_file_filter_add_pattern(filter, "*");
-  gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
+  gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(save_dialog), filter);
 
-  while (!saved && gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+  while (!saved &&
+         gtk_dialog_run(GTK_DIALOG(save_dialog)) == GTK_RESPONSE_ACCEPT) {
     gchar *html = update_preview(TRUE);
     GError *error = NULL;
-    fn = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+    fn = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(save_dialog));
     if (!g_file_set_contents(fn, html, -1, &error)) {
       dialogs_show_msgbox(GTK_MESSAGE_ERROR,
                           _("Failed to export HTML to file '%s': %s"), fn,
@@ -482,7 +481,7 @@ static void on_menu_export_html(GtkWidget * /*self*/, GtkWidget * /*dialog*/) {
     g_free(html);
   }
 
-  gtk_widget_destroy(dialog);
+  gtk_widget_destroy(save_dialog);
 }
 
 /* ********************
