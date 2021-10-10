@@ -105,6 +105,7 @@ static gboolean g_snippet = FALSE;
 static gulong g_handle_sidebar_switch_page = 0;
 static gulong g_handle_sidebar_show = 0;
 static gulong g_handle_sidebar_focus = 0;
+
 static GeanyDocument *g_current_doc = NULL;
 
 extern struct PreviewSettings settings;
@@ -225,7 +226,7 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
 
   // signal handlers to update notebook
   g_handle_sidebar_switch_page =
-      g_signal_connect(GTK_WIDGET(g_sidebar_notebook), "switch_page",
+      g_signal_connect(GTK_WIDGET(g_sidebar_notebook), "switch-page",
                        G_CALLBACK(on_sidebar_switch_page), NULL);
 
   g_handle_sidebar_show =
@@ -524,8 +525,8 @@ static void on_sidebar_state_flags_changed(GtkWidget *widget,
 
   GtkWidget *label =
       gtk_notebook_get_tab_label(g_sidebar_notebook, g_sidebar_preview_page);
-  GtkWidget *focus_widget = find_focus_widget(g_sidebar_preview_page);
 
+  GtkWidget *focus_widget = find_focus_widget(g_sidebar_preview_page);
   if (gtk_widget_has_focus(focus_widget)) {
     gtk_label_set_markup(GTK_LABEL(label), label_str);
     gtk_notebook_set_tab_label(g_sidebar_notebook, g_sidebar_preview_page,
@@ -595,7 +596,8 @@ static void wv_save_position_callback(GObject *object, GAsyncResult *result,
     g_array_insert_val(g_scrollY, idx, temp);
   } else {
     if (temp > 0) {
-      g_array_insert_val(g_scrollY, idx, temp);
+      gint32 *scrollY = &g_array_index(g_scrollY, gint32, idx);
+      *scrollY = temp;
     }
   }
 
@@ -672,7 +674,7 @@ static void wv_load_position() {
     script = g_strdup(
         "window.scrollTo(0, 0.2*document.documentElement.scrollHeight);");
   } else if (g_scrollY->len >= idx) {
-    guint *temp = &g_array_index(g_scrollY, guint, idx);
+    guint *temp = &g_array_index(g_scrollY, gint32, idx);
     script = g_strdup_printf("window.scrollTo(0, %d);", *temp);
   } else {
     return;
