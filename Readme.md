@@ -11,18 +11,19 @@ Supported document types include AsciiDoc, DocBook, Fountain, HTML, LaTeX, Markd
 * The preview is updated as the document is edited
 * HTML and Markdown are supported directly
 * Other document formats can be processed with auxiliary programs
-* Rendering of each format can customized with stylesheets
 * The preview of large documents can be limited to the area being edited
+* Rendering of each format can customized with stylesheets
+* Dark and light themes are available
 
 ## Usage
 
 The preview is active by default for documents with supported file types.  To display formats other than HTML or Markdown, auxiliary programs are needed.  If they are unavailable, no preview will be displayed for their respective formats.
 
-More about usage and configuration is available at [Questions and Answers](docs/Questions_and_Answers.md).
+More about usage and configuration is available at [Certain Queries Answered](docs/CQA.md).
 
 ## Installation
 
-The Preview plugin for Geany can be installed on Ubuntu 21.04 and 21.10 via PPA.
+The Preview plugin for Geany can be installed on Ubuntu via PPA.
 ```
 sudo add-apt-repository ppa:xiota/geany-plugins
 sudo apt-get update

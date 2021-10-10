@@ -4,7 +4,7 @@ cf_docdir = $(docdir)
 cf_doc_DATA = \
 	docs/Building_on_Linux.md \
 	docs/geany-plugin-preferences.png \
-	docs/Questions_and_Answers.md \
+	docs/CQA.md \
 	docs/screenshot-908.jpg \
 	Readme.md
 
@@ -25,7 +25,7 @@ geany_plugin_LTLIBRARIES = preview.la
 preview_la_CFLAGS = $(GEANY_CFLAGS) $(WEBKIT_CFLAGS) $(CMARK_CFLAGS) \
 	-DG_LOG_DOMAIN=\""Preview"\" \
 	-DPREVIEW_README=\""$(cf_docdir)/README.md"\" \
-	-DPREVIEW_FAQ=\""$(cf_docdir)/README.md"\" \
+	-DPREVIEW_FAQ=\""$(cf_docdir)/CQA.md"\" \
 	-DPREVIEW_CONFIG=\""$(cf_datadir)/preview.conf"\" \
 	-DPREVIEW_CSS_HEADERS=\""$(cf_datadir)/preview-headers.css"\" \
 	-DPREVIEW_CSS_PANDOC=\""$(cf_datadir)/pandoc.css"\" \

@@ -1,4 +1,4 @@
-# Questions and Answers
+# Certain Queries Answered
 
 ## General
 
@@ -8,7 +8,7 @@ While the Preview plugin can also show HTML, it does not have features that web 
 
 > Will Preview become part of geany-plugins?
 
-I currently do not intend to submit this plugin to geany-plugins because doing so would limit my ability to add features and fix bugs. Of course, this is open source, so they are free to make a copy.
+I may consider submitting it in the future.  The main concern I have is that doing so would limit my ability to add features and fix bugs.
 
 ## Usage
 
@@ -31,31 +31,25 @@ The Preview plugin uses external programs to process other document types.
 
 > Some Markdown editors autosave the document as it is edited.  Can the Preview plugin do that?
 
-That function is outside the scope of this plugin.  However, there is another plugin that may do what you want: *Save Actions*
+Auto saving documents is outside the scope of this plugin.  However, there is another plugin that may do what you want: *Save Actions*
 
 > Is it possible to hide/show the sidebar based on document type, rather than display a message that the document is not supported?
 
-Since the sidebar includes other functionality, it would not be appropriate for a single plugin to hijack it.  However, the sidebar can be auto-hidden based on file type with a GeanyLua script: [auto-sidebar](https://github.com/xiota/geanylua-scripts).
+Altering the sidebar's general behavior is outside the scope of this plugin.  However, the sidebar can be auto-hidden based on file type with a GeanyLua script: [auto-sidebar](https://github.com/xiota/geanylua-scripts).
+
+> Is it possible to change the appearance of the sidebar tabs so that it is visibly recognizable when they have focus?
+
+Altering the sidebar's general behavior is outside the scope of this plugin.  However, there is another plugin with this capability.  It is currently being tested and has not been uploaded yet.  Iwill add more information when available.
 
 ## Configuration
 
 > Are there any configuration options?
 
-There is a configuration file `preview.conf` that can be edited.  It is located at `~/.config/geany/plugins/preview/`.  The options are documented with comments.
+There is a configuration file `preview.conf` that can be edited.  It is located at `~/.config/geany/plugins/preview/`.  The options are documented the config file itself.
 
-For convenience, there are buttons to access the file and config folder.  They may be reached from the Geany menu: *Edit/Plugin Preferences/Preview*.
+For convenience, there are buttons to access the file and config folder.  They may be reached from the Geany menu: *Edit/Plugin Preferences/Preview* or *Tools/Preview*.
 
 ![convenience buttons](geany-plugin-preferences.png)
-
-> My config file doesn't have some options mentioned on this page.  How do I use them?
-
-You probably have an old config file from before some features were added.  You can update the file in the plugin preferences:
-
-1. Click the button that says "Reset Config".  This will replace the old config file with one that has the new options.
-
-2. Click the button that says "Save Config".  This will save your current settings (from your old config) into the new config file.
-
-3. Click "Edit Config" to edit the new settings.
 
 > Can I customize the way documents are rendered?
 
@@ -74,12 +68,12 @@ W3Schools has a [CSS Tutorial](https://www.w3schools.com/css/) that you may find
 
 > Is there a dark theme?
 
-Change the `extra_css` option in the config file.
+The default `css` files attempt to detect when the desktop environment is set to a dark theme.  If detection fails, or you need to customize the appearance further, you can change the `extra_css` option in the config file.
 ```
 extra_css=dark.css
 ```
 
-To allow plain text messages to be styled, the stylesheet is applied directly to the webview when the plugin is loaded.  If the stylesheet is changed, click the "Reload Config" button in *Edit/Plugin Preferences/Preview*.
+To allow plain text messages to be styled, the stylesheet is applied directly to the webview when the plugin is loaded.  If the stylesheet is edited, click the "Reload Config" button in *Edit/Plugin Preferences/Preview*.
 
 When developing new `css` rules, it's more convenient to use one of the other stylesheets that's refreshed more frequently, like `markdown.css`. Then when you're done, copy the rules to the file you want to use for the `extra_css` option.
 
@@ -108,6 +102,20 @@ Those interested may try [Building on Linux](Building_on_Linux.md).  Unfortunate
 
 ## Problems
 
+> My config file doesn't have some options mentioned on this page.  How do I use them?
+
+You probably have an old config file from before some features were added.  You can update the file in the plugin preferences:
+
+1. Click the button that says "Reset Config".  This will replace the old config file with one that has the new options.
+
+2. Click the button that says "Save Config".  This will save your current settings (from your old config) into the new config file.
+
+3. Click "Edit Config" to edit the new settings.
+
+> I updated the plugin now the preview looks different.  What happened?
+
+The preview plugin uses several `css` files.  You probably have a mix of old and new `css` files that do not work well together.  Remove all `css` files from the config folder so the plugin can refresh them with the latest versions.
+
 > Why does the plugin sometimes say "Unable to process type" or display files with strange formatting?
 
-For performance, updates are disabled when the preview is not visible or the document is not actively being edited.  This sometimes results in glitches.  The Preview will update normally when the document is edited.  Sometimes switching documents also helps.
+To improve performance, updates are disabled when the preview is not visible or the document is not actively being edited.  This sometimes results in glitches that go away when editing is resumed.  Recent changes have been made to significantly reduce how often this happens.

@@ -115,8 +115,6 @@ void save_settings() {
   SET_KEY(boolean, "snippet_screenplain", settings.snippet_screenplain);
 
   SET_KEY(string, "extra_css", settings.extra_css);
-  SET_KEY(boolean, "preview_tab_focus_green", settings.preview_tab_focus_green);
-  SET_KEY(boolean, "preview_tab_focus_bold", settings.preview_tab_focus_bold);
 
   // Store back on disk
   contents = g_key_file_to_data(kf, &length, NULL);
@@ -164,8 +162,6 @@ void load_settings(GKeyFile *kf) {
   LOAD_KEY_BOOLEAN(snippet_screenplain, TRUE);
 
   LOAD_KEY_STRING(extra_css, "disabled");
-  LOAD_KEY_BOOLEAN(preview_tab_focus_green, FALSE);
-  LOAD_KEY_BOOLEAN(preview_tab_focus_bold, FALSE);
 }
 
 void init_settings() {
@@ -192,6 +188,4 @@ void init_settings() {
   settings.snippet_pandoc = TRUE;
   settings.snippet_screenplain = TRUE;
   settings.extra_css = g_strdup("disabled");
-  settings.preview_tab_focus_green = FALSE;
-  settings.preview_tab_focus_bold = FALSE;
 }
