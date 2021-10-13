@@ -62,8 +62,8 @@ G_END_DECLS
 // Macros to make loading settings easier
 #define PLUGIN_GROUP "preview"
 
-#define HAS_KEY(key) g_key_file_has_key(kf, PLUGIN_GROUP, (key), NULL)
-#define GET_KEY(T, key) g_key_file_get_##T(kf, PLUGIN_GROUP, (key), NULL)
+#define HAS_KEY(key) g_key_file_has_key(kf, PLUGIN_GROUP, (key), nullptr)
+#define GET_KEY(T, key) g_key_file_get_##T(kf, PLUGIN_GROUP, (key), nullptr)
 #define SET_KEY(T, key, _val) \
   g_key_file_set_##T(kf, PLUGIN_GROUP, (key), (_val))
 

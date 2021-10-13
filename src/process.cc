@@ -45,15 +45,15 @@ static void on_process_exited(GPid pid, int status, FmtProcess *proc) {
   }
 
   if (proc->ch_in) {
-    g_io_channel_shutdown(proc->ch_in, true, NULL);
+    g_io_channel_shutdown(proc->ch_in, true, nullptr);
     g_io_channel_unref(proc->ch_in);
-    proc->ch_in = NULL;
+    proc->ch_in = nullptr;
   }
 
   if (proc->ch_out) {
-    g_io_channel_shutdown(proc->ch_out, true, NULL);
+    g_io_channel_shutdown(proc->ch_out, true, nullptr);
     g_io_channel_unref(proc->ch_out);
-    proc->ch_out = NULL;
+    proc->ch_out = nullptr;
   }
 
   proc->return_code = status;
@@ -61,19 +61,19 @@ static void on_process_exited(GPid pid, int status, FmtProcess *proc) {
 
 FmtProcess *fmt_process_open(const char *work_dir, const char *const *argv) {
   FmtProcess *proc;
-  GError *error = NULL;
+  GError *error = nullptr;
   int fd_in = -1, fd_out = -1;
 
   proc = g_new0(FmtProcess, 1);
 
-  if (!g_spawn_async_with_pipes(work_dir, (char **)argv, NULL,
-                                G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD,
-                                NULL, NULL, &proc->child_pid, &fd_in, &fd_out,
-                                NULL, &error)) {
+  if (!g_spawn_async_with_pipes(
+          work_dir, (char **)argv, nullptr,
+          GSpawnFlags(G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD), nullptr,
+          nullptr, &proc->child_pid, &fd_in, &fd_out, nullptr, &error)) {
     g_warning(_("Failed to create subprocess: %s"), error->message);
     GERROR_FREE(error);
     GFREE(proc);
-    return NULL;
+    return nullptr;
   }
 
   proc->return_code = -1;
@@ -91,12 +91,12 @@ int fmt_process_close(FmtProcess *proc) {
   int ret_code = proc->return_code;
 
   if (proc->ch_in) {
-    g_io_channel_shutdown(proc->ch_in, true, NULL);
+    g_io_channel_shutdown(proc->ch_in, true, nullptr);
     g_io_channel_unref(proc->ch_in);
   }
 
   if (proc->ch_out) {
-    g_io_channel_shutdown(proc->ch_out, true, NULL);
+    g_io_channel_shutdown(proc->ch_out, true, nullptr);
     g_io_channel_unref(proc->ch_out);
   }
 
@@ -112,7 +112,7 @@ int fmt_process_close(FmtProcess *proc) {
 bool fmt_process_run(FmtProcess *proc, const char *str_in, size_t in_len,
                      GString *str_out) {
   GIOStatus status;
-  GError *error = NULL;
+  GError *error = nullptr;
   bool read_complete = false;
   size_t in_off = 0;
 
@@ -124,14 +124,15 @@ bool fmt_process_run(FmtProcess *proc, const char *str_in, size_t in_len,
       size_t size_to_write = MIN(write_size_remaining, IO_BUF_SIZE);
 
       // Write some data to process's stdin
-      error = NULL;
+      error = nullptr;
       status = g_io_channel_write_chars(proc->ch_in, str_in + in_off,
                                         size_to_write, &bytes_written, &error);
 
       in_off += bytes_written;
 
       if (status == G_IO_STATUS_ERROR) {
-        g_warning(_("Failed writing to subprocess's stdin: %s"), error->message);
+        g_warning(_("Failed writing to subprocess's stdin: %s"),
+                  error->message);
         GERROR_FREE(error);
         return false;
       }
@@ -140,17 +141,17 @@ bool fmt_process_run(FmtProcess *proc, const char *str_in, size_t in_len,
   }
 
   // Flush it and close it down
-  g_io_channel_shutdown(proc->ch_in, true, NULL);
+  g_io_channel_shutdown(proc->ch_in, true, nullptr);
   g_io_channel_unref(proc->ch_in);
-  proc->ch_in = NULL;
+  proc->ch_in = nullptr;
 
   // All text should be written to process's stdin by now, read the
   // rest of the process's stdout.
   while (!read_complete) {
-    char *tail_string = NULL;
+    char *tail_string = nullptr;
     size_t tail_len = 0;
 
-    error = NULL;
+    error = nullptr;
     status =
         g_io_channel_read_to_end(proc->ch_out, &tail_string, &tail_len, &error);
 

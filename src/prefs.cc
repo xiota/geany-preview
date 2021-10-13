@@ -27,7 +27,7 @@ struct PreviewSettings settings;
 
 void open_settings() {
   char *conf_fn = g_build_filename(geany_data->app->configdir, "plugins",
-                                   "preview", "preview.conf", NULL);
+                                   "preview", "preview.conf", nullptr);
   char *conf_dn = g_path_get_dirname(conf_fn);
   g_mkdir_with_parents(conf_dn, 0755);
 
@@ -39,8 +39,9 @@ void open_settings() {
   }
 
   g_key_file_load_from_file(
-      kf, conf_fn, G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS,
-      NULL);
+      kf, conf_fn,
+      GKeyFileFlags(G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS),
+      nullptr);
 
   init_settings();
   load_settings(kf);
@@ -52,21 +53,21 @@ void open_settings() {
 
 void save_default_settings() {
   char *conf_fn = g_build_filename(geany_data->app->configdir, "plugins",
-                                   "preview", "preview.conf", NULL);
+                                   "preview", "preview.conf", nullptr);
   char *conf_dn = g_path_get_dirname(conf_fn);
   g_mkdir_with_parents(conf_dn, 0755);
 
   // delete if file exists
   GFile *file = g_file_new_for_path(conf_fn);
-  if (!g_file_trash(file, NULL, NULL)) {
-    g_file_delete(file, NULL, NULL);
+  if (!g_file_trash(file, nullptr, nullptr)) {
+    g_file_delete(file, nullptr, nullptr);
   }
 
   // copy default config
-  char *contents = NULL;
+  char *contents = nullptr;
   size_t length = 0;
-  if (g_file_get_contents(PREVIEW_CONFIG, &contents, &length, NULL)) {
-    g_file_set_contents(conf_fn, contents, length, NULL);
+  if (g_file_get_contents(PREVIEW_CONFIG, &contents, &length, nullptr)) {
+    g_file_set_contents(conf_fn, contents, length, nullptr);
     GFREE(contents);
   }
 
@@ -79,11 +80,13 @@ void save_settings() {
   char *contents;
   size_t length = 0;
   char *fn = g_build_filename(geany_data->app->configdir, "plugins", "preview",
-                              "preview.conf", NULL);
+                              "preview.conf", nullptr);
 
   // Load old contents in case user changed file outside of GUI
   g_key_file_load_from_file(
-      kf, fn, G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS, NULL);
+      kf, fn,
+      GKeyFileFlags(G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS),
+      nullptr);
 
   // Update settings with new contents
   SET_KEY(integer, "update_interval_slow", settings.update_interval_slow);
@@ -117,9 +120,9 @@ void save_settings() {
   SET_KEY(string, "extra_css", settings.extra_css);
 
   // Store back on disk
-  contents = g_key_file_to_data(kf, &length, NULL);
+  contents = g_key_file_to_data(kf, &length, nullptr);
   if (contents) {
-    g_file_set_contents(fn, contents, length, NULL);
+    g_file_set_contents(fn, contents, length, nullptr);
     GFREE(contents);
   }
 
@@ -143,23 +146,23 @@ void load_settings(GKeyFile *kf) {
   LOAD_KEY_STRING(fountain_processor, "screenplain");
   LOAD_KEY_STRING(wiki_default, "mediawiki");
 
-  LOAD_KEY_BOOLEAN(pandoc_disabled, FALSE);
-  LOAD_KEY_BOOLEAN(pandoc_fragment, FALSE);
-  LOAD_KEY_BOOLEAN(pandoc_toc, FALSE);
+  LOAD_KEY_BOOLEAN(pandoc_disabled, false);
+  LOAD_KEY_BOOLEAN(pandoc_fragment, false);
+  LOAD_KEY_BOOLEAN(pandoc_toc, false);
 
   LOAD_KEY_STRING(pandoc_markdown, "markdown");
   LOAD_KEY_STRING(default_font_family, "serif");
 
-  LOAD_KEY_BOOLEAN(extended_types, TRUE);
+  LOAD_KEY_BOOLEAN(extended_types, true);
 
   LOAD_KEY_INTEGER(snippet_window, 5000, 5);
   LOAD_KEY_INTEGER(snippet_trigger, 100000, 5);
 
-  LOAD_KEY_BOOLEAN(snippet_html, FALSE);
-  LOAD_KEY_BOOLEAN(snippet_markdown, TRUE);
-  LOAD_KEY_BOOLEAN(snippet_asciidoctor, TRUE);
-  LOAD_KEY_BOOLEAN(snippet_pandoc, TRUE);
-  LOAD_KEY_BOOLEAN(snippet_screenplain, TRUE);
+  LOAD_KEY_BOOLEAN(snippet_html, false);
+  LOAD_KEY_BOOLEAN(snippet_markdown, true);
+  LOAD_KEY_BOOLEAN(snippet_asciidoctor, true);
+  LOAD_KEY_BOOLEAN(snippet_pandoc, true);
+  LOAD_KEY_BOOLEAN(snippet_screenplain, true);
 
   LOAD_KEY_STRING(extra_css, "disabled");
 }
@@ -174,18 +177,18 @@ void init_settings() {
   settings.asciidoc_processor = g_strdup("asciidoctor");
   settings.fountain_processor = g_strdup("screenplain");
   settings.wiki_default = g_strdup("mediawiki");
-  settings.pandoc_disabled = FALSE;
-  settings.pandoc_fragment = FALSE;
-  settings.pandoc_toc = FALSE;
+  settings.pandoc_disabled = false;
+  settings.pandoc_fragment = false;
+  settings.pandoc_toc = false;
   settings.pandoc_markdown = g_strdup("markdown");
   settings.default_font_family = g_strdup("serif");
-  settings.extended_types = TRUE;
+  settings.extended_types = true;
   settings.snippet_window = 5000;
   settings.snippet_trigger = 100000;
-  settings.snippet_html = FALSE;
-  settings.snippet_markdown = TRUE;
-  settings.snippet_asciidoctor = TRUE;
-  settings.snippet_pandoc = TRUE;
-  settings.snippet_screenplain = TRUE;
+  settings.snippet_html = false;
+  settings.snippet_markdown = true;
+  settings.snippet_asciidoctor = true;
+  settings.snippet_pandoc = true;
+  settings.snippet_screenplain = true;
   settings.extra_css = g_strdup("disabled");
 }

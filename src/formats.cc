@@ -24,7 +24,7 @@
 
 char *find_css(const char *css) {
   char *css_fn = g_build_filename(geany_data->app->configdir, "plugins",
-                                  "preview", css, NULL);
+                                  "preview", css, nullptr);
   char *css_dn = g_path_get_dirname(css_fn);
   g_mkdir_with_parents(css_dn, 0755);
   GFREE(css_dn);
@@ -32,23 +32,23 @@ char *find_css(const char *css) {
   if (g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
     return css_fn;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
 char *find_copy_css(const char *css, const char *src) {
   char *css_fn = g_build_filename(geany_data->app->configdir, "plugins",
-                                  "preview", css, NULL);
+                                  "preview", css, nullptr);
   char *css_dn = g_path_get_dirname(css_fn);
   g_mkdir_with_parents(css_dn, 0755);
   GFREE(css_dn);
 
   if (!g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
     if (g_file_test(src, G_FILE_TEST_EXISTS)) {
-      char *contents = NULL;
+      char *contents = nullptr;
       size_t length = 0;
-      if (g_file_get_contents(src, &contents, &length, NULL)) {
-        g_file_set_contents(css_fn, contents, length, NULL);
+      if (g_file_get_contents(src, &contents, &length, nullptr)) {
+        g_file_set_contents(css_fn, contents, length, nullptr);
         GFREE(contents);
       }
     }
@@ -56,14 +56,14 @@ char *find_copy_css(const char *css, const char *src) {
   if (g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
     return css_fn;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
 GString *pandoc(const char *work_dir, const char *input,
                 const char *from_format) {
-  if (input == NULL) {
-    return NULL;
+  if (input == nullptr) {
+    return nullptr;
   }
   if (settings.pandoc_disabled) {
     GString *output =
@@ -74,7 +74,7 @@ GString *pandoc(const char *work_dir, const char *input,
   GPtrArray *args = g_ptr_array_new_with_free_func(g_free);
   g_ptr_array_add(args, g_strdup("pandoc"));
 
-  if (from_format != NULL) {
+  if (from_format != nullptr) {
     g_ptr_array_add(args, g_strdup_printf("--from=%s", from_format));
   }
   g_ptr_array_add(args, g_strdup("--to=html"));
@@ -102,59 +102,59 @@ GString *pandoc(const char *work_dir, const char *input,
   GFREE(css);
 
   // end of args
-  g_ptr_array_add(args, NULL);
+  g_ptr_array_add(args, nullptr);
 
   FmtProcess *proc =
       fmt_process_open(work_dir, (const char *const *)args->pdata);
 
   if (!proc) {
     // command not found, FmtProcess will print warning
-    return NULL;
+    return nullptr;
   }
-  g_ptr_array_free(args, TRUE);
+  g_ptr_array_free(args, true);
 
   GString *output = g_string_sized_new(strlen(input));
   if (!fmt_process_run(proc, input, strlen(input), output)) {
     g_warning(_("Failed to format document range"));
     GSTRING_FREE(output);
     fmt_process_close(proc);
-    return NULL;
+    return nullptr;
   }
 
   return output;
 }
 
 GString *asciidoctor(const char *work_dir, const char *input) {
-  if (input == NULL) {
-    return NULL;
+  if (input == nullptr) {
+    return nullptr;
   }
 
   GPtrArray *args = g_ptr_array_new_with_free_func(g_free);
   g_ptr_array_add(args, g_strdup("asciidoctor"));
 
-  if (work_dir != NULL) {
+  if (work_dir != nullptr) {
     g_ptr_array_add(args, g_strdup_printf("--base-dir=%s", work_dir));
   }
   g_ptr_array_add(args, g_strdup("--quiet"));
   g_ptr_array_add(args, g_strdup("--out-file=-"));
   g_ptr_array_add(args, g_strdup("-"));
-  g_ptr_array_add(args, NULL);  // end of args
+  g_ptr_array_add(args, nullptr);  // end of args
 
   FmtProcess *proc =
       fmt_process_open(work_dir, (const char *const *)args->pdata);
 
   if (!proc) {
     // command not found, FmtProcess will print warning
-    return NULL;
+    return nullptr;
   }
-  g_ptr_array_free(args, TRUE);
+  g_ptr_array_free(args, true);
 
   GString *output = g_string_sized_new(strlen(input));
   if (!fmt_process_run(proc, input, strlen(input), output)) {
     g_warning(_("Failed to format document range"));
     GSTRING_FREE(output);
     fmt_process_close(proc);
-    return NULL;
+    return nullptr;
   }
 
   // attach asciidoctor.css if it exists
@@ -168,11 +168,11 @@ GString *asciidoctor(const char *work_dir, const char *input) {
       g_string_replace(output, "</head>", plain, 1);
       GFREE(plain);
     } else {
-      char *html = g_string_free(output, FALSE);
+      char *html = g_string_free(output, false);
       char *plain = g_strjoin(
-          NULL,
+          nullptr,
           "<html><head><link rel='stylesheet' type='text/css' href='file://",
-          css_fn, "'></head><body>", html, "</body></html>", NULL);
+          css_fn, "'></head><body>", html, "</body></html>", nullptr);
       output = g_string_new(plain);
       GFREE(html);
       GFREE(plain);
@@ -184,14 +184,14 @@ GString *asciidoctor(const char *work_dir, const char *input) {
 
 GString *screenplain(const char *work_dir, const char *input,
                      const char *to_format) {
-  if (input == NULL) {
-    return NULL;
+  if (input == nullptr) {
+    return nullptr;
   }
 
   GPtrArray *args = g_ptr_array_new_with_free_func(g_free);
   g_ptr_array_add(args, g_strdup("screenplain"));
 
-  if (to_format != NULL) {
+  if (to_format != nullptr) {
     g_ptr_array_add(args, g_strdup_printf("--format=%s", to_format));
   } else {
     g_ptr_array_add(args, g_strdup("--format=html"));
@@ -208,7 +208,7 @@ GString *screenplain(const char *work_dir, const char *input,
   GFREE(css);
 
   // end of args
-  g_ptr_array_add(args, NULL);
+  g_ptr_array_add(args, nullptr);
 
   // rutn program
   FmtProcess *proc =
@@ -216,16 +216,16 @@ GString *screenplain(const char *work_dir, const char *input,
 
   if (!proc) {
     // command not found, FmtProcess will print warning
-    return NULL;
+    return nullptr;
   }
-  g_ptr_array_free(args, TRUE);
+  g_ptr_array_free(args, true);
 
   GString *output = g_string_sized_new(strlen(input));
   if (!fmt_process_run(proc, input, strlen(input), output)) {
     g_warning(_("Failed to format document range"));
     GSTRING_FREE(output);
     fmt_process_close(proc);
-    return NULL;
+    return nullptr;
   }
 
   return output;
