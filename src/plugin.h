@@ -26,9 +26,6 @@
 #include <gtk/gtk.h>
 #include <webkit2/webkit2.h>
 
-//#include <Scintilla.h>
-//#include <ScintillaWidget.h>
-
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wignored-attributes"
@@ -38,46 +35,87 @@
 #pragma clang diagnostic pop
 #endif
 
-#include <ctype.h>
-#include <errno.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 G_BEGIN_DECLS
 
 extern GeanyPlugin *geany_plugin;
 extern GeanyData *geany_data;
 
 enum PreviewFileType {
-  NONE,
-  ASCIIDOC,
-  DOCBOOK,
-  DOKUWIKI,
-  EMAIL,
-  FOUNTAIN,
-  GFM,
-  HTML,
-  LATEX,
-  MARKDOWN,
-  MEDIAWIKI,
-  MUSE,
-  ORG,
-  PLAIN,
-  REST,
-  TEXTILE,
-  TIKIWIKI,
-  TWIKI,
-  TXT2TAGS,
-  VIMWIKI,
-  WIKI
+  PREVIEW_FILETYPE_NONE,
+  PREVIEW_FILETYPE_ASCIIDOC,
+  PREVIEW_FILETYPE_DOCBOOK,
+  PREVIEW_FILETYPE_DOKUWIKI,
+  PREVIEW_FILETYPE_EMAIL,
+  PREVIEW_FILETYPE_FOUNTAIN,
+  PREVIEW_FILETYPE_GFM,
+  PREVIEW_FILETYPE_HTML,
+  PREVIEW_FILETYPE_LATEX,
+  PREVIEW_FILETYPE_MARKDOWN,
+  PREVIEW_FILETYPE_MEDIAWIKI,
+  PREVIEW_FILETYPE_MUSE,
+  PREVIEW_FILETYPE_ORG,
+  PREVIEW_FILETYPE_PLAIN,
+  PREVIEW_FILETYPE_REST,
+  PREVIEW_FILETYPE_TEXTILE,
+  PREVIEW_FILETYPE_TIKIWIKI,
+  PREVIEW_FILETYPE_TWIKI,
+  PREVIEW_FILETYPE_TXT2TAGS,
+  PREVIEW_FILETYPE_VIMWIKI,
+  PREVIEW_FILETYPE_WIKI,
 };
 
 enum PreviewShortcuts {
   PREVIEW_KEY_TOGGLE_EDITOR,
 };
+
+static gboolean preview_init(GeanyPlugin *plugin, gpointer data);
+static void preview_cleanup(GeanyPlugin *plugin, gpointer data);
+static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
+                                    gpointer pdata);
+
+static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
+                                 SCNotification *notif, gpointer user_data);
+static void on_document_signal(GObject *obj, GeanyDocument *doc,
+                               gpointer user_data);
+
+static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog);
+static void on_pref_edit_config(GtkWidget *self, GtkWidget *dialog);
+static void on_pref_reload_config(GtkWidget *self, GtkWidget *dialog);
+static void on_pref_save_config(GtkWidget *self, GtkWidget *dialog);
+static void on_pref_reset_config(GtkWidget *self, GtkWidget *dialog);
+
+static GtkWidget *find_focus_widget(GtkWidget *widget);
+static void on_toggle_editor_preview();
+static bool on_key_binding(int key_id);
+static gboolean on_sidebar_focus(GtkWidget *widget, GtkDirectionType direction,
+                                 gpointer user_data);
+static gboolean on_sidebar_focus_in(GtkWidget *widget, GdkEvent *event,
+                                    gpointer user_data);
+static gboolean on_sidebar_focus_out(GtkWidget *widget, GdkEvent *event,
+                                     gpointer user_data);
+
+static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog);
+
+static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog);
+static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog);
+static gchar *replace_extension(const gchar *utf8_fn, const gchar *new_ext);
+
+static gboolean update_timeout_callback(gpointer user_data);
+static char *update_preview(const gboolean get_contents);
+
+static void on_sidebar_switch_page(GtkNotebook *nb, GtkWidget *page,
+                                   guint page_num, gpointer user_data);
+static void on_sidebar_show(GtkNotebook *nb, gpointer user_data);
+static void on_sidebar_state_flags_changed(GtkWidget *widget,
+                                           GtkStateFlags flags,
+                                           gpointer user_data);
+
+static PreviewFileType get_filetype(const char *fn);
+static void set_filetype();
+static void set_snippets();
+static void wv_apply_settings();
+
+G_END_DECLS
 
 #define GEANY_PSC(sig, cb)                                                  \
   plugin_signal_connect(geany_plugin, nullptr, (sig), true, G_CALLBACK(cb), \
@@ -107,9 +145,12 @@ enum PreviewShortcuts {
     _z_ = nullptr;          \
   } while (0)
 
-#define REGEX_CHK(_tp, _str) \
-  g_regex_match_simple((_tp), (_str), G_REGEX_CASELESS, GRegexMatchFlags(0))
+#define REGEX_CHK(_tp, _str)                                                   \
+  (((_str) != nullptr) ? g_regex_match_simple((_tp), (_str), G_REGEX_CASELESS, \
+                                              GRegexMatchFlags(0))             \
+                       : false)
 
-G_END_DECLS
+#define SUBSTR(needle, haystack) \
+  (strncmp((needle), (haystack), strlen(needle)) == 0)
 
 #endif  // PREVIEW_PLUGIN_H

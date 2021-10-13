@@ -44,4 +44,6 @@ preview_la_SOURCES = \
 	src/prefs.cc \
 	src/prefs.h \
 	src/process.cc \
-	src/process.h
+	src/process.h \
+	src/fountain.cc \
+	src/fountain.h

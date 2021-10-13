@@ -28,62 +28,13 @@
 #include <cmark-gfm.h>
 
 #include "formats.h"
+#include "fountain.h"
 #include "plugin.h"
 #include "prefs.h"
 #include "process.h"
 
 #define WEBVIEW_WARN(msg) \
   webkit_web_view_load_plain_text(WEBKIT_WEB_VIEW(g_viewer), (msg))
-
-/* ********************
- * Declarations
- */
-static gboolean preview_init(GeanyPlugin *plugin, gpointer data);
-static void preview_cleanup(GeanyPlugin *plugin, gpointer data);
-static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
-                                    gpointer pdata);
-
-static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
-                                 SCNotification *notif, gpointer user_data);
-static void on_document_signal(GObject *obj, GeanyDocument *doc,
-                               gpointer user_data);
-
-static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog);
-static void on_pref_edit_config(GtkWidget *self, GtkWidget *dialog);
-static void on_pref_reload_config(GtkWidget *self, GtkWidget *dialog);
-static void on_pref_save_config(GtkWidget *self, GtkWidget *dialog);
-static void on_pref_reset_config(GtkWidget *self, GtkWidget *dialog);
-
-static GtkWidget *find_focus_widget(GtkWidget *widget);
-static void on_toggle_editor_preview();
-static bool on_key_binding(int key_id);
-static gboolean on_sidebar_focus(GtkWidget *widget, GtkDirectionType direction,
-                                 gpointer user_data);
-static gboolean on_sidebar_focus_in(GtkWidget *widget, GdkEvent *event,
-                                    gpointer user_data);
-static gboolean on_sidebar_focus_out(GtkWidget *widget, GdkEvent *event,
-                                     gpointer user_data);
-
-static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog);
-
-static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog);
-static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog);
-static gchar *replace_extension(const gchar *utf8_fn, const gchar *new_ext);
-
-static gboolean update_timeout_callback(gpointer user_data);
-static char *update_preview(const gboolean get_contents);
-
-static void on_sidebar_switch_page(GtkNotebook *nb, GtkWidget *page,
-                                   guint page_num, gpointer user_data);
-static void on_sidebar_show(GtkNotebook *nb, gpointer user_data);
-static void on_sidebar_state_flags_changed(GtkWidget *widget,
-                                           GtkStateFlags flags,
-                                           gpointer user_data);
-
-static inline enum PreviewFileType get_filetype(char *format);
-static inline void set_filetype();
-static inline void set_snippets();
-static void wv_apply_settings();
 
 /* ********************
  * Globals
@@ -108,7 +59,8 @@ static gulong g_handle_sidebar_show = 0;
 static GeanyDocument *g_current_doc = nullptr;
 
 extern struct PreviewSettings settings;
-enum PreviewFileType g_filetype = NONE;
+
+PreviewFileType g_filetype = PREVIEW_FILETYPE_NONE;
 GtkNotebook *g_sidebar_notebook = nullptr;
 GtkWidget *g_sidebar_preview_page = nullptr;
 
@@ -349,7 +301,7 @@ static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog) {
   char *command;
   command = g_strdup_printf("xdg-open \"%s\"", conf_dn);
   if (system(command)) {
-    // ignore;
+    // ignore return value
   }
   GFREE(conf_dn);
   GFREE(command);
@@ -394,7 +346,7 @@ static gchar *replace_extension(const gchar *utf8_fn, const gchar *new_ext) {
     *dot = '\0';
   }
   new_fn = g_strconcat(fn_noext, new_ext, nullptr);
-  g_free(fn_noext);
+  GFREE(fn_noext);
   return new_fn;
 }
 
@@ -426,13 +378,13 @@ static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
     gchar *bn = g_path_get_basename(fn);
     gchar *utf8_name;
     gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog), dn);
-    g_free(dn);
+    GFREE(dn);
     utf8_name = g_filename_to_utf8(bn, -1, nullptr, nullptr, nullptr);
     gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(save_dialog), utf8_name);
-    g_free(bn);
-    g_free(utf8_name);
+    GFREE(bn);
+    GFREE(utf8_name);
   }
-  g_free(fn);
+  GFREE(fn);
 
   // add file type filters to the chooser
   filter = gtk_file_filter_new();
@@ -458,8 +410,8 @@ static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
     } else {
       saved = true;
     }
-    g_free(fn);
-    g_free(html);
+    GFREE(fn);
+    GFREE(html);
   }
 
   gtk_widget_destroy(save_dialog);
@@ -582,9 +534,9 @@ static void wv_apply_settings() {
   // attach extra_css
   css_fn = find_css(settings.extra_css);
   if (!css_fn) {
-    if (g_strcmp0("dark.css", settings.extra_css) == 0) {
+    if (strcmp("dark.css", settings.extra_css) == 0) {
       css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_DARK);
-    } else if (g_strcmp0("invert.css", settings.extra_css) == 0) {
+    } else if (strcmp("invert.css", settings.extra_css) == 0) {
       css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_INVERT);
     }
   }
@@ -671,14 +623,12 @@ static char *update_preview(const gboolean get_contents) {
         g_signal_connect_swapped(WEBKIT_WEB_VIEW(g_viewer), "load-changed",
                                  G_CALLBACK(wv_loading_callback), nullptr);
   }
-
   char *uri = g_filename_to_uri(DOC_FILENAME(doc), nullptr, nullptr);
-  if (!REGEX_CHK("file://", uri)) {
+  if (!uri || strlen(uri) < 7 || strncmp(uri, "file://", 7) != 0) {
     GFREE(uri);
     uri = g_strdup("file:///tmp/blank.html");
   }
 
-  char *basename = g_path_get_basename(DOC_FILENAME(doc));
   char *work_dir = g_path_get_dirname(DOC_FILENAME(doc));
   char *text = (char *)scintilla_send_message(doc->editor->sci,
                                               SCI_GETCHARACTERPOINTER, 0, 0);
@@ -732,14 +682,16 @@ static char *update_preview(const gboolean get_contents) {
   GString *body = g_string_new(nullptr);
 
   char *format = nullptr;
-  if (!g_regex_match(re_has_header, text, GRegexMatchFlags(0), nullptr)) {
+  if (text &&
+      !g_regex_match(re_has_header, text, GRegexMatchFlags(0), nullptr)) {
     GSTRING_FREE(body);
     body = g_string_new(text);
-  } else {
+  } else if (text) {
     GMatchInfo *match_info = nullptr;
 
     // get format header
-    if (g_regex_match(re_format, text, GRegexMatchFlags(0), &match_info)) {
+    if (text &&
+        g_regex_match(re_format, text, GRegexMatchFlags(0), &match_info)) {
       format = g_match_info_fetch(match_info, 2);
     }
     g_match_info_free(match_info);
@@ -754,8 +706,8 @@ static char *update_preview(const gboolean get_contents) {
     int i = 0;
     while (texts[i] != nullptr) {
       if (state_head) {
-        if (g_regex_match(re_is_header, texts[i], GRegexMatchFlags(0),
-                          nullptr)) {
+        if (texts[i] && g_regex_match(re_is_header, texts[i],
+                                      GRegexMatchFlags(0), nullptr)) {
           g_string_append(head, texts[i]);
           g_string_append(head, "\n");
           i++;
@@ -773,19 +725,19 @@ static char *update_preview(const gboolean get_contents) {
   }
 
   switch (g_filetype) {
-    case HTML:
-      if (REGEX_CHK("disable", settings.html_processor)) {
+    case PREVIEW_FILETYPE_HTML:
+      if (strcmp("disable", settings.html_processor) == 0) {
         plain = g_strdup(_("Preview of HTML documents has been disabled."));
-      } else if (REGEX_CHK("pandoc", settings.html_processor)) {
+      } else if (SUBSTR("pandoc", settings.html_processor)) {
         output = pandoc(work_dir, body->str, "html");
       } else {
         output = g_string_new(body->str);
       }
       break;
-    case MARKDOWN:
-      if (REGEX_CHK("disable", settings.markdown_processor)) {
+    case PREVIEW_FILETYPE_MARKDOWN:
+      if (strcmp("disable", settings.markdown_processor) == 0) {
         plain = g_strdup(_("Preview of Markdown documents has been disabled."));
-      } else if (REGEX_CHK("pandoc", settings.markdown_processor)) {
+      } else if (SUBSTR("pandoc", settings.markdown_processor)) {
         output = pandoc(work_dir, body->str, settings.pandoc_markdown);
       } else {
         html = cmark_markdown_to_html(body->str, body->len, 0);
@@ -806,71 +758,75 @@ static char *update_preview(const gboolean get_contents) {
         GFREE(plain);
       }
       break;
-    case ASCIIDOC:
-      if (REGEX_CHK("disable", settings.asciidoc_processor)) {
+    case PREVIEW_FILETYPE_ASCIIDOC:
+      if (strcmp("disable", settings.asciidoc_processor) == 0) {
         plain = g_strdup(_("Preview of AsciiDoc documents has been disabled."));
       } else {
         output = asciidoctor(work_dir, body->str);
       }
       break;
-    case DOCBOOK:
+    case PREVIEW_FILETYPE_DOCBOOK:
       output = pandoc(work_dir, body->str, "docbook");
       break;
-    case LATEX:
+    case PREVIEW_FILETYPE_LATEX:
       output = pandoc(work_dir, body->str, "latex");
       break;
-    case REST:
+    case PREVIEW_FILETYPE_REST:
       output = pandoc(work_dir, body->str, "rst");
       break;
-    case TXT2TAGS:
+    case PREVIEW_FILETYPE_TXT2TAGS:
       output = pandoc(work_dir, body->str, "t2t");
       break;
-    case GFM:
+    case PREVIEW_FILETYPE_GFM:
       output = pandoc(work_dir, body->str, "gfm");
       break;
-    case FOUNTAIN:
-      if (REGEX_CHK("disable", settings.fountain_processor)) {
+    case PREVIEW_FILETYPE_FOUNTAIN:
+      if (strcmp("disable", settings.fountain_processor) == 0) {
         plain =
             g_strdup(_("Preview of Fountain screenplays has been disabled."));
       } else {
-        output = screenplain(work_dir, body->str, "html");
+        plain = g_strdup(_("Testing tokenizer."));
+        // output = screenplain(work_dir, body->str, "html");
+        Fountain::Tokenizer fountain_tokenizer;
+        fountain_tokenizer.tokenize(body->str);
+        // output = screenplain(work_dir, body->str, "html");
       }
       break;
-    case TEXTILE:
+    case PREVIEW_FILETYPE_TEXTILE:
       output = pandoc(work_dir, body->str, "textile");
       break;
-    case DOKUWIKI:
+    case PREVIEW_FILETYPE_DOKUWIKI:
       output = pandoc(work_dir, body->str, "dokuwiki");
       break;
-    case TIKIWIKI:
+    case PREVIEW_FILETYPE_TIKIWIKI:
       output = pandoc(work_dir, body->str, "tikiwiki");
       break;
-    case VIMWIKI:
+    case PREVIEW_FILETYPE_VIMWIKI:
       output = pandoc(work_dir, body->str, "vimwiki");
       break;
-    case TWIKI:
+    case PREVIEW_FILETYPE_TWIKI:
       output = pandoc(work_dir, body->str, "twiki");
       break;
-    case MEDIAWIKI:
+    case PREVIEW_FILETYPE_MEDIAWIKI:
       output = pandoc(work_dir, body->str, "mediawiki");
       break;
-    case WIKI:
+    case PREVIEW_FILETYPE_WIKI:
       output = pandoc(work_dir, body->str, settings.wiki_default);
       break;
-    case MUSE:
+    case PREVIEW_FILETYPE_MUSE:
       output = pandoc(work_dir, body->str, "muse");
       break;
-    case ORG:
+    case PREVIEW_FILETYPE_ORG:
       output = pandoc(work_dir, body->str, "org");
       break;
-    case PLAIN:
-    case EMAIL: {
+    case PREVIEW_FILETYPE_PLAIN:
+    case PREVIEW_FILETYPE_EMAIL: {
       g_string_prepend(body, "<pre>");
       g_string_append(body, "</pre>");
       output = g_string_new(body->str);
       // plain = g_strdup(text);
     } break;
-    case NONE:
+    case PREVIEW_FILETYPE_NONE:
     default:
       plain = g_strdup_printf("Unable to process type: %s, %s.",
                               doc->file_type->name, doc->encoding);
@@ -890,14 +846,15 @@ static char *update_preview(const gboolean get_contents) {
     }
   } else if (output) {
     // combine head and body
-    if (g_strcmp0(head->str, "") != 0 && g_strcmp0(head->str, "\n") != 0) {
+    if (strcmp(head->str, "") != 0 && strcmp(head->str, "\n") != 0) {
       static GRegex *re_body = nullptr;
       if (!re_body) {
         re_body = g_regex_new("(?i)(<body[^>]*>)", G_REGEX_MULTILINE,
                               GRegexMatchFlags(0), nullptr);
       }
 
-      if (g_regex_match(re_body, output->str, GRegexMatchFlags(0), nullptr)) {
+      if (output->str &&
+          g_regex_match(re_body, output->str, GRegexMatchFlags(0), nullptr)) {
         g_string_append(head, "</pre>\n");
         g_string_prepend(head, "\\1\n<pre class='geany_preview_headers'>");
         html = g_regex_replace(re_body, output->str, -1, 0, head->str,
@@ -926,7 +883,6 @@ static char *update_preview(const gboolean get_contents) {
   GSTRING_FREE(body);
 
   GFREE(uri);
-  GFREE(basename);
   GFREE(work_dir);
 
   // restore scroll position
@@ -934,55 +890,72 @@ static char *update_preview(const gboolean get_contents) {
   return contents;
 }
 
-static inline enum PreviewFileType get_filetype(char *format) {
-  if (REGEX_CHK("gfm", format)) {
-    return GFM;
-  } else if (REGEX_CHK("fountain", format) || REGEX_CHK("spmd", format)) {
-    return FOUNTAIN;
-  } else if (REGEX_CHK("textile", format)) {
-    return TEXTILE;
-  } else if (REGEX_CHK("txt", format) || REGEX_CHK("plain", format)) {
-    return PLAIN;
-  } else if (REGEX_CHK("eml", format)) {
-    return EMAIL;
-  } else if (REGEX_CHK("wiki", format)) {
-    if (REGEX_CHK("disable", settings.wiki_default)) {
-      return NONE;
-    } else if (REGEX_CHK("dokuwiki", format)) {
-      return DOKUWIKI;
-    } else if (REGEX_CHK("tikiwiki", format)) {
-      return TIKIWIKI;
-    } else if (REGEX_CHK("vimwiki", format)) {
-      return VIMWIKI;
-    } else if (REGEX_CHK("twiki", format)) {
-      return TWIKI;
-    } else if (REGEX_CHK("mediawiki", format) ||
-               REGEX_CHK("wikipedia", format)) {
-      return MEDIAWIKI;
-    } else {
-      return WIKI;
-    }
-  } else if (REGEX_CHK("muse", format)) {
-    return MUSE;
-  } else if (REGEX_CHK("org", format)) {
-    return ORG;
-  } else if (REGEX_CHK("html", format)) {
-    return HTML;
-  } else if (REGEX_CHK("markdown", format)) {
-    return MARKDOWN;
-  } else if (REGEX_CHK("asciidoc", format)) {
-    return ASCIIDOC;
-  } else if (REGEX_CHK("docbook", format)) {
-    return DOCBOOK;
-  } else if (REGEX_CHK("latex", format)) {
-    return LATEX;
-  } else if (REGEX_CHK("rest", format) ||
-             REGEX_CHK("restructuredtext", format)) {
-    return REST;
-  } else if (REGEX_CHK("txt2tags", format) || REGEX_CHK("t2t", format)) {
-    return TXT2TAGS;
+static PreviewFileType get_filetype(const char *fn) {
+  if (!fn) {
+    return PREVIEW_FILETYPE_NONE;
   }
-  return NONE;
+
+  char *bn = g_path_get_basename(fn);
+  char *format = g_utf8_strdown(bn, -1);
+  if (!bn || !format) {
+    GFREE(bn);
+    GFREE(format);
+    return PREVIEW_FILETYPE_NONE;
+  }
+
+  PreviewFileType filetype = PREVIEW_FILETYPE_NONE;
+
+  if (SUBSTR("gfm", format)) {
+    filetype = PREVIEW_FILETYPE_GFM;
+  } else if (SUBSTR("fountain", format) || SUBSTR("spmd", format)) {
+    filetype = PREVIEW_FILETYPE_FOUNTAIN;
+  } else if (SUBSTR("textile", format)) {
+    filetype = PREVIEW_FILETYPE_TEXTILE;
+  } else if (SUBSTR("txt", format) || SUBSTR("plain", format)) {
+    filetype = PREVIEW_FILETYPE_PLAIN;
+  } else if (SUBSTR("eml", format)) {
+    filetype = PREVIEW_FILETYPE_EMAIL;
+  } else if (SUBSTR("wiki", format)) {
+    if (strcmp("disable", settings.wiki_default) == 0) {
+      filetype = PREVIEW_FILETYPE_NONE;
+    } else if (SUBSTR("dokuwiki", format)) {
+      filetype = PREVIEW_FILETYPE_DOKUWIKI;
+    } else if (SUBSTR("tikiwiki", format)) {
+      filetype = PREVIEW_FILETYPE_TIKIWIKI;
+    } else if (SUBSTR("vimwiki", format)) {
+      filetype = PREVIEW_FILETYPE_VIMWIKI;
+    } else if (SUBSTR("twiki", format)) {
+      filetype = PREVIEW_FILETYPE_TWIKI;
+    } else if (SUBSTR("mediawiki", format) ||
+               SUBSTR("wikipedia", format)) {
+      filetype = PREVIEW_FILETYPE_MEDIAWIKI;
+    } else {
+      filetype = PREVIEW_FILETYPE_WIKI;
+    }
+  } else if (SUBSTR("muse", format)) {
+    filetype = PREVIEW_FILETYPE_MUSE;
+  } else if (SUBSTR("org", format)) {
+    filetype = PREVIEW_FILETYPE_ORG;
+  } else if (SUBSTR("html", format)) {
+    filetype = PREVIEW_FILETYPE_HTML;
+  } else if (SUBSTR("markdown", format)) {
+    filetype = PREVIEW_FILETYPE_MARKDOWN;
+  } else if (SUBSTR("asciidoc", format)) {
+    filetype = PREVIEW_FILETYPE_ASCIIDOC;
+  } else if (SUBSTR("docbook", format)) {
+    filetype = PREVIEW_FILETYPE_DOCBOOK;
+  } else if (SUBSTR("latex", format)) {
+    filetype = PREVIEW_FILETYPE_LATEX;
+  } else if (SUBSTR("rest", format) ||
+             SUBSTR("restructuredtext", format)) {
+    filetype = PREVIEW_FILETYPE_REST;
+  } else if (SUBSTR("txt2tags", format) || SUBSTR("t2t", format)) {
+    filetype = PREVIEW_FILETYPE_TXT2TAGS;
+  }
+
+  GFREE(bn);
+  GFREE(format);
+  return filetype;
 }
 
 static inline void set_filetype() {
@@ -990,38 +963,36 @@ static inline void set_filetype() {
 
   switch (doc->file_type->id) {
     case GEANY_FILETYPES_HTML:
-      g_filetype = HTML;
+      g_filetype = PREVIEW_FILETYPE_HTML;
       break;
     case GEANY_FILETYPES_MARKDOWN:
-      g_filetype = MARKDOWN;
+      g_filetype = PREVIEW_FILETYPE_MARKDOWN;
       break;
     case GEANY_FILETYPES_ASCIIDOC:
-      g_filetype = ASCIIDOC;
+      g_filetype = PREVIEW_FILETYPE_ASCIIDOC;
       break;
     case GEANY_FILETYPES_DOCBOOK:
-      g_filetype = DOCBOOK;
+      g_filetype = PREVIEW_FILETYPE_DOCBOOK;
       break;
     case GEANY_FILETYPES_LATEX:
-      g_filetype = LATEX;
+      g_filetype = PREVIEW_FILETYPE_LATEX;
       break;
     case GEANY_FILETYPES_REST:
-      g_filetype = REST;
+      g_filetype = PREVIEW_FILETYPE_REST;
       break;
     case GEANY_FILETYPES_TXT2TAGS:
-      g_filetype = TXT2TAGS;
+      g_filetype = PREVIEW_FILETYPE_TXT2TAGS;
       break;
     case GEANY_FILETYPES_NONE:
       if (!settings.extended_types) {
-        g_filetype = NONE;
+        g_filetype = PREVIEW_FILETYPE_NONE;
         break;
       } else {
-        char *basename = g_path_get_basename(DOC_FILENAME(doc));
-        g_filetype = get_filetype(basename);
-        GFREE(basename);
+        g_filetype = get_filetype(DOC_FILENAME(doc));
       }
       break;
     default:
-      g_filetype = NONE;
+      g_filetype = PREVIEW_FILETYPE_NONE;
       break;
   }
 }
@@ -1053,13 +1024,17 @@ static inline void set_snippets() {
       }
       break;
     case GEANY_FILETYPES_NONE: {
-      char *basename = g_path_get_basename(DOC_FILENAME(doc));
-      if (REGEX_CHK("fountain", basename) || REGEX_CHK("spmd", basename)) {
-        if (!settings.snippet_screenplain) {
-          g_snippet = false;
+      char *bn = g_path_get_basename(DOC_FILENAME(doc));
+      char *format = g_utf8_strdown(bn, -1);
+      if (format) {
+        if (SUBSTR("fountain", format) || SUBSTR("spmd", format)) {
+          if (!settings.snippet_screenplain) {
+            g_snippet = false;
+          }
         }
+        GFREE(bn);
+        GFREE(format);
       }
-      GFREE(basename);
     }  // no break; need to check pandoc setting
     case GEANY_FILETYPES_LATEX:
     case GEANY_FILETYPES_DOCBOOK:
