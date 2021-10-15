@@ -690,8 +690,7 @@ static char *update_preview(const gboolean get_contents) {
     GMatchInfo *match_info = nullptr;
 
     // get format header
-    if (text &&
-        g_regex_match(re_format, text, GRegexMatchFlags(0), &match_info)) {
+    if (g_regex_match(re_format, text, GRegexMatchFlags(0), &match_info)) {
       format = g_match_info_fetch(match_info, 2);
     }
     g_match_info_free(match_info);
@@ -700,28 +699,33 @@ static char *update_preview(const gboolean get_contents) {
       g_filetype = get_filetype(format);
       GFREE(format);
     }
-    // split head and body)
-    gchar **texts = g_strsplit(text, "\n", -1);
-    gboolean state_head = true;
-    int i = 0;
-    while (texts[i] != nullptr) {
-      if (state_head) {
-        if (texts[i] && g_regex_match(re_is_header, texts[i],
-                                      GRegexMatchFlags(0), nullptr)) {
-          g_string_append(head, texts[i]);
-          g_string_append(head, "\n");
-          i++;
+
+    // split head and body
+    if (g_filetype == PREVIEW_FILETYPE_FOUNTAIN) {
+      // fountain handles its own headers
+      body = g_string_new(text);
+    } else {
+      gchar **texts = g_strsplit(text, "\n", -1);
+      gboolean state_head = true;
+      int i = 0;
+      while (texts[i] != nullptr) {
+        if (state_head) {
+          if (*texts[i] != '\0') {
+            g_string_append(head, texts[i]);
+            g_string_append(head, "\n");
+            i++;
+          } else {
+            state_head = false;
+          }
         } else {
-          state_head = false;
+          g_string_append(body, texts[i]);
+          g_string_append(body, "\n");
+          i++;
         }
-      } else {
-        g_string_append(body, texts[i]);
-        g_string_append(body, "\n");
-        i++;
       }
+      g_strfreev(texts);
+      texts = nullptr;
     }
-    g_strfreev(texts);
-    texts = nullptr;
   }
 
   switch (g_filetype) {
@@ -784,12 +788,15 @@ static char *update_preview(const gboolean get_contents) {
       if (strcmp("disable", settings.fountain_processor) == 0) {
         plain =
             g_strdup(_("Preview of Fountain screenplays has been disabled."));
+      } else if (strcmp("screenplain", settings.fountain_processor) == 0) {
+        output = screenplain(work_dir, body->str, "html");
       } else {
-        plain = g_strdup(_("Testing tokenizer."));
-        // output = screenplain(work_dir, body->str, "html");
-        Fountain::Tokenizer fountain_tokenizer;
-        fountain_tokenizer.tokenize(body->str);
-        // output = screenplain(work_dir, body->str, "html");
+        char *css_fn = find_copy_css("fountain.css", PREVIEW_CSS_FOUNTAIN);
+        html = ftn2html2(body->str, css_fn);
+        output = g_string_new(html);
+
+        GFREE(css_fn);
+        GFREE(html);
       }
       break;
     case PREVIEW_FILETYPE_TEXTILE:
@@ -926,8 +933,7 @@ static PreviewFileType get_filetype(const char *fn) {
       filetype = PREVIEW_FILETYPE_VIMWIKI;
     } else if (SUBSTR("twiki", format)) {
       filetype = PREVIEW_FILETYPE_TWIKI;
-    } else if (SUBSTR("mediawiki", format) ||
-               SUBSTR("wikipedia", format)) {
+    } else if (SUBSTR("mediawiki", format) || SUBSTR("wikipedia", format)) {
       filetype = PREVIEW_FILETYPE_MEDIAWIKI;
     } else {
       filetype = PREVIEW_FILETYPE_WIKI;
@@ -946,8 +952,7 @@ static PreviewFileType get_filetype(const char *fn) {
     filetype = PREVIEW_FILETYPE_DOCBOOK;
   } else if (SUBSTR("latex", format)) {
     filetype = PREVIEW_FILETYPE_LATEX;
-  } else if (SUBSTR("rest", format) ||
-             SUBSTR("restructuredtext", format)) {
+  } else if (SUBSTR("rest", format) || SUBSTR("restructuredtext", format)) {
     filetype = PREVIEW_FILETYPE_REST;
   } else if (SUBSTR("txt2tags", format) || SUBSTR("t2t", format)) {
     filetype = PREVIEW_FILETYPE_TXT2TAGS;

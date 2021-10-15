@@ -13,6 +13,8 @@ cf_data_DATA = \
 	data/preview.conf \
 	data/preview-headers.css \
 	data/asciidoctor.css \
+	data/fountain.css \
+	data/fountain-html.css \
 	data/markdown.css \
 	data/pandoc.css \
 	data/screenplain.css \
@@ -30,6 +32,8 @@ preview_la_CXXFLAGS = $(GEANY_CFLAGS) $(WEBKIT_CFLAGS) $(CMARK_CFLAGS) \
 	-DPREVIEW_CSS_HEADERS=\""$(cf_datadir)/preview-headers.css"\" \
 	-DPREVIEW_CSS_PANDOC=\""$(cf_datadir)/pandoc.css"\" \
 	-DPREVIEW_CSS_ASCIIDOCTOR=\""$(cf_datadir)/asciidoctor.css"\" \
+	-DPREVIEW_CSS_FOUNTAIN=\""$(cf_datadir)/fountain.css"\" \
+	-DPREVIEW_CSS_FTN2HTML=\""$(cf_datadir)/fountain-html.css"\" \
 	-DPREVIEW_CSS_MARKDOWN=\""$(cf_datadir)/markdown.css"\" \
 	-DPREVIEW_CSS_SCREENPLAIN=\""$(cf_datadir)/screenplain.css"\" \
 	-DPREVIEW_CSS_DARK=\""$(cf_datadir)/dark.css"\" \

@@ -150,7 +150,6 @@ G_END_DECLS
                                               GRegexMatchFlags(0))             \
                        : false)
 
-#define SUBSTR(needle, haystack) \
-  (strncmp((needle), (haystack), strlen(needle)) == 0)
+#define SUBSTR(needle, haystack) (strstr((haystack), (needle)) != nullptr)
 
 #endif  // PREVIEW_PLUGIN_H
