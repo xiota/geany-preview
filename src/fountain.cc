@@ -446,14 +446,20 @@ void Script::parseFountain(const std::string &text) {
   // remove comments
   {
     static GRegex *re_comment = nullptr;
+    static GRegex *re_tabs = nullptr;
     if (!re_comment) {
       re_comment = g_regex_new("(?s)/\\*.*?\\*/", G_REGEX_MULTILINE,
                                GRegexMatchFlags(0), nullptr);
+      re_tabs =
+          g_regex_new("\\t", G_REGEX_MULTILINE, GRegexMatchFlags(0), nullptr);
     }
-    char *cs = g_regex_replace_literal(re_comment, text.c_str(), -1, 0, "",
-                                       GRegexMatchFlags(0), nullptr);
-    std::string s = std::string(cs);
-    g_free(cs);
+    char *cs1 = g_regex_replace_literal(re_comment, text.c_str(), -1, 0, "",
+                                        GRegexMatchFlags(0), nullptr);
+    char *cs2 = g_regex_replace_literal(re_tabs, cs1, -1, 0, "    ",
+                                        GRegexMatchFlags(0), nullptr);
+    std::string s = std::string(cs2);
+    g_free(cs1);
+    g_free(cs2);
     lines = split_lines(s);
   }
 
