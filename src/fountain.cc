@@ -99,7 +99,7 @@ bool isTransition(const std::string &input) {
 }
 
 std::string parseTransition(const std::string &input) {
-  std::string r = ws_rtrim(ws_ltrim(input));
+  std::string r = ws_trim(input);
   if (r[0] == '>') {
     r = r.substr(1);
   }
@@ -136,13 +136,23 @@ bool isSceneHeader(const std::string &input) {
   return false;
 }
 
-std::string parseSceneHeader(const std::string &input) {
-  std::string s = to_upper(ws_ltrim(input));
+std::pair<std::string, std::string> parseSceneHeader(const std::string &input) {
+  std::string first;
+  std::string second;
 
-  if (s[0] == '.' && s[1] != '.') {
-    return ws_ltrim(s.substr(1));
+  size_t pos = input.find("#");
+  if (pos < input.length() - 1 && input.back() == '#') {
+    first = ws_trim(input.substr(0, pos));
+    second = input.substr(pos + 1);
+    second.pop_back();
   } else {
-    return ws_ltrim(s);
+    first = ws_trim(input);
+  }
+
+  if (first[0] == '.' && first[1] != '.') {
+    return std::make_pair(ws_ltrim(first.substr(1)), trim(second));
+  } else {
+    return std::make_pair(first, trim(second));
   }
 }
 
@@ -167,7 +177,7 @@ bool isNotation(const std::string &input) {
     return false;
   }
 
-  std::string s = ws_rtrim(ws_ltrim(input));
+  std::string s = ws_trim(input);
   size_t len = s.length();
 
   if (len > 3 && s[0] == '[' && s[1] == '[' && s[len - 1] == ']' &&
@@ -236,7 +246,7 @@ bool isParenthetical(const std::string &input) {
   }
 
   // ignore surrounding spaces
-  std::string s = ws_rtrim(ws_ltrim(input));
+  std::string s = ws_trim(input);
   size_t len = s.length();
 
   if (len > 0 && s[0] == '(' && s[len - 1] == ')') {
@@ -262,7 +272,7 @@ bool isContinuation(const std::string &input) {
 }
 
 auto parseKeyValue(const std::string &input) {
-  std::string s = ws_rtrim(ws_ltrim(input));
+  std::string s = ws_trim(input);
   std::string key;
   std::string value;
 
@@ -372,7 +382,12 @@ std::string ScriptNode::to_string() const {
       output += "<Continuation>" + value + "</Continuation>";
       break;
     case ScriptNodeType::ftnSceneHeader:
-      output += "<SceneHeader>" + value + "</SceneHeader>";
+      if (!key.empty()) {
+        output += "<SceneHeader><SceneNumL>" + key + "</SceneNumL>" + value +
+                  +"<SceneNumR>" + key + "</SceneNumR></SceneHeader>";
+      } else {
+        output += "<SceneHeader>" + value + "</SceneHeader>";
+      }
       break;
     case ScriptNodeType::ftnAction:
       output += "<Action>" + value + "</Action>";
@@ -408,12 +423,10 @@ std::string ScriptNode::to_string() const {
       output += "<Lyric>" + value + "</Lyric>";
       break;
     case ScriptNodeType::ftnSection:
-      output +=
-          "<Section><h" + key + ">" + value + "</h" + key + ">" + "</Section>";
+      output += "<SectionH" + key + ">" + value + "</SectionH" + key + ">";
       break;
     case ScriptNodeType::ftnSynopsis:
-      output += "<Synopsis><h" + key + ">" + value + "</h" + key + ">" +
-                "</Synopsis>";
+      output += "<SynopsisH" + key + ">" + value + "</SynopsisH" + key + ">";
       break;
     case ScriptNodeType::ftnUnknown:
     default:
@@ -525,9 +538,10 @@ void Script::parseFountain(const std::string &text) {
 
     // Scene Header
     if (curr_node.type == ScriptNodeType::ftnUnknown && isSceneHeader(s)) {
-      // need to get scene number
-      new_node(ScriptNodeType::ftnSceneHeader, "");
-      append_text(parseSceneHeader(s));
+      auto scene = parseSceneHeader(s);
+
+      new_node(ScriptNodeType::ftnSceneHeader, scene.second);
+      append_text(scene.first);
       end_node();
       continue;
     }
@@ -570,7 +584,7 @@ void Script::parseFountain(const std::string &text) {
             ct == ScriptNodeType::ftnCharacter ||
             ct == ScriptNodeType::ftnSpeech) {
           new_node(ScriptNodeType::ftnParenthetical, "");
-          append_text(ws_rtrim(ws_ltrim(s)));
+          append_text(ws_trim(s));
           end_node();
           continue;
         }
@@ -633,8 +647,7 @@ void Script::parseFountain(const std::string &text) {
     // Note: Leading whitespace is retained in Action
     if (curr_node.type == ScriptNodeType::ftnAction) {
       if (isCenter(s)) {
-        append_text("<center>" +
-                    ws_rtrim(ws_ltrim(s.substr(1, s.length() - 2))) +
+        append_text("<center>" + ws_trim(s.substr(1, s.length() - 2)) +
                     "</center>");
       } else {
         append_text(line);
@@ -643,7 +656,7 @@ void Script::parseFountain(const std::string &text) {
     }
     if (isCenter(s)) {
       new_node(ScriptNodeType::ftnAction, "");
-      append_text("<center>" + ws_rtrim(ws_ltrim(s.substr(1, s.length() - 2))) +
+      append_text("<center>" + ws_trim(s.substr(1, s.length() - 2)) +
                   "</center>");
       continue;
     }
@@ -658,6 +671,8 @@ void Script::parseFountain(const std::string &text) {
       continue;
     }
   }
+
+  end_node();
 }
 
 char *ftn2str(const char *input) {
@@ -743,71 +758,6 @@ char *ftn2html(const char *input, const char *css_fn) {
   // Notes
   g_string_replace(gstr_output, "<Note>", "<div class=\"note\">", 0);
   g_string_replace(gstr_output, "</Note>", "</div>", 0);
-  g_string_replace(gstr_output, "<Section>", "", 0);
-  g_string_replace(gstr_output, "</Section>", "", 0);
-  g_string_replace(gstr_output, "<Synopsis><h1>", "<div class=\"h1-synopsis\">",
-                   0);
-  g_string_replace(gstr_output, "</h1></Synopsis>", "</div>", 0);
-  g_string_replace(gstr_output, "<Synopsis><h2>", "<div class=\"h2-synopsis\">",
-                   0);
-  g_string_replace(gstr_output, "</h2></Synopsis>", "</div>", 0);
-  g_string_replace(gstr_output, "<Synopsis><h3>", "<div class=\"h3-synopsis\">",
-                   0);
-  g_string_replace(gstr_output, "</h3></Synopsis>", "</div>", 0);
-  g_string_replace(gstr_output, "<Synopsis><h4>", "<div class=\"h4-synopsis\">",
-                   0);
-  g_string_replace(gstr_output, "</h4></Synopsis>", "</div>", 0);
-  g_string_replace(gstr_output, "<Synopsis><h5>", "<div class=\"h5-synopsis\">",
-                   0);
-  g_string_replace(gstr_output, "</h5></Synopsis>", "</div>", 0);
-  g_string_replace(gstr_output, "<Synopsis><h6>", "<div class=\"h6-synopsis\">",
-                   0);
-  g_string_replace(gstr_output, "</h6></Synopsis>", "</div>", 0);
-
-  // Discard
-  g_string_replace(gstr_output, "<BlankLine>", "", 0);
-  g_string_replace(gstr_output, "</BlankLine>", "", 0);
-  g_string_replace(gstr_output, "<Continuation>", "", 0);
-  g_string_replace(gstr_output, "</Continuation>", "", 0);
-
-  // Cleanup
-  g_string_replace(gstr_output, "\n\n", "\n", 0);
-  g_string_replace(gstr_output, "\n\n", "\n", 0);
-
-  return g_string_free(gstr_output, false);
-}
-
-// semi-compatible with screenplain
-char *ftn2html2(const char *input, const char *css_fn) {
-  std::string output(
-      "<!DOCTYPE html>\n"
-      "<html>\n<head>\n");
-
-  if (css_fn) {
-    output += "<link rel=\"stylesheet\" type=\"text/css\" href=\"file://";
-    output += css_fn;
-    output += "\">\n";
-  }
-
-  output +=
-      "</head>\n<body>\n"
-      "<Fountain>\n";
-
-  std::string s(input);
-  Script script;
-  script.parseFountain(s);
-
-  for (auto node : script.nodes) {
-    if (node.type != ScriptNodeType::ftnContinuation &&
-        node.type != ScriptNodeType::ftnKeyValue &&
-        node.type != ScriptNodeType::ftnUnknown) {
-      output += node.to_string() + "\n";
-    }
-  }
-
-  output += "\n</Fountain>\n</body>\n</html>\n";
-
-  GString *gstr_output = g_string_new(output.c_str());
 
   // Discard
   g_string_replace(gstr_output, "<BlankLine>", "", 0);
@@ -889,10 +839,6 @@ char *ftn2fdx(const char *input) {
   // Notes
   g_string_replace(gstr_output, "<Note>", "<ScriptNote><Text>", 0);
   g_string_replace(gstr_output, "</Note>", "</Text></ScriptNote>", 0);
-  g_string_replace(gstr_output, "<Section>", "<ScriptNote><Text>", 0);
-  g_string_replace(gstr_output, "</Section>", "</Text></ScriptNote>", 0);
-  g_string_replace(gstr_output, "<Synopsis>", "<ScriptNote><Text>", 0);
-  g_string_replace(gstr_output, "</Synopsis>", "</Text></ScriptNote>", 0);
 
   // Discard
   g_string_replace(gstr_output, "<Dialog>", "", 0);
@@ -914,6 +860,50 @@ char *ftn2fdx(const char *input) {
   g_string_replace(gstr_output, "<Lyric>", "<Paragraph Type=\"Lyric\"><Text>",
                    0);
   g_string_replace(gstr_output, "</Lyric>", "</Text></Paragraph>", 0);
+
+  return g_string_free(gstr_output, false);
+}
+
+char *ftn2html2(const char *input, const char *css_fn) {
+  std::string output(
+      "<!DOCTYPE html>\n"
+      "<html>\n<head>\n");
+
+  if (css_fn) {
+    output += "<link rel=\"stylesheet\" type=\"text/css\" href=\"file://";
+    output += css_fn;
+    output += "\">\n";
+  }
+
+  output +=
+      "</head>\n<body>\n"
+      "<Fountain>\n";
+
+  std::string s(input);
+  Script script;
+  script.parseFountain(s);
+
+  for (auto node : script.nodes) {
+    if (node.type != ScriptNodeType::ftnContinuation &&
+        node.type != ScriptNodeType::ftnKeyValue &&
+        node.type != ScriptNodeType::ftnUnknown) {
+      output += node.to_string() + "\n";
+    }
+  }
+
+  output += "\n</Fountain>\n</body>\n</html>\n";
+
+  GString *gstr_output = g_string_new(output.c_str());
+
+  // Discard
+  g_string_replace(gstr_output, "<BlankLine>", "", 0);
+  g_string_replace(gstr_output, "</BlankLine>", "", 0);
+  g_string_replace(gstr_output, "<Continuation>", "", 0);
+  g_string_replace(gstr_output, "</Continuation>", "", 0);
+
+  // Cleanup
+  g_string_replace(gstr_output, "\n\n", "\n", 0);
+  g_string_replace(gstr_output, "\n\n", "\n", 0);
 
   return g_string_free(gstr_output, false);
 }

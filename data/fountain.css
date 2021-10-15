@@ -202,6 +202,24 @@ SceneHeader {
 	text-transform: uppercase;
 	font-weight: bold;
 }
+
+SceneNumL {
+	display: block;
+	float: left;
+	margin-left: -4.25em; /* 4 char */
+	font-weight: inherit;
+	color: #707070;
+	user-select: none;
+}
+SceneNumR {
+	display: block;
+	float: right;
+	margin-right: 0.65em; /* 1 char */
+	font-weight: inherit;
+	color: #707070;
+	user-select: none;
+}
+
 PageBreak {
 	break-before: always;
 }
@@ -212,53 +230,43 @@ center {
 	text-align: center;
 }
 
-h1:before, h2:before, h3:before, h4:before, h5:before {
+SectionH1:before, SectionH2:before, SectionH3:before, SectionH4:before, SectionH5:before, SectionH6:before {
 	content: "◦ ";
 	margin-left: -0.667em;
 }
-h1, h2, h3, h4, h5 {
-	font-family: "Gill Sans", "Helvetiva Neue", Helvetica, sans-serif;
+SectionH1, SectionH2, SectionH3, SectionH4, SectionH5, SectionH6 {
+	font-family: sans-serif;
 	font-size: 0.85em;
 	font-weight: normal;
 	padding-top: 0.25em;
 	margin-top: 1.5em;
 	color: rgb(110, 110, 110);
 	border-top: dotted 1px rgb(199, 199, 199);
+	display: block;
 }
-.h1-synopsis, .h2-synopsis, .h3-synopsis, .h4-synopsis, .h5-synopsis, .h6-synopsis {
-	font-family: "Gill Sans", "Helvetiva Neue", Helvetica, sans-serif;
+SynopsisH1, SynopsisH2, SynopsisH3, SynopsisH4, SynopsisH5, SynopsisH6 {
+	font-family: sans-serif;
 	font-size: 0.741em;
 	font-style: italic;
+	margin-top: 0.5em;
 	color: rgb(145, 145, 145);
 	display: block;
 }
-h1, .h1-synopsis {
-	margin-left: -13.33%;
-}
-h2, .h2-synopsis {
+SectionH1, SynopsisH1 {
 	margin-left: -10%;
 }
-h3, .h3-synopsis {
-	margin-left: -6.67%;
+SectionH2, SynopsisH2 {
+	margin-left: -8%;
 }
-h4, .h4-synopsis {
-	margin-left: -3.33%;
+SectionH3, SynopsisH3 {
+	margin-left: -6%;
 }
-h5, .h5-synopsis {
-	margin-left: 0;
+SectionH4, SynopsisH4 {
+	margin-left: -4%;
 }
-
-span.scnuml {
-	display: block;
-	float: left;
-	margin-left: -4.25em; /* 4 char */
-	font-weight: inherit;
-	user-select: none;
+SectionH5, SynopsisH5 {
+	margin-left: -2%;
 }
-span.scnumr {
-	display: block;
-	float: right;
-	margin-right: 0.65em; /* 1 char */
-	font-weight: inherit;
-	user-select: none;
+SectionH6, SynopsisH6 {
+	margin-left: 0%;
 }
