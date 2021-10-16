@@ -59,7 +59,8 @@ static void on_process_exited(GPid pid, int status, FmtProcess *proc) {
   proc->return_code = status;
 }
 
-FmtProcess *fmt_process_open(const char *work_dir, const char *const *argv) {
+FmtProcess *fmt_process_open(char const *const work_dir,
+                             char const *const *const argv) {
   FmtProcess *proc;
   GError *error = nullptr;
   int fd_in = -1, fd_out = -1;
@@ -109,7 +110,7 @@ int fmt_process_close(FmtProcess *proc) {
   return ret_code;
 }
 
-bool fmt_process_run(FmtProcess *proc, const char *str_in, size_t in_len,
+bool fmt_process_run(FmtProcess *proc, char const *const str_in, size_t in_len,
                      GString *str_out) {
   GIOStatus status;
   GError *error = nullptr;

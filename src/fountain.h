@@ -23,51 +23,57 @@
 #include <string>
 #include <vector>
 
-enum class ScriptNodeType {
-  ftnUnknown,
-  ftnKeyValue,
-  ftnPageBreak,
-  ftnBlankLine,
-  ftnContinuation,
-  ftnSceneHeader,
-  ftnAction,
-  ftnTransition,
-  ftnDialog,
-  ftnDialogLeft,
-  ftnDialogRight,
-  ftnCharacter,
-  ftnParenthetical,
-  ftnSpeech,
-  ftnNotation,
-  ftnLyric,
-  ftnSection,
-  ftnSynopsis,
+// used as bitmask to exclude types for to_string output
+enum ScriptNodeType : size_t {
+  ftnNone = 0,
+  ftnUnknown = 1ull,
+  ftnKeyValue = 1ull << 1,
+  ftnContinuation = 1ull << 2,
+  ftnPageBreak = 1ull << 3,
+  ftnBlankLine = 1ull << 4,
+  ftnSceneHeader = 1ull << 5,
+  ftnAction = 1ull << 6,
+  ftnTransition = 1ull << 7,
+  ftnDialog = 1ull << 8,
+  ftnDialogLeft = 1ull << 9,
+  ftnDialogRight = 1ull << 10,
+  ftnCharacter = 1ull << 11,
+  ftnParenthetical = 1ull << 12,
+  ftnSpeech = 1ull << 13,
+  ftnNotation = 1ull << 14,
+  ftnLyric = 1ull << 15,
+  ftnSection = 1ull << 16,
+  ftnSynopsis = 1ull << 17,
 };
 
 class ScriptNode {
  public:
+  std::string to_string(size_t const &flags = ScriptNodeType::ftnNone) const;
+
+ public:
   ScriptNodeType type = ScriptNodeType::ftnUnknown;
   std::string key;
   std::string value;
-  std::string to_string() const;
 };
 
 class Script {
  public:
   Script() {}
 
-  void parseFountain(const std::string &fountainFile);
+  void parseFountain(std::string const &fountainFile);
+  std::string to_string(size_t const &flags = ScriptNodeType::ftnNone) const;
 
   std::vector<ScriptNode> nodes;
 
  private:
   ScriptNode curr_node;
 
-  std::string parseNodeText(const std::string &input);
+  std::string parseNodeText(std::string const &input);
 
-  void new_node(ScriptNodeType type, const std::string &value) {
+  void new_node(ScriptNodeType const &type, std::string const &key = "",
+                std::string const &value = "") {
     end_node();
-    curr_node = {type, value, ""};
+    curr_node = {type, key, value};
   }
   void end_node() {
     if (curr_node.type != ScriptNodeType::ftnUnknown) {
@@ -79,7 +85,7 @@ class Script {
       curr_node.value = "";
     }
   }
-  void append_text(const std::string &s) {
+  void append(std::string const &s) {
     if (curr_node.value.size()) {
       curr_node.value += '\n';
     }
@@ -87,9 +93,7 @@ class Script {
   }
 };
 
-char *ftn2str(const char *input);
+char *ftn2fdx(char *const input);
 
-char *ftn2fdx(const char *input);
-char *ftn2html(const char *input, const char *css_fn);
-
-char *ftn2html2(const char *input, const char *css_fn);
+char *ftn2html(char *const input, char *const css_fn);
+char *ftn2html2(char *const input, char *const css_fn);

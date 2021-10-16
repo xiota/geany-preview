@@ -34,14 +34,14 @@ enum PandocOptions {
   PANDOC_TOC = 2
 };
 
-char *find_css(const char *css);
-char *find_copy_css(const char *css, const char *src);
+char *find_css(char const *css);
+char *find_copy_css(char const *css, char const *src);
 
 // wrappers around command line programs
-GString *pandoc(const char *work_dir, const char *input, const char *in_format);
-GString *asciidoctor(const char *work_dir, const char *input);
-GString *screenplain(const char *work_dir, const char *input,
-                     const char *out_format);
+GString *pandoc(char const *work_dir, char const *input, char const *in_format);
+GString *asciidoctor(char const *work_dir, char const *input);
+GString *screenplain(char const *work_dir, char const *input,
+                     char const *out_format);
 
 G_END_DECLS
 

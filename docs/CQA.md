@@ -27,11 +27,9 @@ The Preview plugin uses external programs to process other document types.
   + Txt2Tags
   + DokuWiki, MediaWiki, Tiki Wiki, TWiki
 
-* [Screenplain](https://github.com/vilcans/screenplain) is used to process screenplays written in [Fountain](https://www.fountain.io/).
-
 > Some Markdown editors autosave the document as it is edited.  Can the Preview plugin do that?
 
-Auto saving documents is outside the scope of this plugin.  However, there is another plugin that may do what you want: *Save Actions*
+Auto saving documents is outside the scope of this plugin.  However, there is another plugin, which is included with Geany, that may do what you want: *Save Actions*
 
 > Is it possible to hide/show the sidebar based on document type, rather than display a message that the document is not supported?
 
@@ -39,15 +37,15 @@ Altering the sidebar's general behavior is outside the scope of this plugin.  Ho
 
 > Is it possible to change the appearance of the sidebar tabs so that it is visibly recognizable when they have focus?
 
-Altering the sidebar's general behavior is outside the scope of this plugin.  However, there is another plugin with this capability.  It is currently being tested and has not been uploaded yet.  Iwill add more information when available.
+Altering the sidebar's general behavior is outside the scope of this plugin.  However, I have added this capability to another plugin: xi-tweaks.  It may be installed from the PPA.
 
 ## Configuration
 
 > Are there any configuration options?
 
-There is a configuration file `preview.conf` that can be edited.  It is located at `~/.config/geany/plugins/preview/`.  The options are documented the config file itself.
+There is a configuration file `preview.conf` that can be edited.  It is located at `~/.config/geany/plugins/preview/`.  The options are documented within the config file itself.
 
-For convenience, there are buttons to access the file and config folder.  They may be reached from the Geany menu: *Edit/Plugin Preferences/Preview* or *Tools/Preview*.
+For convenience, the config file and folder may be reached from the Geany menu: *Edit/Plugin Preferences/Preview* or *Tools/Preview*.
 
 ![convenience buttons](geany-plugin-preferences.png)
 
@@ -62,13 +60,13 @@ You can edit `css` files in the configuration folder.  Create the files if they 
 * `pandoc-rst.css`
 * `pandoc-t2t.css`
 * `pandoc-textile.css`
-* `screenplain.css`
+* `preview-headers.css`
 
 W3Schools has a [CSS Tutorial](https://www.w3schools.com/css/) that you may find helpful.
 
 > Is there a dark theme?
 
-The default `css` files attempt to detect when the desktop environment is set to a dark theme.  If detection fails, or you need to customize the appearance further, you can change the `extra_css` option in the config file.
+The default `css` files use rules that attempt to detect when the desktop environment is set to a dark theme.  If detection fails, or you need to customize the appearance further, you can change the `extra_css` option in the config file.
 ```
 extra_css=dark.css
 ```
@@ -87,18 +85,18 @@ For long documents, there is a snippets mode that shows a preview for only a sma
 
 > How do I install the Preview plugin?
 
-The Preview plugin for Geany can be installed on Ubuntu 21.04 and 21.10 via PPA.
+The Preview plugin for Geany can be installed on Ubuntu from PPA.  The files *may* work with other Debian-based distributions.
 ```
 sudo add-apt-repository ppa:xiota/geany-plugins
 sudo apt-get update
 sudo apt-get install geany-plugin-preview
 ```
 
-The plugin can then be enabled in the Plugin Manager (*Tools/Plugin Manager*).  Since this plugin adds a pane to the sidebar, the sidebar must also be shown (*View/Show Sidebar*).
+The plugin can then be enabled in the Plugin Manager (*Tools/Plugin Manager*).  Since this plugin uses the sidebar, the sidebar must also be shown (*View/Show Sidebar*).
 
 > How do I build from source?
 
-Those interested may try [Building on Linux](Building_on_Linux.md).  Unfortunately, this plugin does not currently work on Windows because WebKit2GTK is not available.  I also do not have a Mac to test.
+Those interested may try [Building on Linux](Building_on_Linux.md).  Unfortunately, this plugin does not currently work on Windows because WebKit2GTK is not available.  Also, the plugin has not been tested on Mac.
 
 ## Problems
 
@@ -118,4 +116,4 @@ The preview plugin uses several `css` files.  You probably have a mix of old and
 
 > Why does the plugin sometimes say "Unable to process type" or display files with strange formatting?
 
-To improve performance, updates are disabled when the preview is not visible or the document is not actively being edited.  This sometimes results in glitches that go away when editing is resumed.  Recent changes have been made to significantly reduce how often this happens.
+To improve performance, updates are disabled when the preview is not visible or the document is not actively being edited.  This sometimes results in glitches that go away when editing is resumed.  Recent changes have been made to the plugin to reduce how often this happens.

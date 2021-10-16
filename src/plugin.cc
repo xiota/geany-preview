@@ -338,8 +338,8 @@ static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog) {
 }
 
 // from markdown plugin
-static gchar *replace_extension(const gchar *utf8_fn, const gchar *new_ext) {
-  gchar *fn_noext, *new_fn, *dot;
+static char *replace_extension(char const *utf8_fn, char const *new_ext) {
+  char *fn_noext, *new_fn, *dot;
   fn_noext = g_filename_from_utf8(utf8_fn, -1, nullptr, nullptr, nullptr);
   dot = strrchr(fn_noext, '.');
   if (dot != nullptr) {
@@ -353,7 +353,7 @@ static gchar *replace_extension(const gchar *utf8_fn, const gchar *new_ext) {
 // from markdown plugin
 static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
   GtkFileFilter *filter;
-  gchar *fn;
+  char *fn;
   gboolean saved = false;
 
   GeanyDocument *doc = document_get_current();
@@ -374,9 +374,9 @@ static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
   } else {
     // If the file doesn't exist, change the directory and give a
     // suggested name for the file, since GtkFileChooser won't do it.
-    gchar *dn = g_path_get_dirname(fn);
-    gchar *bn = g_path_get_basename(fn);
-    gchar *utf8_name;
+    char *dn = g_path_get_dirname(fn);
+    char *bn = g_path_get_basename(fn);
+    char *utf8_name;
     gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog), dn);
     GFREE(dn);
     utf8_name = g_filename_to_utf8(bn, -1, nullptr, nullptr, nullptr);
@@ -399,7 +399,7 @@ static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
 
   while (!saved &&
          gtk_dialog_run(GTK_DIALOG(save_dialog)) == GTK_RESPONSE_ACCEPT) {
-    gchar *html = update_preview(true);
+    char *html = update_preview(true);
     GError *error = nullptr;
     fn = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(save_dialog));
     if (!g_file_set_contents(fn, html, -1, &error)) {
@@ -596,7 +596,7 @@ static gboolean update_timeout_callback(gpointer user_data) {
   return false;
 }
 
-static char *update_preview(const gboolean get_contents) {
+static char *update_preview(gboolean const get_contents) {
   char *contents = nullptr;
 
   GeanyDocument *doc = document_get_current();
@@ -705,7 +705,7 @@ static char *update_preview(const gboolean get_contents) {
       // fountain handles its own headers
       body = g_string_new(text);
     } else {
-      gchar **texts = g_strsplit(text, "\n", -1);
+      char **texts = g_strsplit(text, "\n", -1);
       gboolean state_head = true;
       int i = 0;
       while (texts[i] != nullptr) {
@@ -897,7 +897,7 @@ static char *update_preview(const gboolean get_contents) {
   return contents;
 }
 
-static PreviewFileType get_filetype(const char *fn) {
+static PreviewFileType get_filetype(char const *fn) {
   if (!fn) {
     return PREVIEW_FILETYPE_NONE;
   }

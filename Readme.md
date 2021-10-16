@@ -9,7 +9,7 @@ Supported document types include AsciiDoc, DocBook, Fountain, HTML, LaTeX, Markd
 ## Features
 
 * The preview is updated as the document is edited
-* HTML and Markdown are supported directly
+* HTML, Markdown, and Fountain are supported directly
 * Other document formats can be processed with auxiliary programs
 * The preview of large documents can be limited to the area being edited
 * Rendering of each format can customized with stylesheets
@@ -17,13 +17,13 @@ Supported document types include AsciiDoc, DocBook, Fountain, HTML, LaTeX, Markd
 
 ## Usage
 
-The preview is active by default for documents with supported file types.  To display formats other than HTML or Markdown, auxiliary programs are needed.  If they are unavailable, no preview will be displayed for their respective formats.
+The preview is active by default for documents with supported file types.  To display formats other than HTML, Markdown, or Fountain, auxiliary programs are needed.  If they are unavailable, no preview will be displayed for their respective formats.
 
 More about usage and configuration is available at [Certain Queries Answered](docs/CQA.md).
 
 ## Installation
 
-The Preview plugin for Geany can be installed on Ubuntu via PPA.
+The Preview plugin for Geany can be installed on Ubuntu from PPA.  The files *may* work with other Debian-based distributions.
 ```
 sudo add-apt-repository ppa:xiota/geany-plugins
 sudo apt-get update
@@ -32,7 +32,7 @@ sudo apt-get install geany-plugin-preview
 
 The plugin can then be enabled in the Plugin Manager (*Tools/Plugin Manager*).  Since this plugin adds a pane to the sidebar, the sidebar must also be shown (*View/Show Sidebar*).
 
-Those interested may try [Building on Linux](docs/Building_on_Linux.md).  Unfortunately, this plugin does not currently work on Windows because WebKit2GTK is not available.  I also do not have a Mac to test.
+Those interested may try [Building on Linux](docs/Building_on_Linux.md).  Unfortunately, this plugin does not currently work on Windows because WebKit2GTK is not available.  Also, the plugin has not been tested on Mac.
 
 ## Requirements
 
@@ -47,8 +47,9 @@ Optional auxiliary programs may also be used to process additional formats:
 
 * [Asciidoctor](https://asciidoctor.org/)
 * [Pandoc](https://pandoc.org/)
-* [Screenplain](https://github.com/vilcans/screenplain)
 
 ## License
 
-The Preview plugin for Geany is licensed under the [GPLv2](COPYING) or later.  It uses code from the [Code Format](https://github.com/codebrainz/code-format/) and [Markdown](https://plugins.geany.org/markdown.html) plugins written by [Michael Brush](https://github.com/codebrainz).
+The Preview plugin for Geany is licensed under the [GPLv2](COPYING) or later.
+
+Some code is taken from the [Code Format](https://github.com/codebrainz/code-format/) and [Markdown](https://plugins.geany.org/markdown.html) plugins written by [Michael Brush](https://github.com/codebrainz).

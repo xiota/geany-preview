@@ -21,10 +21,162 @@
 #include <glib-2.0/glib.h>
 #include <string.h>
 
+#include <regex>
+
 #include "auxiliary.h"
 #include "fountain.h"
 
-bool isForced(const std::string &input) {
+std::string ScriptNode::to_string(size_t const &flags) const {
+  static int dialog_state = 0;
+  std::string output;
+
+  switch (type) {
+    case ScriptNodeType::ftnKeyValue:
+      if (flags & type) {
+        break;
+      }
+      output += "<meta>\n<key>" + key + "</key>\n<value>" + value +
+                "</value>\n</meta>";
+      break;
+    case ScriptNodeType::ftnPageBreak:
+      if (flags & type) {
+        break;
+      }
+      if (dialog_state) {
+        dialog_state == 1   ? output += "</Dialog>\n"
+        : dialog_state == 2 ? output += "</DialogLeft>\n"
+                            : output += "</DialogRight>\n</DualDialog>\n";
+        dialog_state = 0;
+      }
+      output += "<PageBreak></PageBreak>";
+      break;
+    case ScriptNodeType::ftnBlankLine:
+      if (flags & type) {
+        break;
+      }
+      if (dialog_state) {
+        dialog_state == 1   ? output += "</Dialog>\n"
+        : dialog_state == 2 ? output += "</DialogLeft>\n"
+                            : output += "</DialogRight>\n</DualDialog>\n";
+        dialog_state = 0;
+      }
+      output += "<BlankLine></BlankLine>";
+      break;
+    case ScriptNodeType::ftnContinuation:
+      if (flags & type) {
+        break;
+      }
+      output += "<Continuation>" + value + "</Continuation>";
+      break;
+    case ScriptNodeType::ftnSceneHeader:
+      if (flags & type) {
+        break;
+      }
+      if (!key.empty()) {
+        output += "<SceneHeader><SceneNumL>" + key + "</SceneNumL>" + value +
+                  +"<SceneNumR>" + key + "</SceneNumR></SceneHeader>";
+      } else {
+        output += "<SceneHeader>" + value + "</SceneHeader>";
+      }
+      break;
+    case ScriptNodeType::ftnAction:
+      if (flags & type) {
+        break;
+      }
+      output += "<Action>" + value + "</Action>";
+      break;
+    case ScriptNodeType::ftnTransition:
+      if (flags & type) {
+        break;
+      }
+      output += "<Transition>" + value + "</Transition>";
+      break;
+    case ScriptNodeType::ftnDialog:
+      if (flags & type) {
+        break;
+      }
+      dialog_state = 1;
+      output += "<Dialog>" + key;
+      break;
+    case ScriptNodeType::ftnDialogLeft:
+      if (flags & type) {
+        break;
+      }
+      dialog_state = 2;
+      output += "<DualDialog>\n<DialogLeft>" + value;
+      break;
+    case ScriptNodeType::ftnDialogRight:
+      if (flags & type) {
+        break;
+      }
+      dialog_state = 3;
+      output += "<DialogRight>" + value;
+      break;
+    case ScriptNodeType::ftnCharacter:
+      if (flags & type) {
+        break;
+      }
+      output += "<Character>" + value + "</Character>";
+      break;
+    case ScriptNodeType::ftnParenthetical:
+      if (flags & type) {
+        break;
+      }
+      output += "<Parenthetical>" + value + "</Parenthetical>";
+      break;
+    case ScriptNodeType::ftnSpeech:
+      if (flags & type) {
+        break;
+      }
+      output += "<Speech>" + value + "</Speech>";
+      break;
+    case ScriptNodeType::ftnNotation:
+      if (flags & type) {
+        break;
+      }
+      output += "<Note>" + value + "</Note>";
+      break;
+    case ScriptNodeType::ftnLyric:
+      if (flags & type) {
+        break;
+      }
+      output += "<Lyric>" + value + "</Lyric>";
+      break;
+    case ScriptNodeType::ftnSection:
+      if (flags & type) {
+        break;
+      }
+      output += "<SectionH" + key + ">" + value + "</SectionH" + key + ">";
+      break;
+    case ScriptNodeType::ftnSynopsis:
+      if (flags & type) {
+        break;
+      }
+      output += "<SynopsisH" + key + ">" + value + "</SynopsisH" + key + ">";
+      break;
+    case ScriptNodeType::ftnUnknown:
+    default:
+      if (flags & type) {
+        break;
+      }
+      output += "<Unknown>" + value + "</Unknown>";
+      break;
+  }
+  return output;
+}
+
+std::string Script::to_string(size_t const &flags) const {
+  std::string output("<Fountain>\n");
+
+  for (auto node : nodes) {
+    output += node.to_string(flags) + "\n";
+  }
+
+  output += "\n</Fountain>";
+  return output;
+}
+
+bool isForced(std::string const &input) {
   if (input.length() < 1) {
     return false;
   }
@@ -46,7 +198,7 @@ bool isForced(const std::string &input) {
   return false;
 }
 
-bool isTransition(const std::string &input) {
+bool isTransition(std::string const &input) {
   if (!input.length()) {
     return false;
   }
@@ -98,7 +250,7 @@ bool isTransition(const std::string &input) {
   return false;
 }
 
-std::string parseTransition(const std::string &input) {
+std::string parseTransition(std::string const &input) {
   std::string r = ws_trim(input);
   if (r[0] == '>') {
     r = r.substr(1);
@@ -107,8 +259,8 @@ std::string parseTransition(const std::string &input) {
   return to_upper(ws_ltrim(r));
 }
 
-bool isSceneHeader(const std::string &input) {
-  std::string s = to_upper(ws_ltrim(input));
+bool isSceneHeader(std::string const &input) {
+  const std::string s = ws_ltrim(input);
 
   if (s.length() < 2) {
     return false;
@@ -122,21 +274,22 @@ bool isSceneHeader(const std::string &input) {
     return false;
   }
 
-  static GRegex *re_scene_header = nullptr;
-  if (!re_scene_header) {
-    re_scene_header =
-        g_regex_new("^(INT|EXT|EST|INT\\./EXT|INT/EXT|EXT/INT|I/E)[\\.\\ ]",
-                    G_REGEX_CASELESS, GRegexMatchFlags(0), nullptr);
-  }
+  try {
+    static const std::regex re_scene_header(
+        R"(^(INT|EXT|EST|INT\.?/EXT|EXT\.?/INT|I/E)[\.\ ])",
+        std::regex_constants::icase);
 
-  if (g_regex_match(re_scene_header, s.c_str(), GRegexMatchFlags(0), nullptr)) {
-    return true;
+    if (std::regex_search(input, re_scene_header)) {
+      return true;
+    }
+  } catch (std::regex_error &e) {
+    printf("regex error in isSceneHeader\n");
+    print_regex_error(e);
   }
-
   return false;
 }
 
-std::pair<std::string, std::string> parseSceneHeader(const std::string &input) {
+std::pair<std::string, std::string> parseSceneHeader(std::string const &input) {
   std::string first;
   std::string second;
 
@@ -156,7 +309,7 @@ std::pair<std::string, std::string> parseSceneHeader(const std::string &input) {
   }
 }
 
-bool isCenter(const std::string &input) {
+bool isCenter(std::string const &input) {
   if (input.length() < 2) {
     return false;
   }
@@ -172,7 +325,7 @@ bool isCenter(const std::string &input) {
   return false;
 }
 
-bool isNotation(const std::string &input) {
+bool isNotation(std::string const &input) {
   if (input.length() < 4) {
     return false;
   }
@@ -188,7 +341,7 @@ bool isNotation(const std::string &input) {
   return false;
 }
 
-bool isCharacter(const std::string &input) {
+bool isCharacter(std::string const &input) {
   if (!input.length()) {
     return false;
   }
@@ -219,7 +372,7 @@ bool isCharacter(const std::string &input) {
   return false;
 }
 
-std::string parseCharacter(const std::string &input) {
+std::string parseCharacter(std::string const &input) {
   std::string r = ws_ltrim(input);
   if (r[0] == '>') {
     r = ws_ltrim(r.substr(1));
@@ -230,7 +383,7 @@ std::string parseCharacter(const std::string &input) {
   return to_upper(r);
 }
 
-bool isDualDialog(const std::string &input) {
+bool isDualDialog(std::string const &input) {
   size_t len = input.length();
 
   if (len > 0 && input[len - 1] == '^') {
@@ -240,7 +393,7 @@ bool isDualDialog(const std::string &input) {
   return false;
 }
 
-bool isParenthetical(const std::string &input) {
+bool isParenthetical(std::string const &input) {
   if (!input.length()) {
     return false;
   }
@@ -256,22 +409,21 @@ bool isParenthetical(const std::string &input) {
   return false;
 }
 
-bool isContinuation(const std::string &input) {
-  static GRegex *re_whitespace = nullptr;
-  if (!re_whitespace) {
-    re_whitespace =
-        g_regex_new("^\\s+$", G_REGEX_CASELESS, GRegexMatchFlags(0), nullptr);
-  }
+bool isContinuation(std::string const &input) {
+  try {
+    static const std::regex re_continuation(R"(^\s*[\s\.]\s*$)");
 
-  if (g_regex_match(re_whitespace, input.c_str(), GRegexMatchFlags(0),
-                    nullptr)) {
-    return true;
+    if (std::regex_search(input, re_continuation)) {
+      return true;
+    }
+  } catch (std::regex_error &e) {
+    printf("regex error in isContinuation\n");
+    print_regex_error(e);
   }
-
   return false;
 }
 
-auto parseKeyValue(const std::string &input) {
+auto parseKeyValue(std::string const &input) {
   std::string s = ws_trim(input);
   std::string key;
   std::string value;
@@ -286,157 +438,32 @@ auto parseKeyValue(const std::string &input) {
   return std::make_pair(key, ws_ltrim(value));
 }
 
-std::string Script::parseNodeText(const std::string &input) {
-  static GRegex *re_underline = nullptr;
-  static GRegex *re_bolditalic = nullptr;
-  static GRegex *re_bold = nullptr;
-  static GRegex *re_italic = nullptr;
-  static GRegex *re_note_1 = nullptr;
-  static GRegex *re_note_2 = nullptr;
-  if (!re_bolditalic) {
-    re_bolditalic = g_regex_new("\\*{3}([^*]+?)\\*{3}", G_REGEX_CASELESS,
-                                GRegexMatchFlags(0), nullptr);
+std::string Script::parseNodeText(std::string const &input) {
+  try {
+    static const std::regex re_bolditalic(R"(\*{3}([^*]+?)\*{3})");
+    static const std::regex re_bold(R"(\*{2}([^*]+?)\*{2})");
+    static const std::regex re_italic(R"(\*{1}([^*]+?)\*{1})");
+    static const std::regex re_underline(R"(_([^_\n]+)_)");
+    static const std::regex re_note_1(R"(\[{2}([\S\s]*?)\]{2})");
+    static const std::regex re_note_2(R"(\[{2}([\S\s]*?)$)");
 
-    re_bold = g_regex_new("\\*{2}([^*]+?)\\*{2}", G_REGEX_CASELESS,
-                          GRegexMatchFlags(0), nullptr);
+    std::string output =
+        std::regex_replace(input, re_bolditalic, "<b><i>$1</i></b>");
+    output = std::regex_replace(output, re_bold, "<b>$1</b>");
+    output = std::regex_replace(output, re_italic, "<i>$1</i>");
+    output = std::regex_replace(output, re_underline, "<u>$1</u>");
+    output = std::regex_replace(output, re_note_1, "<note>$1</note>");
+    output = std::regex_replace(output, re_note_2, "<note>$1</note>");
 
-    re_italic = g_regex_new("\\*{1}([^*]+?)\\*{1}", G_REGEX_CASELESS,
-                            GRegexMatchFlags(0), nullptr);
-
-    re_underline = g_regex_new("\\_{1}([^_]+)\\_{1}", G_REGEX_CASELESS,
-                               GRegexMatchFlags(0), nullptr);
-
-    re_note_1 = g_regex_new("(?s)\\[{2}(.*?)\\]{2}", G_REGEX_CASELESS,
-                            GRegexMatchFlags(0), nullptr);
-
-    re_note_2 = g_regex_new("(?s)\\[{2}(.*?)$", G_REGEX_CASELESS,
-                            GRegexMatchFlags(0), nullptr);
+    return output;
+  } catch (std::regex_error &e) {
+    printf("regex error in parseNodeText\n");
+    print_regex_error(e);
+    return input;
   }
-  gchar *tmp_str_1 = nullptr;
-  gchar *tmp_str_2 = nullptr;
-
-  if (input.find("*") != std::string::npos) {
-    tmp_str_1 =
-        g_regex_replace(re_bolditalic, input.c_str(), -1, 0,
-                        "<b><i>\\1</i></b>", GRegexMatchFlags(0), nullptr);
-    tmp_str_2 = g_regex_replace(re_bold, tmp_str_1, -1, 0, "<b>\\1</b>",
-                                GRegexMatchFlags(0), nullptr);
-    g_free(tmp_str_1);
-    tmp_str_1 = g_regex_replace(re_italic, tmp_str_2, -1, 0, "<i>\\1</i>",
-                                GRegexMatchFlags(0), nullptr);
-    g_free(tmp_str_2);
-  } else {
-    tmp_str_1 = g_strdup(input.c_str());
-  }
-
-  if (input.find("[[") != std::string::npos) {
-    tmp_str_2 = g_regex_replace(re_note_1, tmp_str_1, -1, 0, "<note>\\1</note>",
-                                GRegexMatchFlags(0), nullptr);
-    g_free(tmp_str_1);
-    tmp_str_1 = g_regex_replace(re_note_2, tmp_str_2, -1, 0, "<note>\\1</note>",
-                                GRegexMatchFlags(0), nullptr);
-    g_free(tmp_str_2);
-  }
-
-  if (input.find("_") != std::string::npos) {
-    tmp_str_2 = g_regex_replace(re_underline, tmp_str_1, -1, 0, "<u>\\1</u>",
-                                GRegexMatchFlags(0), nullptr);
-    g_free(tmp_str_1);
-    tmp_str_1 = tmp_str_2;
-  }
-
-  std::string output(tmp_str_1);
-  g_free(tmp_str_1);
-
-  return output;
 }
 
-std::string ScriptNode::to_string() const {
-  static int dialog_state = 0;
-  std::string output;
-
-  switch (type) {
-    case ScriptNodeType::ftnKeyValue:
-      output += "<meta>\n<key>" + key + "</key>\n<value>" + value +
-                "</value>\n</meta>";
-      break;
-    case ScriptNodeType::ftnPageBreak:
-      if (dialog_state) {
-        dialog_state == 1   ? output += "</Dialog>\n"
-        : dialog_state == 2 ? output += "</DialogLeft>\n"
-                            : output += "</DialogRight>\n</DualDialog>\n";
-        dialog_state = 0;
-      }
-      output += "<PageBreak></PageBreak>";
-      break;
-    case ScriptNodeType::ftnBlankLine:
-      if (dialog_state) {
-        dialog_state == 1   ? output += "</Dialog>\n"
-        : dialog_state == 2 ? output += "</DialogLeft>\n"
-                            : output += "</DialogRight>\n</DualDialog>\n";
-        dialog_state = 0;
-      }
-      output += "<BlankLine></BlankLine>";
-      break;
-    case ScriptNodeType::ftnContinuation:
-      output += "<Continuation>" + value + "</Continuation>";
-      break;
-    case ScriptNodeType::ftnSceneHeader:
-      if (!key.empty()) {
-        output += "<SceneHeader><SceneNumL>" + key + "</SceneNumL>" + value +
-                  +"<SceneNumR>" + key + "</SceneNumR></SceneHeader>";
-      } else {
-        output += "<SceneHeader>" + value + "</SceneHeader>";
-      }
-      break;
-    case ScriptNodeType::ftnAction:
-      output += "<Action>" + value + "</Action>";
-      break;
-    case ScriptNodeType::ftnTransition:
-      output += "<Transition>" + value + "</Transition>";
-      break;
-    case ScriptNodeType::ftnDialog:
-      dialog_state = 1;
-      output += "<Dialog>" + key;
-      break;
-    case ScriptNodeType::ftnDialogLeft:
-      dialog_state = 2;
-      output += "<DualDialog>\n<DialogLeft>" + value;
-      break;
-    case ScriptNodeType::ftnDialogRight:
-      dialog_state = 3;
-      output += "<DialogRight>" + value;
-      break;
-    case ScriptNodeType::ftnCharacter:
-      output += "<Character>" + value + "</Character>";
-      break;
-    case ScriptNodeType::ftnParenthetical:
-      output += "<Parenthetical>" + value + "</Parenthetical>";
-      break;
-    case ScriptNodeType::ftnSpeech:
-      output += "<Speech>" + value + "</Speech>";
-      break;
-    case ScriptNodeType::ftnNotation:
-      output += "<Note>" + value + "</Note>";
-      break;
-    case ScriptNodeType::ftnLyric:
-      output += "<Lyric>" + value + "</Lyric>";
-      break;
-    case ScriptNodeType::ftnSection:
-      output += "<SectionH" + key + ">" + value + "</SectionH" + key + ">";
-      break;
-    case ScriptNodeType::ftnSynopsis:
-      output += "<SynopsisH" + key + ">" + value + "</SynopsisH" + key + ">";
-      break;
-    case ScriptNodeType::ftnUnknown:
-    default:
-      output += "<Unknown>" + value + "</Unknown>";
-      break;
-  }
-  return output;
-}
-
-void Script::parseFountain(const std::string &text) {
+void Script::parseFountain(std::string const &text) {
   if (!text.length()) {
     return;
   }
@@ -444,35 +471,31 @@ void Script::parseFountain(const std::string &text) {
   std::vector<std::string> lines;
 
   // remove comments
-  {
-    static GRegex *re_comment = nullptr;
-    static GRegex *re_tabs = nullptr;
-    if (!re_comment) {
-      re_comment = g_regex_new("(?s)/\\*.*?\\*/", G_REGEX_MULTILINE,
-                               GRegexMatchFlags(0), nullptr);
-      re_tabs =
-          g_regex_new("\\t", G_REGEX_MULTILINE, GRegexMatchFlags(0), nullptr);
-    }
-    char *cs1 = g_regex_replace_literal(re_comment, text.c_str(), -1, 0, "",
-                                        GRegexMatchFlags(0), nullptr);
-    char *cs2 = g_regex_replace_literal(re_tabs, cs1, -1, 0, "    ",
-                                        GRegexMatchFlags(0), nullptr);
-    std::string s = std::string(cs2);
-    g_free(cs1);
-    g_free(cs2);
+  try {
+    static const std::regex re_comment(R"(/\*[\S\s]*?\*/)");
+    static const std::regex re_tabs(R"(\t)");
+
+    std::string s = std::regex_replace(text, re_comment, "");
+    s = std::regex_replace(s, re_tabs, "    ");
+
     lines = split_lines(s);
+  } catch (std::regex_error &e) {
+    printf("regex error in parseNodeText\n");
+    print_regex_error(e);
   }
 
-  // determine whether to extract header
-  static GRegex *re_has_header = nullptr;
-  if (!re_has_header) {
-    re_has_header = g_regex_new("^[^\\s:]+:\\s.*$", G_REGEX_MULTILINE,
-                                GRegexMatchFlags(0), nullptr);
-  }
+  // determine whether to try to extract header
   bool has_header = false;
-  if (g_regex_match(re_has_header, text.c_str(), GRegexMatchFlags(0),
-                    nullptr)) {
-    has_header = true;
+  try {
+    // check if first line matches header format
+    static const std::regex re_has_header(R"(^[^\s:]+:\s)");
+
+    if (std::regex_search(text, re_has_header)) {
+      has_header = true;
+    }
+  } catch (std::regex_error &e) {
+    printf("regex error in header check\n");
+    print_regex_error(e);
   }
 
   // used for synposis
@@ -486,13 +509,13 @@ void Script::parseFountain(const std::string &text) {
       if (s.find(':') != std::string::npos) {
         auto kv = parseKeyValue(s);
         new_node(ScriptNodeType::ftnKeyValue, kv.first);
-        append_text(kv.second);
+        append(kv.second);
         continue;
       }
       if (line.length() == 0) {
         has_header = false;
       } else {
-        append_text(ws_rtrim(s));
+        append(ws_rtrim(s));
         continue;
       }
     }
@@ -507,7 +530,7 @@ void Script::parseFountain(const std::string &text) {
     // Continuation, line with only whitespace
     if (isContinuation(line)) {
       if (curr_node.type != ScriptNodeType::ftnUnknown) {
-        append_text(line);
+        append(" ");
       } else {
         new_node(ScriptNodeType::ftnContinuation, line);
         end_node();
@@ -518,9 +541,9 @@ void Script::parseFountain(const std::string &text) {
     if (isNotation(s)) {
       if (line[0] == ' ' || line[0] == '\t' || line[line.length() - 1] == ' ' ||
           line[line.length() - 1] == '\t') {
-        append_text(s);
+        append(s);
       } else {
-        append_text(s);
+        append(s);
         new_node(ScriptNodeType::ftnBlankLine, "");
         end_node();
       }
@@ -537,7 +560,7 @@ void Script::parseFountain(const std::string &text) {
     // Transition
     if (curr_node.type == ScriptNodeType::ftnUnknown && isTransition(s)) {
       new_node(ScriptNodeType::ftnTransition, "");
-      append_text(parseTransition(s));
+      append(parseTransition(s));
       end_node();
       continue;
     }
@@ -547,7 +570,7 @@ void Script::parseFountain(const std::string &text) {
       auto scene = parseSceneHeader(s);
 
       new_node(ScriptNodeType::ftnSceneHeader, scene.second);
-      append_text(scene.first);
+      append(scene.first);
       end_node();
       continue;
     }
@@ -571,12 +594,12 @@ void Script::parseFountain(const std::string &text) {
         }
 
         new_node(ScriptNodeType::ftnCharacter, "");
-        append_text(parseCharacter(s));
+        append(parseCharacter(s));
         end_node();
       } else {
         new_node(ScriptNodeType::ftnDialog, "");
         new_node(ScriptNodeType::ftnCharacter, "");
-        append_text(parseCharacter(s));
+        append(parseCharacter(s));
         end_node();
       }
       continue;
@@ -590,7 +613,7 @@ void Script::parseFountain(const std::string &text) {
             ct == ScriptNodeType::ftnCharacter ||
             ct == ScriptNodeType::ftnSpeech) {
           new_node(ScriptNodeType::ftnParenthetical, "");
-          append_text(ws_trim(s));
+          append(ws_trim(s));
           end_node();
           continue;
         }
@@ -599,14 +622,14 @@ void Script::parseFountain(const std::string &text) {
 
     // Speech
     if (curr_node.type == ScriptNodeType::ftnSpeech) {
-      append_text(s);
+      append(s);
       continue;
     } else if (!nodes.empty()) {
       ScriptNodeType ct = nodes.back().type;
       if (ct == ScriptNodeType::ftnParenthetical ||
           ct == ScriptNodeType::ftnCharacter) {
         new_node(ScriptNodeType::ftnSpeech, "");
-        append_text(s);
+        append(s);
         continue;
       }
     }
@@ -617,13 +640,13 @@ void Script::parseFountain(const std::string &text) {
         if (s.length() > i && s[i] == '#') {
           if (i == 5) {
             new_node(ScriptNodeType::ftnSection, std::to_string(i + 1));
-            append_text(s.substr(i + 1));
+            append(s.substr(i + 1));
             currSection = i + 1;
             break;
           }
         } else {
           new_node(ScriptNodeType::ftnSection, std::to_string(i));
-          append_text(s.substr(i));
+          append(s.substr(i));
           currSection = i;
           break;
         }
@@ -636,7 +659,7 @@ void Script::parseFountain(const std::string &text) {
     // Synopsis, can only be forced
     if (s.length() > 1 && s[0] == '=') {
       new_node(ScriptNodeType::ftnSynopsis, std::to_string(currSection));
-      append_text(ws_ltrim(s.substr(1)));
+      append(ws_ltrim(s.substr(1)));
       end_node();
       continue;
     }
@@ -644,7 +667,7 @@ void Script::parseFountain(const std::string &text) {
     // Lyric, can only be forced
     if (s.length() > 1 && s[0] == '~') {
       new_node(ScriptNodeType::ftnLyric, "");
-      append_text(s.substr(1));
+      append(s.substr(1));
       end_node();
       continue;
     }
@@ -653,27 +676,25 @@ void Script::parseFountain(const std::string &text) {
     // Note: Leading whitespace is retained in Action
     if (curr_node.type == ScriptNodeType::ftnAction) {
       if (isCenter(s)) {
-        append_text("<center>" + ws_trim(s.substr(1, s.length() - 2)) +
-                    "</center>");
+        append("<center>" + ws_trim(s.substr(1, s.length() - 2)) + "</center>");
       } else {
-        append_text(line);
+        append(line);
       }
       continue;
     }
     if (isCenter(s)) {
       new_node(ScriptNodeType::ftnAction, "");
-      append_text("<center>" + ws_trim(s.substr(1, s.length() - 2)) +
-                  "</center>");
+      append("<center>" + ws_trim(s.substr(1, s.length() - 2)) + "</center>");
       continue;
     }
     if (s.length() > 1 && s[0] == '!') {
       new_node(ScriptNodeType::ftnAction, "");
-      append_text(s.substr(1));
+      append(s.substr(1));
       continue;
     }
     if (curr_node.type == ScriptNodeType::ftnUnknown) {
       new_node(ScriptNodeType::ftnAction, "");
-      append_text(line);
+      append(line);
       continue;
     }
   }
@@ -681,23 +702,8 @@ void Script::parseFountain(const std::string &text) {
   end_node();
 }
 
-char *ftn2str(const char *input) {
-  std::string output("<Fountain>\n");
-
-  std::string s(input);
-  Script script;
-  script.parseFountain(s);
-
-  for (auto node : script.nodes) {
-    output += node.to_string() + "\n";
-  }
-
-  output += "\n</Fountain>";
-  return strdup(output.c_str());
-}
-
 // semi-compatible with screenplain
-char *ftn2html(const char *input, const char *css_fn) {
+char *ftn2html(char *const input, char *const css_fn) {
   std::string output(
       "<!DOCTYPE html>\n"
       "<html>\n<head>\n");
@@ -778,7 +784,7 @@ char *ftn2html(const char *input, const char *css_fn) {
   return g_string_free(gstr_output, false);
 }
 
-char *ftn2fdx(const char *input) {
+char *ftn2fdx(char *const input) {
   std::string output(
       "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n"
       "<FinalDraft DocumentType=\"Script\" Template=\"No\" Version=\"1\">\n"
@@ -870,7 +876,7 @@ char *ftn2fdx(const char *input) {
   return g_string_free(gstr_output, false);
 }
 
-char *ftn2html2(const char *input, const char *css_fn) {
+char *ftn2html2(char *const input, char *const css_fn) {
   std::string output(
       "<!DOCTYPE html>\n"
       "<html>\n<head>\n");
@@ -891,7 +897,7 @@ char *ftn2html2(const char *input, const char *css_fn) {
 
   for (auto node : script.nodes) {
     if (node.type != ScriptNodeType::ftnContinuation &&
-        node.type != ScriptNodeType::ftnKeyValue &&
+        // node.type != ScriptNodeType::ftnKeyValue &&
         node.type != ScriptNodeType::ftnUnknown) {
       output += node.to_string() + "\n";
     }

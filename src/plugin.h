@@ -1,6 +1,8 @@
 /*
- * plugin.h
+ * Preview Geany Plugin
+ * Copyright 2021 xiota
  *
+ * Code Format, Markdown Geany Plugins
  * Copyright 2013 Matthew <mbrush@codebrainz.ca>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -98,10 +100,10 @@ static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog);
 
 static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog);
 static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog);
-static gchar *replace_extension(const gchar *utf8_fn, const gchar *new_ext);
+static char *replace_extension(char const *utf8_fn, char const *new_ext);
 
 static gboolean update_timeout_callback(gpointer user_data);
-static char *update_preview(const gboolean get_contents);
+static char *update_preview(gboolean const get_contents);
 
 static void on_sidebar_switch_page(GtkNotebook *nb, GtkWidget *page,
                                    guint page_num, gpointer user_data);
@@ -110,7 +112,7 @@ static void on_sidebar_state_flags_changed(GtkWidget *widget,
                                            GtkStateFlags flags,
                                            gpointer user_data);
 
-static PreviewFileType get_filetype(const char *fn);
+static PreviewFileType get_filetype(char const *fn);
 static void set_filetype();
 static void set_snippets();
 static void wv_apply_settings();

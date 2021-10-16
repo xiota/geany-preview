@@ -22,7 +22,7 @@
 #include "prefs.h"
 #include "process.h"
 
-char *find_css(const char *css) {
+char *find_css(char const *css) {
   char *css_fn = g_build_filename(geany_data->app->configdir, "plugins",
                                   "preview", css, nullptr);
   char *css_dn = g_path_get_dirname(css_fn);
@@ -36,7 +36,7 @@ char *find_css(const char *css) {
   }
 }
 
-char *find_copy_css(const char *css, const char *src) {
+char *find_copy_css(char const *css, char const *src) {
   char *css_fn = g_build_filename(geany_data->app->configdir, "plugins",
                                   "preview", css, nullptr);
   char *css_dn = g_path_get_dirname(css_fn);
@@ -60,8 +60,8 @@ char *find_copy_css(const char *css, const char *src) {
   }
 }
 
-GString *pandoc(const char *work_dir, const char *input,
-                const char *from_format) {
+GString *pandoc(char const *work_dir, char const *input,
+                char const *from_format) {
   if (input == nullptr) {
     return nullptr;
   }
@@ -105,7 +105,7 @@ GString *pandoc(const char *work_dir, const char *input,
   g_ptr_array_add(args, nullptr);
 
   FmtProcess *proc =
-      fmt_process_open(work_dir, (const char *const *)args->pdata);
+      fmt_process_open(work_dir, (char const *const *)args->pdata);
 
   if (!proc) {
     // command not found, FmtProcess will print warning
@@ -124,7 +124,7 @@ GString *pandoc(const char *work_dir, const char *input,
   return output;
 }
 
-GString *asciidoctor(const char *work_dir, const char *input) {
+GString *asciidoctor(char const *work_dir, char const *input) {
   if (input == nullptr) {
     return nullptr;
   }
@@ -141,7 +141,7 @@ GString *asciidoctor(const char *work_dir, const char *input) {
   g_ptr_array_add(args, nullptr);  // end of args
 
   FmtProcess *proc =
-      fmt_process_open(work_dir, (const char *const *)args->pdata);
+      fmt_process_open(work_dir, (char const *const *)args->pdata);
 
   if (!proc) {
     // command not found, FmtProcess will print warning
@@ -182,8 +182,8 @@ GString *asciidoctor(const char *work_dir, const char *input) {
   return output;
 }
 
-GString *screenplain(const char *work_dir, const char *input,
-                     const char *to_format) {
+GString *screenplain(char const *work_dir, char const *input,
+                     char const *to_format) {
   if (input == nullptr) {
     return nullptr;
   }
@@ -212,7 +212,7 @@ GString *screenplain(const char *work_dir, const char *input,
 
   // rutn program
   FmtProcess *proc =
-      fmt_process_open(work_dir, (const char *const *)args->pdata);
+      fmt_process_open(work_dir, (char const *const *)args->pdata);
 
   if (!proc) {
     // command not found, FmtProcess will print warning
