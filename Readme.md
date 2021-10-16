@@ -50,6 +50,6 @@ Optional auxiliary programs may also be used to process additional formats:
 
 ## License
 
-The Preview plugin for Geany is licensed under the [GPLv2](COPYING) or later.
+The Preview plugin for Geany is licensed under the [GPLv3](License.md) or later.
 
-Some code is taken from the [Code Format](https://github.com/codebrainz/code-format/) and [Markdown](https://plugins.geany.org/markdown.html) plugins written by [Michael Brush](https://github.com/codebrainz).
+Some code is taken from the [Code Format](https://github.com/codebrainz/code-format/) and [Markdown](https://plugins.geany.org/markdown.html) plugins, which are written by [Michael Brush](https://github.com/codebrainz) and licensed under the GPLv2+.
