@@ -16,13 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "fountain.h"
-
 #include <string.h>
 
 #include <regex>
 
 #include "auxiliary.h"
+#include "fountain.h"
 
 namespace Fountain {
 
@@ -263,7 +262,7 @@ bool isParenthetical(std::string const &input) {
 
 bool isContinuation(std::string const &input) {
   try {
-    static const std::regex re_continuation(R"(^\s*[\s\.]\s*$)");
+    static const std::regex re_continuation(R"(^\s*[\s\.]$)");
 
     if (std::regex_search(input, re_continuation)) {
       return true;
@@ -432,7 +431,7 @@ std::string ScriptNode::to_string(size_t const &flags) const {
 }
 
 std::string Script::to_string(size_t const &flags) const {
-  std::string output("<Fountain>\n");
+  std::string output{"<Fountain>\n"};
 
   for (auto node : nodes) {
     output += node.to_string(flags) + "\n";
@@ -711,12 +710,10 @@ void Script::parseFountain(std::string const &text) {
 // html similar to screenplain html output (can use the same css files)
 std::string ftn2screenplain(std::string const &input,
                             std::string const &css_fn) {
-  std::string output(
-      "<!DOCTYPE html>\n"
-      "<html>\n<head>\n");
+  std::string output{"<!DOCTYPE html>\n<html>\n<head>\n"};
 
   if (!css_fn.empty()) {
-    output += "<link rel=\"stylesheet\" type=\"text/css\" href=\"file://";
+    output += R"(<link rel="stylesheet" type="text/css" href="file://)";
     output += css_fn;
     output += "\">\n";
   }
@@ -735,96 +732,96 @@ std::string ftn2screenplain(std::string const &input,
   output += "\n</div>\n</body>\n</html>\n";
 
   try {
-    static const std::regex re_transition1(R"(<Transition>)");
+    static const std::regex re_transition1("<Transition>");
     output = std::regex_replace(output, re_transition1,
                                 R"(<div class="transition">)");
 
-    static const std::regex re_transition2(R"(</Transition>)");
+    static const std::regex re_transition2("</Transition>");
     output = std::regex_replace(output, re_transition2, "</div>");
 
-    static const std::regex re_sceneheader1(R"(<SceneHeader>)");
+    static const std::regex re_sceneheader1("<SceneHeader>");
     output = std::regex_replace(output, re_sceneheader1,
                                 R"(<h6 class="sceneheader">)");
 
-    static const std::regex re_sceneheader2(R"(</SceneHeader>)");
+    static const std::regex re_sceneheader2("</SceneHeader>");
     output = std::regex_replace(output, re_sceneheader2, "</h6>");
 
-    static const std::regex re_action1(R"(<Action>)");
+    static const std::regex re_action1("<Action>");
     output = std::regex_replace(output, re_action1, R"(<div class="action">)");
 
-    static const std::regex re_action2(R"(</Action>)");
+    static const std::regex re_action2("</Action>");
     output = std::regex_replace(output, re_action2, "</div>");
 
-    static const std::regex re_lyric1(R"(<Lyric>)");
+    static const std::regex re_lyric1("<Lyric>");
     output = std::regex_replace(output, re_lyric1, R"(<div class="lyric">)");
 
-    static const std::regex re_lyric2(R"(</Lyric>)");
+    static const std::regex re_lyric2("</Lyric>");
     output = std::regex_replace(output, re_lyric2, "</div>");
 
-    static const std::regex re_character1(R"(<Character>)");
+    static const std::regex re_character1("<Character>");
     output =
         std::regex_replace(output, re_character1, R"(<p class="character">)");
 
-    static const std::regex re_character2(R"(</Character>)");
+    static const std::regex re_character2("</Character>");
     output = std::regex_replace(output, re_character2, "</p>");
 
-    static const std::regex re_parenthetical1(R"(<Parenthetical>)");
+    static const std::regex re_parenthetical1("<Parenthetical>");
     output = std::regex_replace(output, re_parenthetical1,
                                 R"(<p class="parenthetical">)");
 
-    static const std::regex re_parenthetical2(R"(</Parenthetical>)");
+    static const std::regex re_parenthetical2("</Parenthetical>");
     output = std::regex_replace(output, re_parenthetical2, "</p>");
 
-    static const std::regex re_speech1(R"(<Speech>)");
+    static const std::regex re_speech1("<Speech>");
     output = std::regex_replace(output, re_speech1, R"(<p class="speech">)");
 
-    static const std::regex re_speech2(R"(</Speech>)");
+    static const std::regex re_speech2("</Speech>");
     output = std::regex_replace(output, re_speech2, "</p>");
 
-    static const std::regex re_dialog1(R"(<Dialog>)");
+    static const std::regex re_dialog1("<Dialog>");
     output = std::regex_replace(output, re_dialog1, R"(<div class="dialog">)");
 
-    static const std::regex re_dialog2(R"(</Dialog>)");
+    static const std::regex re_dialog2("</Dialog>");
     output = std::regex_replace(output, re_dialog2, "</div>");
 
-    static const std::regex re_dialogdual1(R"(<DialogDual>)");
+    static const std::regex re_dialogdual1("<DialogDual>");
     output =
         std::regex_replace(output, re_dialogdual1, R"(<div class="dual">)");
 
-    static const std::regex re_dialogdual2(R"(</DialogDual>)");
+    static const std::regex re_dialogdual2("</DialogDual>");
     output = std::regex_replace(output, re_dialogdual2, "</div>");
 
-    static const std::regex re_dialogleft1(R"(<DialogLeft>)");
+    static const std::regex re_dialogleft1("<DialogLeft>");
     output =
         std::regex_replace(output, re_dialogleft1, R"(<div class="left">)");
 
-    static const std::regex re_dialogleft2(R"(</DialogLeft>)");
+    static const std::regex re_dialogleft2("</DialogLeft>");
     output = std::regex_replace(output, re_dialogleft2, "</div>");
 
-    static const std::regex re_dialogright1(R"(<DialogRight>)");
+    static const std::regex re_dialogright1("<DialogRight>");
     output =
         std::regex_replace(output, re_dialogright1, R"(<div class="right">)");
 
-    static const std::regex re_dialogright2(R"(</DialogRight>)");
+    static const std::regex re_dialogright2("</DialogRight>");
     output = std::regex_replace(output, re_dialogright2, "</div>");
 
-    static const std::regex re_pagebreak1(R"(<PageBreak>)");
+    static const std::regex re_pagebreak1("<PageBreak>");
     output = std::regex_replace(output, re_pagebreak1,
                                 R"(<div class="page-break">)");
 
-    static const std::regex re_pagebreak2(R"(</PageBreak>)");
+    static const std::regex re_pagebreak2("</PageBreak>");
     output = std::regex_replace(output, re_pagebreak2, "</div>");
 
-    static const std::regex re_note1(R"(<Note>)");
+    static const std::regex re_note1("<Note>");
     output = std::regex_replace(output, re_note1, R"(<div class="note">)");
 
-    static const std::regex re_note2(R"(</Note>)");
+    static const std::regex re_note2("</Note>");
     output = std::regex_replace(output, re_note2, "</div>");
 
-    static const std::regex re_blankline(R"(</?BlankLine>)");
+    static const std::regex re_blankline("</?BlankLine>");
     output = std::regex_replace(output, re_blankline, "");
 
-    static const std::regex re_continuation(R"(</?Continuation>)");
+    static const std::regex re_continuation("</?Continuation>");
     output = std::regex_replace(output, re_continuation, "");
 
     static const std::regex re_newlines(R"(\n+)");
@@ -839,9 +836,7 @@ std::string ftn2screenplain(std::string const &input,
 
 // html similar to textplay html output (can use the same css files)
 std::string ftn2textpla(std::string const &input, std::string const &css_fn) {
-  std::string output(
-      "<!DOCTYPE html>\n"
-      "<html>\n<head>\n");
+  std::string output{"<!DOCTYPE html>\n<html>\n<head>\n"};
 
   if (!css_fn.empty()) {
     output += "<link rel=\"stylesheet\" type=\"text/css\" href=\"file://";
@@ -863,102 +858,102 @@ std::string ftn2textpla(std::string const &input, std::string const &css_fn) {
   output += "\n</div>\n</body>\n</html>\n";
 
   try {
-    static const std::regex re_transition1(R"(<Transition>)");
+    static const std::regex re_transition1("<Transition>");
     output = std::regex_replace(output, re_transition1,
                                 R"(<h3 class="right-transition">)");
 
-    static const std::regex re_transition2(R"(</Transition>)");
+    static const std::regex re_transition2("</Transition>");
     output = std::regex_replace(output, re_transition2, "</h3>");
 
-    static const std::regex re_sceneheader1(R"(<SceneHeader>)");
+    static const std::regex re_sceneheader1("<SceneHeader>");
     output = std::regex_replace(output, re_sceneheader1,
                                 R"(<h2 class="full-slugline">)");
 
-    static const std::regex re_sceneheader2(R"(</SceneHeader>)");
+    static const std::regex re_sceneheader2("</SceneHeader>");
     output = std::regex_replace(output, re_sceneheader2, "</h2>");
 
-    static const std::regex re_action1(R"(<Action>)");
+    static const std::regex re_action1("<Action>");
     output = std::regex_replace(output, re_action1, R"(<p class="action">)");
 
-    static const std::regex re_action2(R"(</Action>)");
+    static const std::regex re_action2("</Action>");
     output = std::regex_replace(output, re_action2, "</p>");
 
-    static const std::regex re_lyric1(R"(<Lyric>)");
+    static const std::regex re_lyric1("<Lyric>");
     output = std::regex_replace(output, re_lyric1, R"(<span class="lyric">)");
 
-    static const std::regex re_lyric2(R"(</Lyric>)");
+    static const std::regex re_lyric2("</Lyric>");
     output = std::regex_replace(output, re_lyric2, "</span>");
 
-    static const std::regex re_character1(R"(<Character>)");
+    static const std::regex re_character1("<Character>");
     output =
         std::regex_replace(output, re_character1, R"(<dt class="character">)");
 
-    static const std::regex re_character2(R"(</Character>)");
+    static const std::regex re_character2("</Character>");
     output = std::regex_replace(output, re_character2, "</dt>");
 
-    static const std::regex re_parenthetical1(R"(<Parenthetical>)");
+    static const std::regex re_parenthetical1("<Parenthetical>");
     output = std::regex_replace(output, re_parenthetical1,
                                 R"(<dd class="parenthetical">)");
 
-    static const std::regex re_parenthetical2(R"(</Parenthetical>)");
+    static const std::regex re_parenthetical2("</Parenthetical>");
     output = std::regex_replace(output, re_parenthetical2, "</dd>");
 
-    static const std::regex re_speech1(R"(<Speech>)");
+    static const std::regex re_speech1("<Speech>");
     output = std::regex_replace(output, re_speech1, R"(<dd class="dialogue">)");
 
-    static const std::regex re_speech2(R"(</Speech>)");
+    static const std::regex re_speech2("</Speech>");
     output = std::regex_replace(output, re_speech2, "</dd>");
 
-    static const std::regex re_dialog1(R"(<Dialog>)");
+    static const std::regex re_dialog1("<Dialog>");
     output = std::regex_replace(output, re_dialog1, R"(<div class="dialog">)");
 
-    static const std::regex re_dialog2(R"(</Dialog>)");
+    static const std::regex re_dialog2("</Dialog>");
     output = std::regex_replace(output, re_dialog2, "</div>");
 
-    static const std::regex re_dialogdual1(R"(<DialogDual>)");
+    static const std::regex re_dialogdual1("<DialogDual>");
     output = std::regex_replace(output, re_dialogdual1,
                                 R"(<div class="dialog_wrapper">)");
 
-    static const std::regex re_dialogdual2(R"(</DialogDual>)");
+    static const std::regex re_dialogdual2("</DialogDual>");
     output = std::regex_replace(output, re_dialogdual2, "</div>");
 
-    static const std::regex re_dialogleft1(R"(<DialogLeft>)");
+    static const std::regex re_dialogleft1("<DialogLeft>");
     output =
         std::regex_replace(output, re_dialogleft1, R"(<dl class="first">)");
 
-    static const std::regex re_dialogleft2(R"(</DialogLeft>)");
+    static const std::regex re_dialogleft2("</DialogLeft>");
     output = std::regex_replace(output, re_dialogleft2, "</dl>");
 
-    static const std::regex re_dialogright1(R"(<DialogRight>)");
+    static const std::regex re_dialogright1("<DialogRight>");
     output =
         std::regex_replace(output, re_dialogright1, R"(<dl class="second">)");
 
-    static const std::regex re_dialogright2(R"(</DialogRight>)");
+    static const std::regex re_dialogright2("</DialogRight>");
     output = std::regex_replace(output, re_dialogright2, "</dl>");
 
-    static const std::regex re_pagebreak1(R"(</PageBreak>)");
+    static const std::regex re_pagebreak1("</PageBreak>");
     output = std::regex_replace(output, re_pagebreak1,
                                 R"(<div class="page-break">)");
 
-    static const std::regex re_pagebreak2(R"(</PageBreak>)");
+    static const std::regex re_pagebreak2("</PageBreak>");
     output = std::regex_replace(output, re_pagebreak2, "</div>");
 
-    static const std::regex re_note1(R"(<Note>)");
+    static const std::regex re_note1("<Note>");
     output = std::regex_replace(output, re_note1, R"(<p class="comment">)");
 
-    static const std::regex re_note2(R"(</Note>)");
+    static const std::regex re_note2("</Note>");
     output = std::regex_replace(output, re_note2, "</p>");
 
-    static const std::regex re_blankline(R"(</?BlankLine>)");
+    static const std::regex re_blankline("</?BlankLine>");
     output = std::regex_replace(output, re_blankline, "");
 
-    static const std::regex re_continuation(R"(</?Continuation>)");
+    static const std::regex re_continuation("</?Continuation>");
     output = std::regex_replace(output, re_continuation, "");
 
-    static const std::regex re_center1(R"(<center>)");
+    static const std::regex re_center1("<center>");
     output = std::regex_replace(output, re_center1, R"(<p class="center">)");
 
-    static const std::regex re_center2(R"(</center>)");
+    static const std::regex re_center2("</center>");
     output = std::regex_replace(output, re_center2, "</p>");
 
     static const std::regex re_newlines(R"(\n+)");
@@ -977,10 +972,11 @@ std::string ftn2textpla(std::string const &input, std::string const &css_fn) {
 }
 
 std::string ftn2fdx(std::string const &input) {
-  std::string output(
-      "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n"
-      "<FinalDraft DocumentType=\"Script\" Template=\"No\" Version=\"1\">\n"
-      "<Content>\n");
+  std::string output{
+      R"(<?xml version="1.0" encoding="UTF-8" standalone="no" ?>)"};
+  output += "\n";
+  output += R"(<FinalDraft DocumentType="Script" Template="No" Version="1">)";
+  output += "\n<Content>\n";
 
   Fountain::Script script;
   script.parseFountain(input);
@@ -994,116 +990,116 @@ std::string ftn2fdx(std::string const &input) {
   output += "\n</Content>\n</FinalDraft>\n";
 
   try {
-    static const std::regex re_transition1(R"(<Transition>)");
+    static const std::regex re_transition1("<Transition>");
     output = std::regex_replace(output, re_transition1,
                                 R"(<Paragraph Type="Transition"><Text>)");
 
-    static const std::regex re_transition2(R"(</Transition>)");
+    static const std::regex re_transition2("</Transition>");
     output = std::regex_replace(output, re_transition2, "</Text></Paragraph>");
 
-    static const std::regex re_sceneheader1(R"(<SceneHeader>)");
+    static const std::regex re_sceneheader1("<SceneHeader>");
     output = std::regex_replace(output, re_sceneheader1,
                                 R"(<Paragraph Type="Scene Heading"><Text>)");
 
-    static const std::regex re_sceneheader2(R"(</SceneHeader>)");
+    static const std::regex re_sceneheader2("</SceneHeader>");
     output = std::regex_replace(output, re_sceneheader2, "</Text></Paragraph>");
 
-    static const std::regex re_action1(R"(<Action>)");
+    static const std::regex re_action1("<Action>");
     output = std::regex_replace(output, re_action1,
                                 R"(<Paragraph Type="Action"><Text>)");
 
-    static const std::regex re_action2(R"(</Action>)");
+    static const std::regex re_action2("</Action>");
     output = std::regex_replace(output, re_action2, "</Text></Paragraph>");
 
-    static const std::regex re_character1(R"(<Character>)");
+    static const std::regex re_character1("<Character>");
     output = std::regex_replace(output, re_character1,
                                 R"(<Paragraph Type="Character"><Text>)");
 
-    static const std::regex re_character2(R"(</Character>)");
+    static const std::regex re_character2("</Character>");
     output = std::regex_replace(output, re_character2, "</Text></Paragraph>");
 
-    static const std::regex re_parenthetical1(R"(<Parenthetical>)");
+    static const std::regex re_parenthetical1("<Parenthetical>");
     output = std::regex_replace(output, re_parenthetical1,
                                 R"(<Paragraph Type="Parenthetical"><Text>)");
 
-    static const std::regex re_parenthetical2(R"(</Parenthetical>)");
+    static const std::regex re_parenthetical2("</Parenthetical>");
     output =
         std::regex_replace(output, re_parenthetical2, "</Text></Paragraph>");
 
-    static const std::regex re_speech1(R"(<Speech>)");
+    static const std::regex re_speech1("<Speech>");
     output = std::regex_replace(output, re_speech1,
                                 R"(<Paragraph Type="Dialogue"><Text>)");
 
-    static const std::regex re_speech2(R"(</Speech>)");
+    static const std::regex re_speech2("</Speech>");
     output = std::regex_replace(output, re_speech2, "</Text></Paragraph>");
 
-    static const std::regex re_dualdialog1(R"(<DualDialog>)");
+    static const std::regex re_dualdialog1("<DualDialog>");
     output = std::regex_replace(output, re_dualdialog1,
-                                R"(<Paragraph><DualDialog>)");
+                                "<Paragraph><DualDialog>");
 
-    static const std::regex re_dualdialog2(R"(</DualDialog>)");
+    static const std::regex re_dualdialog2("</DualDialog>");
     output =
         std::regex_replace(output, re_dualdialog2, "</DualDialog></Paragraph>");
 
-    static const std::regex re_center1(R"(<center>)");
+    static const std::regex re_center1("<center>");
     output = std::regex_replace(
         output, re_center1,
         R"(<Paragraph Type="Action" Alignment="Center"><Text>)");
 
-    static const std::regex re_center2(R"(</center>)");
+    static const std::regex re_center2("</center>");
     output = std::regex_replace(output, re_center2, "</Text></Paragraph>");
 
-    static const std::regex re_bold1(R"(<b>)");
+    static const std::regex re_bold1("<b>");
     output = std::regex_replace(output, re_bold1, R"(<Text Style="Bold">)");
 
-    static const std::regex re_bold2(R"(</b>)");
+    static const std::regex re_bold2("</b>");
     output = std::regex_replace(output, re_bold2, "</Text>");
 
-    static const std::regex re_italic1(R"(<i>)");
+    static const std::regex re_italic1("<i>");
     output = std::regex_replace(output, re_italic1, R"(<Text Style="Italic">)");
 
-    static const std::regex re_italic2(R"(</i>)");
+    static const std::regex re_italic2("</i>");
     output = std::regex_replace(output, re_italic2, "</Text>");
 
-    static const std::regex re_underline1(R"(<u>)");
+    static const std::regex re_underline1("<u>");
     output = std::regex_replace(output, re_underline1,
                                 R"(<Text Style="Underline">)");
 
-    static const std::regex re_underline2(R"(</u>)");
+    static const std::regex re_underline2("</u>");
     output = std::regex_replace(output, re_underline2, "</Text>");
 
-    static const std::regex re_pagebreak1(R"(<PageBreak>)");
+    static const std::regex re_pagebreak1("<PageBreak>");
     output = std::regex_replace(
         output, re_pagebreak1,
         R"(<Paragraph Type="Action" StartsNewPage="Yes"><Text>)");
 
-    static const std::regex re_pagebreak2(R"(</PageBreak>)");
+    static const std::regex re_pagebreak2("</PageBreak>");
     output = std::regex_replace(output, re_pagebreak2, "</Text></Paragraph>");
 
-    static const std::regex re_note1(R"(<Note>)");
-    output = std::regex_replace(output, re_note1, R"(<ScriptNote><Text>)");
+    static const std::regex re_note1("<Note>");
+    output = std::regex_replace(output, re_note1, "<ScriptNote><Text>");
 
-    static const std::regex re_note2(R"(</Note>)");
+    static const std::regex re_note2("</Note>");
     output = std::regex_replace(output, re_note2, "</Text></ScriptNote>");
 
-    static const std::regex re_dialog(R"(</?Dialog(Left|Right)?>)");
+    static const std::regex re_dialog("</?Dialog(Left|Right)?>");
     output = std::regex_replace(output, re_dialog, "");
 
-    static const std::regex re_blankline(R"(</?BlankLine>)");
+    static const std::regex re_blankline("</?BlankLine>");
     output = std::regex_replace(output, re_blankline, "");
 
-    static const std::regex re_continuation(R"(</?Continuation>)");
+    static const std::regex re_continuation("</?Continuation>");
     output = std::regex_replace(output, re_continuation, "");
 
     static const std::regex re_newlines(R"(\n+)");
     output = std::regex_replace(output, re_newlines, "\n");
 
     // Don't know if these work...
-    static const std::regex re_lyric1(R"(<Lyric>)");
+    static const std::regex re_lyric1("<Lyric>");
     output = std::regex_replace(output, re_lyric1,
                                 R"(<Paragraph Type="Lyric"><Text>)");
 
-    static const std::regex re_lyric2(R"(</Lyric>)");
+    static const std::regex re_lyric2("</Lyric>");
     output = std::regex_replace(output, re_lyric2, "</Text></Paragraph>");
   } catch (std::regex_error &e) {
     printf("regex error in ftn2fdx\n");
@@ -1114,9 +1110,7 @@ std::string ftn2fdx(std::string const &input) {
 }
 
 std::string ftn2html(std::string const &input, std::string const &css_fn) {
-  std::string output(
-      "<!DOCTYPE html>\n"
-      "<html>\n<head>\n");
+  std::string output{"<!DOCTYPE html>\n<html>\n<head>\n"};
 
   if (!css_fn.empty()) {
     output += "<link rel=\"stylesheet\" type=\"text/css\" href=\"file://";
@@ -1138,10 +1132,10 @@ std::string ftn2html(std::string const &input, std::string const &css_fn) {
   output += "\n</Fountain>\n</body>\n</html>\n";
 
   try {
-    static const std::regex re_blankline(R"(</?BlankLine>)");
+    static const std::regex re_blankline("</?BlankLine>");
     output = std::regex_replace(output, re_blankline, "");
 
-    static const std::regex re_continuation(R"(</?Continuation>)");
+    static const std::regex re_continuation("</?Continuation>");
     output = std::regex_replace(output, re_continuation, "");
 
     static const std::regex re_newlines(R"(\n+)");

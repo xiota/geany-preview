@@ -16,8 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "formats.h"
+#include <regex>
+#include <string>
 
+#include "formats.h"
 #include "prefs.h"
 #include "process.h"
 
@@ -159,25 +161,38 @@ GString *asciidoctor(char const *work_dir, char const *input) {
   // attach asciidoctor.css if it exists
   char *css_fn = find_copy_css("asciidoctor.css", PREVIEW_CSS_ASCIIDOCTOR);
   if (css_fn) {
-    if (REGEX_CHK("</head>", output->str)) {
-      char *plain = g_strdup_printf(
-          "\n<link rel='stylesheet' type='text/css' "
-          "href='file://%s'>\n</head>\n",
-          css_fn);
-      g_string_replace(output, "</head>", plain, 1);
-      GFREE(plain);
-    } else {
-      char *html = g_string_free(output, false);
-      char *plain = g_strjoin(
-          nullptr,
-          "<html><head><link rel='stylesheet' type='text/css' href='file://",
-          css_fn, "'></head><body>", html, "</body></html>", nullptr);
-      output = g_string_new(plain);
-      GFREE(html);
-      GFREE(plain);
-    }
-  }
+    if (SUBSTR("</head>", output->str)) {
+      try {
+        std::string out_text{output->str};
 
+        std::string rep_text{
+            "\n<link rel=\"stylesheet\" type=\"text/css\" href=\"file://"};
+        rep_text += css_fn;
+        rep_text += "\">\n</head>\n";
+
+        static const std::regex re_head(R"(</head>)");
+        out_text = std::regex_replace(out_text, re_head, rep_text,
+                                      std::regex_constants::format_first_only);
+
+        GSTRING_FREE(output);
+        output = g_string_new(out_text.c_str());
+      } catch (std::regex_error &e) {
+        printf("regex error in asciidoctor\n");
+      }
+    } else {
+      std::string out_text{
+          "<html><head><link rel=\"stylesheet\" "
+          "type=\"text/css\" href=\"file://"};
+      out_text += css_fn;
+      out_text += R"("></head><body>)";
+      out_text += output->str;
+      out_text += "</body></html>";
+
+      GSTRING_FREE(output);
+      output = g_string_new(out_text.c_str());
+    }
+    GFREE(css_fn);
+  }
   return output;
 }
 

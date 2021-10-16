@@ -22,18 +22,22 @@
 #ifndef PREVIEW_PLUGIN_H
 #define PREVIEW_PLUGIN_H
 
+#include <geanyplugin.h>
 #include <glib.h>
 #include <gtk/gtk.h>
 #include <webkit2/webkit2.h>
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wignored-attributes"
-#endif
-#include <geanyplugin.h>
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
+#ifndef g_clear_signal_handler
+#include "gobject/gsignal.h"
+// g_clear_signal_handler was added in glib 2.62
+#define g_clear_signal_handler(handler, instance)      \
+  do {                                                 \
+    if (handler != nullptr && *handler != 0) {         \
+      g_signal_handler_disconnect(instance, *handler); \
+      *handler = 0;                                    \
+    }                                                  \
+  } while (0)
+#endif  // g_clear_signal_handler
 
 G_BEGIN_DECLS
 
