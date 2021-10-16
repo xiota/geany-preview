@@ -1,5 +1,5 @@
 /*
- * C++ Fountain Parser
+ * Fountain Screenplay Processor
  * Copyright 2021 xiota
  *
  * This program is free software; you can redistribute it and/or modify
@@ -18,7 +18,6 @@
  * MA 02110-1301, USA.
  */
 
-#include <glib-2.0/glib.h>
 #include <string.h>
 
 #include <regex>
@@ -26,155 +25,9 @@
 #include "auxiliary.h"
 #include "fountain.h"
 
-std::string ScriptNode::to_string(size_t const &flags) const {
-  static int dialog_state = 0;
-  std::string output;
+namespace Fountain {
 
-  switch (type) {
-    case ScriptNodeType::ftnKeyValue:
-      if (flags & type) {
-        break;
-      }
-      output += "<meta>\n<key>" + key + "</key>\n<value>" + value +
-                "</value>\n</meta>";
-      break;
-    case ScriptNodeType::ftnPageBreak:
-      if (flags & type) {
-        break;
-      }
-      if (dialog_state) {
-        dialog_state == 1   ? output += "</Dialog>\n"
-        : dialog_state == 2 ? output += "</DialogLeft>\n"
-                            : output += "</DialogRight>\n</DualDialog>\n";
-        dialog_state = 0;
-      }
-      output += "<PageBreak></PageBreak>";
-      break;
-    case ScriptNodeType::ftnBlankLine:
-      if (flags & type) {
-        break;
-      }
-      if (dialog_state) {
-        dialog_state == 1   ? output += "</Dialog>\n"
-        : dialog_state == 2 ? output += "</DialogLeft>\n"
-                            : output += "</DialogRight>\n</DualDialog>\n";
-        dialog_state = 0;
-      }
-      output += "<BlankLine></BlankLine>";
-      break;
-    case ScriptNodeType::ftnContinuation:
-      if (flags & type) {
-        break;
-      }
-      output += "<Continuation>" + value + "</Continuation>";
-      break;
-    case ScriptNodeType::ftnSceneHeader:
-      if (flags & type) {
-        break;
-      }
-      if (!key.empty()) {
-        output += "<SceneHeader><SceneNumL>" + key + "</SceneNumL>" + value +
-                  +"<SceneNumR>" + key + "</SceneNumR></SceneHeader>";
-      } else {
-        output += "<SceneHeader>" + value + "</SceneHeader>";
-      }
-      break;
-    case ScriptNodeType::ftnAction:
-      if (flags & type) {
-        break;
-      }
-      output += "<Action>" + value + "</Action>";
-      break;
-    case ScriptNodeType::ftnTransition:
-      if (flags & type) {
-        break;
-      }
-      output += "<Transition>" + value + "</Transition>";
-      break;
-    case ScriptNodeType::ftnDialog:
-      if (flags & type) {
-        break;
-      }
-      dialog_state = 1;
-      output += "<Dialog>" + key;
-      break;
-    case ScriptNodeType::ftnDialogLeft:
-      if (flags & type) {
-        break;
-      }
-      dialog_state = 2;
-      output += "<DualDialog>\n<DialogLeft>" + value;
-      break;
-    case ScriptNodeType::ftnDialogRight:
-      if (flags & type) {
-        break;
-      }
-      dialog_state = 3;
-      output += "<DialogRight>" + value;
-      break;
-    case ScriptNodeType::ftnCharacter:
-      if (flags & type) {
-        break;
-      }
-      output += "<Character>" + value + "</Character>";
-      break;
-    case ScriptNodeType::ftnParenthetical:
-      if (flags & type) {
-        break;
-      }
-      output += "<Parenthetical>" + value + "</Parenthetical>";
-      break;
-    case ScriptNodeType::ftnSpeech:
-      if (flags & type) {
-        break;
-      }
-      output += "<Speech>" + value + "</Speech>";
-      break;
-    case ScriptNodeType::ftnNotation:
-      if (flags & type) {
-        break;
-      }
-      output += "<Note>" + value + "</Note>";
-      break;
-    case ScriptNodeType::ftnLyric:
-      if (flags & type) {
-        break;
-      }
-      output += "<Lyric>" + value + "</Lyric>";
-      break;
-    case ScriptNodeType::ftnSection:
-      if (flags & type) {
-        break;
-      }
-      output += "<SectionH" + key + ">" + value + "</SectionH" + key + ">";
-      break;
-    case ScriptNodeType::ftnSynopsis:
-      if (flags & type) {
-        break;
-      }
-      output += "<SynopsisH" + key + ">" + value + "</SynopsisH" + key + ">";
-      break;
-    case ScriptNodeType::ftnUnknown:
-    default:
-      if (flags & type) {
-        break;
-      }
-      output += "<Unknown>" + value + "</Unknown>";
-      break;
-  }
-  return output;
-}
-
-std::string Script::to_string(size_t const &flags) const {
-  std::string output("<Fountain>\n");
-
-  for (auto node : nodes) {
-    output += node.to_string(flags) + "\n";
-  }
-
-  output += "\n</Fountain>";
-  return output;
-}
+namespace {
 
 bool isForced(std::string const &input) {
   if (input.length() < 1) {
@@ -436,6 +289,158 @@ auto parseKeyValue(std::string const &input) {
   }
 
   return std::make_pair(key, ws_ltrim(value));
+}
+
+}  // namespace
+
+std::string ScriptNode::to_string(size_t const &flags) const {
+  static int dialog_state = 0;
+  std::string output;
+
+  switch (type) {
+    case ScriptNodeType::ftnKeyValue:
+      if (flags & type) {
+        break;
+      }
+      output += "<meta>\n<key>" + key + "</key>\n<value>" + value +
+                "</value>\n</meta>";
+      break;
+    case ScriptNodeType::ftnPageBreak:
+      if (flags & type) {
+        break;
+      }
+      if (dialog_state) {
+        dialog_state == 1   ? output += "</Dialog>\n"
+        : dialog_state == 2 ? output += "</DialogLeft>\n"
+                            : output += "</DialogRight>\n</DualDialog>\n";
+        dialog_state = 0;
+      }
+      output += "<PageBreak></PageBreak>";
+      break;
+    case ScriptNodeType::ftnBlankLine:
+      if (flags & type) {
+        break;
+      }
+      if (dialog_state) {
+        dialog_state == 1   ? output += "</Dialog>\n"
+        : dialog_state == 2 ? output += "</DialogLeft>\n"
+                            : output += "</DialogRight>\n</DualDialog>\n";
+        dialog_state = 0;
+      }
+      output += "<BlankLine></BlankLine>";
+      break;
+    case ScriptNodeType::ftnContinuation:
+      if (flags & type) {
+        break;
+      }
+      output += "<Continuation>" + value + "</Continuation>";
+      break;
+    case ScriptNodeType::ftnSceneHeader:
+      if (flags & type) {
+        break;
+      }
+      if (!key.empty()) {
+        output += "<SceneHeader><SceneNumL>" + key + "</SceneNumL>" + value +
+                  +"<SceneNumR>" + key + "</SceneNumR></SceneHeader>";
+      } else {
+        output += "<SceneHeader>" + value + "</SceneHeader>";
+      }
+      break;
+    case ScriptNodeType::ftnAction:
+      if (flags & type) {
+        break;
+      }
+      output += "<Action>" + value + "</Action>";
+      break;
+    case ScriptNodeType::ftnTransition:
+      if (flags & type) {
+        break;
+      }
+      output += "<Transition>" + value + "</Transition>";
+      break;
+    case ScriptNodeType::ftnDialog:
+      if (flags & type) {
+        break;
+      }
+      dialog_state = 1;
+      output += "<Dialog>" + key;
+      break;
+    case ScriptNodeType::ftnDialogLeft:
+      if (flags & type) {
+        break;
+      }
+      dialog_state = 2;
+      output += "<DualDialog>\n<DialogLeft>" + value;
+      break;
+    case ScriptNodeType::ftnDialogRight:
+      if (flags & type) {
+        break;
+      }
+      dialog_state = 3;
+      output += "<DialogRight>" + value;
+      break;
+    case ScriptNodeType::ftnCharacter:
+      if (flags & type) {
+        break;
+      }
+      output += "<Character>" + value + "</Character>";
+      break;
+    case ScriptNodeType::ftnParenthetical:
+      if (flags & type) {
+        break;
+      }
+      output += "<Parenthetical>" + value + "</Parenthetical>";
+      break;
+    case ScriptNodeType::ftnSpeech:
+      if (flags & type) {
+        break;
+      }
+      output += "<Speech>" + value + "</Speech>";
+      break;
+    case ScriptNodeType::ftnNotation:
+      if (flags & type) {
+        break;
+      }
+      output += "<Note>" + value + "</Note>";
+      break;
+    case ScriptNodeType::ftnLyric:
+      if (flags & type) {
+        break;
+      }
+      output += "<Lyric>" + value + "</Lyric>";
+      break;
+    case ScriptNodeType::ftnSection:
+      if (flags & type) {
+        break;
+      }
+      output += "<SectionH" + key + ">" + value + "</SectionH" + key + ">";
+      break;
+    case ScriptNodeType::ftnSynopsis:
+      if (flags & type) {
+        break;
+      }
+      output += "<SynopsisH" + key + ">" + value + "</SynopsisH" + key + ">";
+      break;
+    case ScriptNodeType::ftnUnknown:
+    default:
+      if (flags & type) {
+        break;
+      }
+      output += "<Unknown>" + value + "</Unknown>";
+      break;
+  }
+  return output;
+}
+
+std::string Script::to_string(size_t const &flags) const {
+  std::string output("<Fountain>\n");
+
+  for (auto node : nodes) {
+    output += node.to_string(flags) + "\n";
+  }
+
+  output += "\n</Fountain>";
+  return output;
 }
 
 std::string Script::parseNodeText(std::string const &input) {
@@ -702,13 +707,16 @@ void Script::parseFountain(std::string const &text) {
   end_node();
 }
 
-// semi-compatible with screenplain
-char *ftn2html(char *const input, char *const css_fn) {
+}  // namespace Fountain
+
+// html similar to screenplain html output (can use the same css files)
+std::string ftn2screenplain(std::string const &input,
+                            std::string const &css_fn) {
   std::string output(
       "<!DOCTYPE html>\n"
       "<html>\n<head>\n");
 
-  if (css_fn) {
+  if (!css_fn.empty()) {
     output += "<link rel=\"stylesheet\" type=\"text/css\" href=\"file://";
     output += css_fn;
     output += "\">\n";
@@ -718,170 +726,400 @@ char *ftn2html(char *const input, char *const css_fn) {
       "</head>\n<body>\n"
       "<div id=\"wrapper\" class=\"fountain\">\n";
 
-  std::string s(input);
-  Script script;
-  script.parseFountain(s);
+  Fountain::Script script;
+  script.parseFountain(input);
 
-  for (auto node : script.nodes) {
-    if (node.type != ScriptNodeType::ftnContinuation &&
-        node.type != ScriptNodeType::ftnKeyValue &&
-        node.type != ScriptNodeType::ftnUnknown) {
-      output += node.to_string() + "\n";
-    }
-  }
+  output += script.to_string(Fountain::ScriptNodeType::ftnContinuation |
+                             Fountain::ScriptNodeType::ftnKeyValue |
+                             Fountain::ScriptNodeType::ftnUnknown);
 
   output += "\n</div>\n</body>\n</html>\n";
 
-  GString *gstr_output = g_string_new(output.c_str());
+  try {
+    static const std::regex re_transition1(R"(<Transition>)");
+    output = std::regex_replace(output, re_transition1,
+                                R"(<div class="transition">)");
 
-  // Screenplay elements
-  g_string_replace(gstr_output, "<Transition>", "<div class=\"transition\">",
-                   0);
-  g_string_replace(gstr_output, "</Transition>", "</div>", 0);
+    static const std::regex re_transition2(R"(</Transition>)");
+    output = std::regex_replace(output, re_transition2, "</div>");
 
-  g_string_replace(gstr_output, "<SceneHeader>", "<div class=\"sceneheader\">",
-                   0);
-  g_string_replace(gstr_output, "</SceneHeader>", "</div>", 0);
-  g_string_replace(gstr_output, "<Action>", "<div class=\"action\">", 0);
-  g_string_replace(gstr_output, "</Action>", "</div>", 0);
-  g_string_replace(gstr_output, "<Lyric>", "<div class=\"lyric\">", 0);
-  g_string_replace(gstr_output, "</Lyric>", "</div>", 0);
+    static const std::regex re_sceneheader1(R"(<SceneHeader>)");
+    output = std::regex_replace(output, re_sceneheader1,
+                                R"(<h6 class="sceneheader">)");
 
-  // Dialog
-  g_string_replace(gstr_output, "<Character>", "<p class=\"character\">", 0);
-  g_string_replace(gstr_output, "</Character>", "</p>", 0);
-  g_string_replace(gstr_output, "<Parenthetical>",
-                   "<p class=\"parenthetical\">", 0);
-  g_string_replace(gstr_output, "</Parenthetical>", "</p>", 0);
-  g_string_replace(gstr_output, "<Speech>", "<p class=\"speech\">", 0);
-  g_string_replace(gstr_output, "</Speech>", "</p>", 0);
-  g_string_replace(gstr_output, "<Dialog>", "<div class=\"dialog\">", 0);
-  g_string_replace(gstr_output, "</Dialog>", "</div>", 0);
-  g_string_replace(gstr_output, "<DualDialog>", "<div class=\"dual\">", 0);
-  g_string_replace(gstr_output, "</DualDialog>", "</div>", 0);
-  g_string_replace(gstr_output, "<DialogLeft>", "<div class=\"left\">", 0);
-  g_string_replace(gstr_output, "</DialogLeft>", "</div>", 0);
-  g_string_replace(gstr_output, "<DialogRight>", "<div class=\"right\">", 0);
-  g_string_replace(gstr_output, "</DialogRight>", "</div>", 0);
+    static const std::regex re_sceneheader2(R"(</SceneHeader>)");
+    output = std::regex_replace(output, re_sceneheader2, "</h6>");
 
-  g_string_replace(gstr_output, "<PageBreak>", "<div class=\"page-break\">", 0);
-  g_string_replace(gstr_output, "</PageBreak>", "</div>", 0);
+    static const std::regex re_action1(R"(<Action>)");
+    output = std::regex_replace(output, re_action1, R"(<div class="action">)");
 
-  // Notes
-  g_string_replace(gstr_output, "<Note>", "<div class=\"note\">", 0);
-  g_string_replace(gstr_output, "</Note>", "</div>", 0);
+    static const std::regex re_action2(R"(</Action>)");
+    output = std::regex_replace(output, re_action2, "</div>");
 
-  // Discard
-  g_string_replace(gstr_output, "<BlankLine>", "", 0);
-  g_string_replace(gstr_output, "</BlankLine>", "", 0);
-  g_string_replace(gstr_output, "<Continuation>", "", 0);
-  g_string_replace(gstr_output, "</Continuation>", "", 0);
+    static const std::regex re_lyric1(R"(<Lyric>)");
+    output = std::regex_replace(output, re_lyric1, R"(<div class="lyric">)");
 
-  // Cleanup
-  g_string_replace(gstr_output, "\n\n", "\n", 0);
-  g_string_replace(gstr_output, "\n\n", "\n", 0);
+    static const std::regex re_lyric2(R"(</Lyric>)");
+    output = std::regex_replace(output, re_lyric2, "</div>");
 
-  return g_string_free(gstr_output, false);
-}
+    static const std::regex re_character1(R"(<Character>)");
+    output =
+        std::regex_replace(output, re_character1, R"(<p class="character">)");
 
-char *ftn2fdx(char *const input) {
-  std::string output(
-      "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n"
-      "<FinalDraft DocumentType=\"Script\" Template=\"No\" Version=\"1\">\n"
-      "<Content>\n");
-  std::string s(input);
-  Script script;
-  script.parseFountain(s);
+    static const std::regex re_character2(R"(</Character>)");
+    output = std::regex_replace(output, re_character2, "</p>");
 
-  for (auto node : script.nodes) {
-    if (node.type != ScriptNodeType::ftnContinuation &&
-        node.type != ScriptNodeType::ftnKeyValue &&
-        node.type != ScriptNodeType::ftnSection &&
-        node.type != ScriptNodeType::ftnSynopsis &&
-        node.type != ScriptNodeType::ftnUnknown) {
-      output += node.to_string() + "\n";
-    }
+    static const std::regex re_parenthetical1(R"(<Parenthetical>)");
+    output = std::regex_replace(output, re_parenthetical1,
+                                R"(<p class="parenthetical">)");
+
+    static const std::regex re_parenthetical2(R"(</Parenthetical>)");
+    output = std::regex_replace(output, re_parenthetical2, "</p>");
+
+    static const std::regex re_speech1(R"(<Speech>)");
+    output = std::regex_replace(output, re_speech1, R"(<p class="speech">)");
+
+    static const std::regex re_speech2(R"(</Speech>)");
+    output = std::regex_replace(output, re_speech2, "</p>");
+
+    static const std::regex re_dialog1(R"(<Dialog>)");
+    output = std::regex_replace(output, re_dialog1, R"(<div class="dialog">)");
+
+    static const std::regex re_dialog2(R"(</Dialog>)");
+    output = std::regex_replace(output, re_dialog2, "</div>");
+
+    static const std::regex re_dialogdual1(R"(<DialogDual>)");
+    output =
+        std::regex_replace(output, re_dialogdual1, R"(<div class="dual">)");
+
+    static const std::regex re_dialogdual2(R"(</DialogDual>)");
+    output = std::regex_replace(output, re_dialogdual2, "</div>");
+
+    static const std::regex re_dialogleft1(R"(<DialogLeft>)");
+    output =
+        std::regex_replace(output, re_dialogleft1, R"(<div class="left">)");
+
+    static const std::regex re_dialogleft2(R"(</DialogLeft>)");
+    output = std::regex_replace(output, re_dialogleft2, "</div>");
+
+    static const std::regex re_dialogright1(R"(<DialogRight>)");
+    output =
+        std::regex_replace(output, re_dialogright1, R"(<div class="right">)");
+
+    static const std::regex re_dialogright2(R"(</DialogRight>)");
+    output = std::regex_replace(output, re_dialogright2, "</div>");
+
+    static const std::regex re_pagebreak1(R"(<PageBreak>)");
+    output = std::regex_replace(output, re_pagebreak1,
+                                R"(<div class="page-break">)");
+
+    static const std::regex re_pagebreak2(R"(</PageBreak>)");
+    output = std::regex_replace(output, re_pagebreak2, "</div>");
+
+    static const std::regex re_note1(R"(<Note>)");
+    output = std::regex_replace(output, re_note1, R"(<div class="note">)");
+
+    static const std::regex re_note2(R"(</Note>)");
+    output = std::regex_replace(output, re_note2, "</div>");
+
+    static const std::regex re_blankline(R"(</?BlankLine>)");
+    output = std::regex_replace(output, re_blankline, "");
+
+    static const std::regex re_continuation(R"(</?Continuation>)");
+    output = std::regex_replace(output, re_continuation, "");
+
+    static const std::regex re_newlines(R"(\n+)");
+    output = std::regex_replace(output, re_newlines, "\n");
+  } catch (std::regex_error &e) {
+    printf("regex error in ftn2screenplain\n");
+    print_regex_error(e);
   }
 
-  output += "\n</Content>\n</FinalDraft>\n";
-
-  GString *gstr_output = g_string_new(output.c_str());
-
-  // Screenplay elements
-  g_string_replace(gstr_output, "<Transition>",
-                   "<Paragraph Type=\"Transition\"><Text>", 0);
-  g_string_replace(gstr_output, "</Transition>", "</Text></Paragraph>", 0);
-  g_string_replace(gstr_output, "<SceneHeader>",
-                   "<Paragraph Type=\"Scene Heading\"><Text>", 0);
-  g_string_replace(gstr_output, "</SceneHeader>", "</Text></Paragraph>", 0);
-  g_string_replace(gstr_output, "<Action>", "<Paragraph Type=\"Action\"><Text>",
-                   0);
-  g_string_replace(gstr_output, "</Action>", "</Text></Paragraph>", 0);
-
-  // Dialog
-  g_string_replace(gstr_output, "<Character>",
-                   "<Paragraph Type=\"Character\"><Text>", 0);
-  g_string_replace(gstr_output, "</Character>", "</Text></Paragraph>", 0);
-  g_string_replace(gstr_output, "<Parenthetical>",
-                   "<Paragraph Type=\"Parenthetical\"><Text>", 0);
-  g_string_replace(gstr_output, "</Parenthetical>", "</Text></Paragraph>", 0);
-  g_string_replace(gstr_output, "<Speech>",
-                   "<Paragraph Type=\"Dialogue\"><Text>", 0);
-  g_string_replace(gstr_output, "</Speech>", "</Text></Paragraph>", 0);
-  g_string_replace(gstr_output, "<DualDialog>", "<Paragraph><DualDialog>", 0);
-  g_string_replace(gstr_output, "</DualDialog>", "</DualDialog></Paragraph>",
-                   0);
-
-  // Formating
-  g_string_replace(gstr_output, "<center>",
-                   "<Paragraph Type=\"Action\" Alignment=\"Center\"><Text>", 0);
-  g_string_replace(gstr_output, "</center>", "</Text></Paragraph>", 0);
-  g_string_replace(gstr_output, "<b>", "<Text Style=\"Bold\">", 0);
-  g_string_replace(gstr_output, "</b>", "</Text>", 0);
-  g_string_replace(gstr_output, "<u>", "<Text Style=\"Underline\">", 0);
-  g_string_replace(gstr_output, "</u>", "</Text>", 0);
-  g_string_replace(gstr_output, "<i>", "<Text Style=\"Italic\">", 0);
-  g_string_replace(gstr_output, "</i>", "</Text>", 0);
-
-  g_string_replace(gstr_output, "<PageBreak>",
-                   "<Paragraph Type=\"Action\" StartsNewPage=\"Yes\"><Text>",
-                   0);
-  g_string_replace(gstr_output, "</PageBreak>", "</Text></Paragraph>", 0);
-
-  // Notes
-  g_string_replace(gstr_output, "<Note>", "<ScriptNote><Text>", 0);
-  g_string_replace(gstr_output, "</Note>", "</Text></ScriptNote>", 0);
-
-  // Discard
-  g_string_replace(gstr_output, "<Dialog>", "", 0);
-  g_string_replace(gstr_output, "</Dialog>", "", 0);
-  g_string_replace(gstr_output, "<DialogLeft>", "", 0);
-  g_string_replace(gstr_output, "</DialogLeft>", "", 0);
-  g_string_replace(gstr_output, "<DialogRight>", "", 0);
-  g_string_replace(gstr_output, "</DialogRight>", "", 0);
-  g_string_replace(gstr_output, "<BlankLine>", "", 0);
-  g_string_replace(gstr_output, "</BlankLine>", "", 0);
-  g_string_replace(gstr_output, "<Continuation>", "", 0);
-  g_string_replace(gstr_output, "</Continuation>", "", 0);
-
-  // Cleanup
-  g_string_replace(gstr_output, "\n\n", "\n", 0);
-  g_string_replace(gstr_output, "\n\n", "\n", 0);
-
-  // Don't know if these work...
-  g_string_replace(gstr_output, "<Lyric>", "<Paragraph Type=\"Lyric\"><Text>",
-                   0);
-  g_string_replace(gstr_output, "</Lyric>", "</Text></Paragraph>", 0);
-
-  return g_string_free(gstr_output, false);
+  return output;
 }
 
-char *ftn2html2(char *const input, char *const css_fn) {
+// html similar to textplay html output (can use the same css files)
+std::string ftn2textpla(std::string const &input, std::string const &css_fn) {
   std::string output(
       "<!DOCTYPE html>\n"
       "<html>\n<head>\n");
 
-  if (css_fn) {
+  if (!css_fn.empty()) {
+    output += "<link rel=\"stylesheet\" type=\"text/css\" href=\"file://";
+    output += css_fn;
+    output += "\">\n";
+  }
+
+  output +=
+      "</head>\n<body>\n"
+      "<div id=\"wrapper\" class=\"fountain\">\n";
+
+  Fountain::Script script;
+  script.parseFountain(input);
+
+  output += script.to_string(Fountain::ScriptNodeType::ftnContinuation |
+                             Fountain::ScriptNodeType::ftnKeyValue |
+                             Fountain::ScriptNodeType::ftnUnknown);
+
+  output += "\n</div>\n</body>\n</html>\n";
+
+  try {
+    static const std::regex re_transition1(R"(<Transition>)");
+    output = std::regex_replace(output, re_transition1,
+                                R"(<h3 class="right-transition">)");
+
+    static const std::regex re_transition2(R"(</Transition>)");
+    output = std::regex_replace(output, re_transition2, "</h3>");
+
+    static const std::regex re_sceneheader1(R"(<SceneHeader>)");
+    output = std::regex_replace(output, re_sceneheader1,
+                                R"(<h2 class="full-slugline">)");
+
+    static const std::regex re_sceneheader2(R"(</SceneHeader>)");
+    output = std::regex_replace(output, re_sceneheader2, "</h2>");
+
+    static const std::regex re_action1(R"(<Action>)");
+    output = std::regex_replace(output, re_action1, R"(<p class="action">)");
+
+    static const std::regex re_action2(R"(</Action>)");
+    output = std::regex_replace(output, re_action2, "</p>");
+
+    static const std::regex re_lyric1(R"(<Lyric>)");
+    output = std::regex_replace(output, re_lyric1, R"(<span class="lyric">)");
+
+    static const std::regex re_lyric2(R"(</Lyric>)");
+    output = std::regex_replace(output, re_lyric2, "</span>");
+
+    static const std::regex re_character1(R"(<Character>)");
+    output =
+        std::regex_replace(output, re_character1, R"(<dt class="character">)");
+
+    static const std::regex re_character2(R"(</Character>)");
+    output = std::regex_replace(output, re_character2, "</dt>");
+
+    static const std::regex re_parenthetical1(R"(<Parenthetical>)");
+    output = std::regex_replace(output, re_parenthetical1,
+                                R"(<dd class="parenthetical">)");
+
+    static const std::regex re_parenthetical2(R"(</Parenthetical>)");
+    output = std::regex_replace(output, re_parenthetical2, "</dd>");
+
+    static const std::regex re_speech1(R"(<Speech>)");
+    output = std::regex_replace(output, re_speech1, R"(<dd class="dialogue">)");
+
+    static const std::regex re_speech2(R"(</Speech>)");
+    output = std::regex_replace(output, re_speech2, "</dd>");
+
+    static const std::regex re_dialog1(R"(<Dialog>)");
+    output = std::regex_replace(output, re_dialog1, R"(<div class="dialog">)");
+
+    static const std::regex re_dialog2(R"(</Dialog>)");
+    output = std::regex_replace(output, re_dialog2, "</div>");
+
+    static const std::regex re_dialogdual1(R"(<DialogDual>)");
+    output = std::regex_replace(output, re_dialogdual1,
+                                R"(<div class="dialog_wrapper">)");
+
+    static const std::regex re_dialogdual2(R"(</DialogDual>)");
+    output = std::regex_replace(output, re_dialogdual2, "</div>");
+
+    static const std::regex re_dialogleft1(R"(<DialogLeft>)");
+    output =
+        std::regex_replace(output, re_dialogleft1, R"(<dl class="first">)");
+
+    static const std::regex re_dialogleft2(R"(</DialogLeft>)");
+    output = std::regex_replace(output, re_dialogleft2, "</dl>");
+
+    static const std::regex re_dialogright1(R"(<DialogRight>)");
+    output =
+        std::regex_replace(output, re_dialogright1, R"(<dl class="second">)");
+
+    static const std::regex re_dialogright2(R"(</DialogRight>)");
+    output = std::regex_replace(output, re_dialogright2, "</dl>");
+
+    static const std::regex re_pagebreak1(R"(</PageBreak>)");
+    output = std::regex_replace(output, re_pagebreak1,
+                                R"(<div class="page-break">)");
+
+    static const std::regex re_pagebreak2(R"(</PageBreak>)");
+    output = std::regex_replace(output, re_pagebreak2, "</div>");
+
+    static const std::regex re_note1(R"(<Note>)");
+    output = std::regex_replace(output, re_note1, R"(<p class="comment">)");
+
+    static const std::regex re_note2(R"(</Note>)");
+    output = std::regex_replace(output, re_note2, "</p>");
+
+    static const std::regex re_blankline(R"(</?BlankLine>)");
+    output = std::regex_replace(output, re_blankline, "");
+
+    static const std::regex re_continuation(R"(</?Continuation>)");
+    output = std::regex_replace(output, re_continuation, "");
+
+    static const std::regex re_center1(R"(<center>)");
+    output = std::regex_replace(output, re_center1, R"(<p class="center">)");
+
+    static const std::regex re_center2(R"(</center>)");
+    output = std::regex_replace(output, re_center2, "</p>");
+
+    static const std::regex re_newlines(R"(\n+)");
+    output = std::regex_replace(output, re_newlines, "\n");
+
+    // Unused tags:
+    //   <h5 class="goldman-slugline"></h5>
+    //   <span class="revised"></span>
+
+  } catch (std::regex_error &e) {
+    printf("regex error in ftn2screenplain\n");
+    print_regex_error(e);
+  }
+
+  return output;
+}
+
+std::string ftn2fdx(std::string const &input) {
+  std::string output(
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n"
+      "<FinalDraft DocumentType=\"Script\" Template=\"No\" Version=\"1\">\n"
+      "<Content>\n");
+
+  Fountain::Script script;
+  script.parseFountain(input);
+
+  output += script.to_string(Fountain::ScriptNodeType::ftnContinuation |
+                             Fountain::ScriptNodeType::ftnKeyValue |
+                             Fountain::ScriptNodeType::ftnSection |
+                             Fountain::ScriptNodeType::ftnSynopsis |
+                             Fountain::ScriptNodeType::ftnUnknown);
+
+  output += "\n</Content>\n</FinalDraft>\n";
+
+  try {
+    static const std::regex re_transition1(R"(<Transition>)");
+    output = std::regex_replace(output, re_transition1,
+                                R"(<Paragraph Type="Transition"><Text>)");
+
+    static const std::regex re_transition2(R"(</Transition>)");
+    output = std::regex_replace(output, re_transition2, "</Text></Paragraph>");
+
+    static const std::regex re_sceneheader1(R"(<SceneHeader>)");
+    output = std::regex_replace(output, re_sceneheader1,
+                                R"(<Paragraph Type="Scene Heading"><Text>)");
+
+    static const std::regex re_sceneheader2(R"(</SceneHeader>)");
+    output = std::regex_replace(output, re_sceneheader2, "</Text></Paragraph>");
+
+    static const std::regex re_action1(R"(<Action>)");
+    output = std::regex_replace(output, re_action1,
+                                R"(<Paragraph Type="Action"><Text>)");
+
+    static const std::regex re_action2(R"(</Action>)");
+    output = std::regex_replace(output, re_action2, "</Text></Paragraph>");
+
+    static const std::regex re_character1(R"(<Character>)");
+    output = std::regex_replace(output, re_character1,
+                                R"(<Paragraph Type="Character"><Text>)");
+
+    static const std::regex re_character2(R"(</Character>)");
+    output = std::regex_replace(output, re_character2, "</Text></Paragraph>");
+
+    static const std::regex re_parenthetical1(R"(<Parenthetical>)");
+    output = std::regex_replace(output, re_parenthetical1,
+                                R"(<Paragraph Type="Parenthetical"><Text>)");
+
+    static const std::regex re_parenthetical2(R"(</Parenthetical>)");
+    output =
+        std::regex_replace(output, re_parenthetical2, "</Text></Paragraph>");
+
+    static const std::regex re_speech1(R"(<Speech>)");
+    output = std::regex_replace(output, re_speech1,
+                                R"(<Paragraph Type="Dialogue"><Text>)");
+
+    static const std::regex re_speech2(R"(</Speech>)");
+    output = std::regex_replace(output, re_speech2, "</Text></Paragraph>");
+
+    static const std::regex re_dualdialog1(R"(<DualDialog>)");
+    output = std::regex_replace(output, re_dualdialog1,
+                                R"(<Paragraph><DualDialog>)");
+
+    static const std::regex re_dualdialog2(R"(</DualDialog>)");
+    output =
+        std::regex_replace(output, re_dualdialog2, "</DualDialog></Paragraph>");
+
+    static const std::regex re_center1(R"(<center>)");
+    output = std::regex_replace(
+        output, re_center1,
+        R"(<Paragraph Type="Action" Alignment="Center"><Text>)");
+
+    static const std::regex re_center2(R"(</center>)");
+    output = std::regex_replace(output, re_center2, "</Text></Paragraph>");
+
+    static const std::regex re_bold1(R"(<b>)");
+    output = std::regex_replace(output, re_bold1, R"(<Text Style="Bold">)");
+
+    static const std::regex re_bold2(R"(</b>)");
+    output = std::regex_replace(output, re_bold2, "</Text>");
+
+    static const std::regex re_italic1(R"(<i>)");
+    output = std::regex_replace(output, re_italic1, R"(<Text Style="Italic">)");
+
+    static const std::regex re_italic2(R"(</i>)");
+    output = std::regex_replace(output, re_italic2, "</Text>");
+
+    static const std::regex re_underline1(R"(<u>)");
+    output = std::regex_replace(output, re_underline1,
+                                R"(<Text Style="Underline">)");
+
+    static const std::regex re_underline2(R"(</u>)");
+    output = std::regex_replace(output, re_underline2, "</Text>");
+
+    static const std::regex re_pagebreak1(R"(<PageBreak>)");
+    output = std::regex_replace(
+        output, re_pagebreak1,
+        R"(<Paragraph Type="Action" StartsNewPage="Yes"><Text>)");
+
+    static const std::regex re_pagebreak2(R"(</PageBreak>)");
+    output = std::regex_replace(output, re_pagebreak2, "</Text></Paragraph>");
+
+    static const std::regex re_note1(R"(<Note>)");
+    output = std::regex_replace(output, re_note1, R"(<ScriptNote><Text>)");
+
+    static const std::regex re_note2(R"(</Note>)");
+    output = std::regex_replace(output, re_note2, "</Text></ScriptNote>");
+
+    static const std::regex re_dialog(R"(</?Dialog(Left|Right)?>)");
+    output = std::regex_replace(output, re_dialog, "");
+
+    static const std::regex re_blankline(R"(</?BlankLine>)");
+    output = std::regex_replace(output, re_blankline, "");
+
+    static const std::regex re_continuation(R"(</?Continuation>)");
+    output = std::regex_replace(output, re_continuation, "");
+
+    static const std::regex re_newlines(R"(\n+)");
+    output = std::regex_replace(output, re_newlines, "\n");
+
+    // Don't know if these work...
+    static const std::regex re_lyric1(R"(<Lyric>)");
+    output = std::regex_replace(output, re_lyric1,
+                                R"(<Paragraph Type="Lyric"><Text>)");
+
+    static const std::regex re_lyric2(R"(</Lyric>)");
+    output = std::regex_replace(output, re_lyric2, "</Text></Paragraph>");
+  } catch (std::regex_error &e) {
+    printf("regex error in ftn2fdx\n");
+    print_regex_error(e);
+  }
+
+  return output;
+}
+
+std::string ftn2html(std::string const &input, std::string const &css_fn) {
+  std::string output(
+      "<!DOCTYPE html>\n"
+      "<html>\n<head>\n");
+
+  if (!css_fn.empty()) {
     output += "<link rel=\"stylesheet\" type=\"text/css\" href=\"file://";
     output += css_fn;
     output += "\">\n";
@@ -891,31 +1129,28 @@ char *ftn2html2(char *const input, char *const css_fn) {
       "</head>\n<body>\n"
       "<Fountain>\n";
 
-  std::string s(input);
-  Script script;
-  script.parseFountain(s);
+  Fountain::Script script;
+  script.parseFountain(input);
 
-  for (auto node : script.nodes) {
-    if (node.type != ScriptNodeType::ftnContinuation &&
-        // node.type != ScriptNodeType::ftnKeyValue &&
-        node.type != ScriptNodeType::ftnUnknown) {
-      output += node.to_string() + "\n";
-    }
-  }
+  output += script.to_string(Fountain::ScriptNodeType::ftnContinuation |
+                             Fountain::ScriptNodeType::ftnKeyValue |
+                             Fountain::ScriptNodeType::ftnUnknown);
 
   output += "\n</Fountain>\n</body>\n</html>\n";
 
-  GString *gstr_output = g_string_new(output.c_str());
+  try {
+    static const std::regex re_blankline(R"(</?BlankLine>)");
+    output = std::regex_replace(output, re_blankline, "");
 
-  // Discard
-  g_string_replace(gstr_output, "<BlankLine>", "", 0);
-  g_string_replace(gstr_output, "</BlankLine>", "", 0);
-  g_string_replace(gstr_output, "<Continuation>", "", 0);
-  g_string_replace(gstr_output, "</Continuation>", "", 0);
+    static const std::regex re_continuation(R"(</?Continuation>)");
+    output = std::regex_replace(output, re_continuation, "");
 
-  // Cleanup
-  g_string_replace(gstr_output, "\n\n", "\n", 0);
-  g_string_replace(gstr_output, "\n\n", "\n", 0);
+    static const std::regex re_newlines(R"(\n+)");
+    output = std::regex_replace(output, re_newlines, "\n");
+  } catch (std::regex_error &e) {
+    printf("regex error in ftn2html2\n");
+    print_regex_error(e);
+  }
 
-  return g_string_free(gstr_output, false);
+  return output;
 }

@@ -2,7 +2,7 @@
  * Preview Geany Plugin
  * Copyright 2021 xiota
  *
- * Code Format, Markdown Geany Plugins
+ * Code Format, Markdown (Geany Plugins)
  * Copyright 2013 Matthew <mbrush@codebrainz.ca>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -792,11 +792,10 @@ static char *update_preview(gboolean const get_contents) {
         output = screenplain(work_dir, body->str, "html");
       } else {
         char *css_fn = find_copy_css("fountain.css", PREVIEW_CSS_FOUNTAIN);
-        html = ftn2html2(body->str, css_fn);
-        output = g_string_new(html);
+        std::string out = ftn2html(body->str, css_fn);
+        output = g_string_new(out.c_str());
 
         GFREE(css_fn);
-        GFREE(html);
       }
       break;
     case PREVIEW_FILETYPE_TEXTILE:

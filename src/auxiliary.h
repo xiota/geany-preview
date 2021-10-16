@@ -1,5 +1,5 @@
 /*
- * C++ Fountain Parser - auxiliary functions
+ * Fountain Screenplay Processor - auxiliary functions
  * Copyright 2021 xiota
  *
  * This program is free software; you can redistribute it and/or modify
@@ -45,8 +45,8 @@ std::string ws_rtrim(std::string s) { return rtrim(s, " \t\n\r\f\v"); }
 
 std::string ws_trim(std::string s) { return trim(s, " \t\n\r\f\v"); }
 
-bool begins_with(std::string const &input, char const *match) {
-  return !strncmp(input.c_str(), match, strlen(match));
+bool begins_with(std::string const &input, std::string const &match) {
+  return !strncmp(input.c_str(), match.c_str(), match.length());
 }
 
 std::vector<std::string> split_string(std::string const &str,
@@ -60,7 +60,8 @@ std::vector<std::string> split_string(std::string const &str,
     prev = pos + 1;
   }
 
-  // To get the last substring (or only, if delimiter is not found)
+  // to get the last substring
+  // (or entire string if delimiter is not found)
   strings.push_back(str.substr(prev));
 
   return strings;

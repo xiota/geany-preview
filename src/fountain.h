@@ -1,5 +1,5 @@
 /*
- * C++ Fountain Parser
+ * Fountain Screenplay Processor
  * Copyright 2021 xiota
  *
  * This program is free software; you can redistribute it and/or modify
@@ -23,7 +23,8 @@
 #include <string>
 #include <vector>
 
-// used as bitmask to exclude types for to_string output
+namespace Fountain {
+
 enum ScriptNodeType : size_t {
   ftnNone = 0,
   ftnUnknown = 1ull,
@@ -58,9 +59,7 @@ class ScriptNode {
 
 class Script {
  public:
-  Script() {}
-
-  void parseFountain(std::string const &fountainFile);
+  void parseFountain(std::string const &text);
   std::string to_string(size_t const &flags = ScriptNodeType::ftnNone) const;
 
   std::vector<ScriptNode> nodes;
@@ -93,7 +92,18 @@ class Script {
   }
 };
 
-char *ftn2fdx(char *const input);
+}  // namespace Fountain
 
-char *ftn2html(char *const input, char *const css_fn);
-char *ftn2html2(char *const input, char *const css_fn);
+
+// html output compatible with screenplain css files
+std::string ftn2screenplain(std::string const &input,
+                            std::string const &css_fn);
+
+// html output compatible with textplay css files
+std::string ftn2textplay(std::string const &input, std::string const &css_fn);
+
+// possibly compatible with finaldraft fdx files
+std::string ftn2fdx(std::string const &input);
+
+// native output; modern browsers can display with css
+std::string ftn2html(std::string const &input, std::string const &css_fn);

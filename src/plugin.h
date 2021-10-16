@@ -2,7 +2,7 @@
  * Preview Geany Plugin
  * Copyright 2021 xiota
  *
- * Code Format, Markdown Geany Plugins
+ * Code Format, Markdown (Geany Plugins)
  * Copyright 2013 Matthew <mbrush@codebrainz.ca>
  *
  * This program is free software; you can redistribute it and/or modify
