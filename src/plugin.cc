@@ -790,7 +790,7 @@ static char *update_preview(gboolean const get_contents) {
         output = screenplain(work_dir, body->str, "html");
       } else {
         char *css_fn = find_copy_css("fountain.css", PREVIEW_CSS_FOUNTAIN);
-        std::string out = ftn2html(body->str, css_fn);
+        std::string out = ftn2xml(body->str, css_fn);
         output = g_string_new(out.c_str());
 
         GFREE(css_fn);
@@ -907,6 +907,11 @@ static PreviewFileType get_filetype(char const *fn) {
     return PREVIEW_FILETYPE_NONE;
   }
 
+  GeanyDocument *doc = document_get_current();
+  if (!DOC_VALID(doc)) {
+    return PREVIEW_FILETYPE_NONE;
+  }
+
   PreviewFileType filetype = PREVIEW_FILETYPE_NONE;
 
   if (SUBSTR("gfm", format)) {
@@ -940,18 +945,25 @@ static PreviewFileType get_filetype(char const *fn) {
   } else if (SUBSTR("org", format)) {
     filetype = PREVIEW_FILETYPE_ORG;
   } else if (SUBSTR("html", format)) {
+    document_set_filetype(doc, filetypes[GEANY_FILETYPES_HTML]);
     filetype = PREVIEW_FILETYPE_HTML;
   } else if (SUBSTR("markdown", format)) {
+    document_set_filetype(doc, filetypes[GEANY_FILETYPES_MARKDOWN]);
     filetype = PREVIEW_FILETYPE_MARKDOWN;
   } else if (SUBSTR("asciidoc", format)) {
     filetype = PREVIEW_FILETYPE_ASCIIDOC;
+    document_set_filetype(doc, filetypes[GEANY_FILETYPES_ASCIIDOC]);
   } else if (SUBSTR("docbook", format)) {
+    document_set_filetype(doc, filetypes[GEANY_FILETYPES_DOCBOOK]);
     filetype = PREVIEW_FILETYPE_DOCBOOK;
   } else if (SUBSTR("latex", format)) {
+    document_set_filetype(doc, filetypes[GEANY_FILETYPES_LATEX]);
     filetype = PREVIEW_FILETYPE_LATEX;
   } else if (SUBSTR("rest", format) || SUBSTR("restructuredtext", format)) {
+    document_set_filetype(doc, filetypes[GEANY_FILETYPES_REST]);
     filetype = PREVIEW_FILETYPE_REST;
   } else if (SUBSTR("txt2tags", format) || SUBSTR("t2t", format)) {
+    document_set_filetype(doc, filetypes[GEANY_FILETYPES_TXT2TAGS]);
     filetype = PREVIEW_FILETYPE_TXT2TAGS;
   }
 

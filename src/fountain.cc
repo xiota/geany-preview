@@ -449,6 +449,7 @@ std::string Script::parseNodeText(std::string const &input) {
     static const std::regex re_underline(R"(_([^_\n]+)_)");
     static const std::regex re_note_1(R"(\[{2}([\S\s]*?)\]{2})");
     static const std::regex re_note_2(R"(\[{2}([\S\s]*?)$)");
+    static const std::regex re_note_3(R"(^([\S\s]*?)\]{2})");
 
     std::string output =
         std::regex_replace(input, re_bolditalic, "<b><i>$1</i></b>");
@@ -457,6 +458,7 @@ std::string Script::parseNodeText(std::string const &input) {
     output = std::regex_replace(output, re_underline, "<u>$1</u>");
     output = std::regex_replace(output, re_note_1, "<note>$1</note>");
     output = std::regex_replace(output, re_note_2, "<note>$1</note>");
+    output = std::regex_replace(output, re_note_3, "<note>$1</note>");
 
     return output;
   } catch (std::regex_error &e) {
@@ -1109,7 +1111,7 @@ std::string ftn2fdx(std::string const &input) {
   return output;
 }
 
-std::string ftn2html(std::string const &input, std::string const &css_fn) {
+std::string ftn2xml(std::string const &input, std::string const &css_fn) {
   std::string output{"<!DOCTYPE html>\n<html>\n<head>\n"};
 
   if (!css_fn.empty()) {
