@@ -1,4 +1,4 @@
-/*
+/* -*- C++ -*-
  * Fountain Screenplay Processor
  * Copyright 2021 xiota
  *
@@ -144,7 +144,7 @@ std::pair<std::string, std::string> parseSceneHeader(std::string const &input) {
   std::string first;
   std::string second;
 
-  size_t pos = input.find("#");
+  long pos = input.find("#");
   if (pos < input.length() - 1 && input.back() == '#') {
     first = ws_trim(input.substr(0, pos));
     second = input.substr(pos + 1);
@@ -292,7 +292,7 @@ auto parseKeyValue(std::string const &input) {
 }  // namespace
 
 std::string ScriptNode::to_string(size_t const &flags) const {
-  static int dialog_state = 0;
+  static uint8_t dialog_state = 0;
   std::string output;
 
   switch (type) {
@@ -447,15 +447,15 @@ std::string Script::parseNodeText(std::string const &input) {
     static const std::regex re_bold(R"(\*{2}([^*]+?)\*{2})");
     static const std::regex re_italic(R"(\*{1}([^*]+?)\*{1})");
     static const std::regex re_underline(R"(_([^_\n]+)_)");
-    static const std::regex re_note_1(R"(\[{2}([\S\s]*?)\]{2})");
-    static const std::regex re_note_2(R"(\[{2}([\S\s]*?)$)");
-    static const std::regex re_note_3(R"(^([\S\s]*?)\]{2})");
-
     std::string output =
         std::regex_replace(input, re_bolditalic, "<b><i>$1</i></b>");
     output = std::regex_replace(output, re_bold, "<b>$1</b>");
     output = std::regex_replace(output, re_italic, "<i>$1</i>");
     output = std::regex_replace(output, re_underline, "<u>$1</u>");
+
+    static const std::regex re_note_1(R"(\[{2}([\S\s]*?)\]{2})");
+    static const std::regex re_note_2(R"(\[{2}([\S\s]*?)$)");
+    static const std::regex re_note_3(R"(^([\S\s]*?)\]{2})");
     output = std::regex_replace(output, re_note_1, "<note>$1</note>");
     output = std::regex_replace(output, re_note_2, "<note>$1</note>");
     output = std::regex_replace(output, re_note_3, "<note>$1</note>");
@@ -475,17 +475,36 @@ void Script::parseFountain(std::string const &text) {
 
   std::vector<std::string> lines;
 
-  // remove comments
+  // remove comments, replace tabs
   try {
     static const std::regex re_comment(R"(/\*[\S\s]*?\*/)");
     static const std::regex re_tabs(R"(\t)");
+    std::string strTmp = std::regex_replace(text, re_comment, "");
+    strTmp = std::regex_replace(strTmp, re_tabs, "    ");
 
-    std::string s = std::regex_replace(text, re_comment, "");
-    s = std::regex_replace(s, re_tabs, "    ");
+    static const std::regex re_ampersand(R"(&(^=#?[a-zA-Z0-9]+;))");
+    static const std::regex re_asterisk(R"(\\\*)");
+    static const std::regex re_underscore(R"(\\_)");
+    static const std::regex re_colon(R"(\\:)");
+    strTmp = std::regex_replace(strTmp, re_ampersand, R"(&#38;)");
+    strTmp = std::regex_replace(strTmp, re_asterisk, R"(&#42;)");
+    strTmp = std::regex_replace(strTmp, re_underscore, R"(&#95;)");
+    strTmp = std::regex_replace(strTmp, re_colon, R"(&#58;)");
 
-    lines = split_lines(s);
+    static const std::regex re_bracket_left(R"(\\\[)");
+    static const std::regex re_bracket_right(R"(\\\])");
+    static const std::regex re_backslash(R"(\\\\)");
+    static const std::regex re_lt(R"(\\<)");
+    static const std::regex re_gt(R"(\\>)");
+    strTmp = std::regex_replace(strTmp, re_bracket_left, R"(&#91;)");
+    strTmp = std::regex_replace(strTmp, re_bracket_right, R"(&#93;)");
+    strTmp = std::regex_replace(strTmp, re_backslash, R"(&#92;)");
+    strTmp = std::regex_replace(strTmp, re_lt, R"(&#60;)");
+    strTmp = std::regex_replace(strTmp, re_gt, R"(&#62;)");
+
+    lines = split_lines(strTmp);
   } catch (std::regex_error &e) {
-    printf("regex error in parseNodeText\n");
+    printf("regex error in parseFountain\n");
     print_regex_error(e);
   }
 
@@ -585,7 +604,7 @@ void Script::parseFountain(std::string const &text) {
       if (isDualDialog(s)) {
         // modify previous dialog node
         bool prev_dialog_modded = false;
-        for (size_t pos = nodes.size() - 1; pos >= 0; pos--) {
+        for (int64_t pos = nodes.size() - 1; pos >= 0; pos--) {
           if (nodes[pos].type == ScriptNodeType::ftnDialog) {
             nodes[pos].type = ScriptNodeType::ftnDialogLeft;
             prev_dialog_modded = true;
@@ -641,7 +660,7 @@ void Script::parseFountain(std::string const &text) {
 
     // Section, can only be forced
     if (s.length() > 0 && s[0] == '#') {
-      for (int i = 1; i < 6; i++) {
+      for (uint8_t i = 1; i < 6; i++) {
         if (s.length() > i && s[i] == '#') {
           if (i == 5) {
             new_node(ScriptNodeType::ftnSection, std::to_string(i + 1));
@@ -837,7 +856,7 @@ std::string ftn2screenplain(std::string const &input,
 }
 
 // html similar to textplay html output (can use the same css files)
-std::string ftn2textpla(std::string const &input, std::string const &css_fn) {
+std::string ftn2textplay(std::string const &input, std::string const &css_fn) {
   std::string output{"<!DOCTYPE html>\n<html>\n<head>\n"};
 
   if (!css_fn.empty()) {
@@ -966,7 +985,7 @@ std::string ftn2textpla(std::string const &input, std::string const &css_fn) {
     //   <span class="revised"></span>
 
   } catch (std::regex_error &e) {
-    printf("regex error in ftn2screenplain\n");
+    printf("regex error in ftn2textplay\n");
     print_regex_error(e);
   }
 
@@ -1036,8 +1055,8 @@ std::string ftn2fdx(std::string const &input) {
     output = std::regex_replace(output, re_speech2, "</Text></Paragraph>");
 
     static const std::regex re_dualdialog1("<DualDialog>");
-    output = std::regex_replace(output, re_dualdialog1,
-                                "<Paragraph><DualDialog>");
+    output =
+        std::regex_replace(output, re_dualdialog1, "<Paragraph><DualDialog>");
 
     static const std::regex re_dualdialog2("</DualDialog>");
     output =
@@ -1143,7 +1162,7 @@ std::string ftn2xml(std::string const &input, std::string const &css_fn) {
     static const std::regex re_newlines(R"(\n+)");
     output = std::regex_replace(output, re_newlines, "\n");
   } catch (std::regex_error &e) {
-    printf("regex error in ftn2html2\n");
+    printf("regex error in ftn2xml\n");
     print_regex_error(e);
   }
 

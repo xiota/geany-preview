@@ -1,3 +1,8 @@
+# Common build directories
+/build
+/build*
+
+# Common compiler artifacts
 *.[ao]
 *.so
 *.lo
@@ -6,6 +11,10 @@
 *.lib
 *.dylib
 
+# Geany project file
+*.geany
+
+# Other commonly unwanted files
 .deps/
 .libs/
 Makefile.in
@@ -18,7 +27,5 @@ Makefile
 /libtool
 /m4/
 /stamp-h1
-
 /compile_commands.json
-
 /misc/

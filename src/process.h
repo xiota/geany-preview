@@ -1,4 +1,4 @@
-/*
+/* -*- C++ -*-
  * process.h
  *
  * Copyright 2013 Matthew <mbrush@codebrainz.ca>
