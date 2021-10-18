@@ -90,17 +90,18 @@ class Script {
   }
 };
 
-}  // namespace Fountain
-
 // html output compatible with screenplain css files
 std::string ftn2screenplain(std::string const &input,
-                            std::string const &css_fn = nullptr);
+                            std::string const &css_fn = "");
 
 // html output compatible with textplay css files
-std::string ftn2textplay(std::string const &input, std::string const &css_fn = nullptr);
+std::string ftn2textplay(std::string const &input,
+                         std::string const &css_fn = "");
 
 // possibly compatible with finaldraft fdx files
 std::string ftn2fdx(std::string const &input);
 
 // native output; modern browsers can display with css
-std::string ftn2xml(std::string const &input, std::string const &css_fn = nullptr);
+std::string ftn2xml(std::string const &input, std::string const &css_fn = "");
+
+}  // namespace Fountain

@@ -18,13 +18,22 @@
 
 #pragma once
 
-std::string &ltrim(std::string &s, char const *t = " \t\n\r\f\v");
-std::string &rtrim(std::string &s, char const *t = " \t\n\r\f\v");
-std::string &trim(std::string &s, char const *t = " \t\n\r\f\v");
+namespace Fountain {
+
+std::string &ltrim_inplace(std::string &s, char const *t = " \t\n\r\f\v");
+std::string &rtrim_inplace(std::string &s, char const *t = " \t\n\r\f\v");
+std::string &trim_inplace(std::string &s, char const *t = " \t\n\r\f\v");
+
+std::string &replace_all_inplace(std::string &subject,
+                                 const std::string &search,
+                                 const std::string &replace);
 
 std::string ws_ltrim(std::string s);
 std::string ws_rtrim(std::string s);
 std::string ws_trim(std::string s);
+
+std::string replace_all(std::string subject, const std::string &search,
+                        const std::string &replace);
 
 bool begins_with(std::string const &input, std::string const &match);
 
@@ -33,10 +42,14 @@ std::vector<std::string> split_string(std::string const &str,
 
 std::vector<std::string> split_lines(std::string const &s);
 
-std::string to_upper(std::string s);
+std::string &to_upper_inplace(std::string &s);
+std::string &to_lower_inplace(std::string &s);
 
+std::string to_upper(std::string s);
 std::string to_lower(std::string s);
 
 bool is_upper(std::string const &s);
 
 void print_regex_error(std::regex_error &e);
+
+}  // namespace Fountain

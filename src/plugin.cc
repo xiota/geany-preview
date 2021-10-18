@@ -790,7 +790,7 @@ static char *update_preview(gboolean const get_contents) {
         output = screenplain(work_dir, body->str, "html");
       } else {
         char *css_fn = find_copy_css("fountain.css", PREVIEW_CSS_FOUNTAIN);
-        std::string out = ftn2xml(body->str, css_fn);
+        std::string out = Fountain::ftn2xml(body->str, css_fn);
         output = g_string_new(out.c_str());
 
         GFREE(css_fn);

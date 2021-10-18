@@ -50,25 +50,25 @@ bool isForced(std::string const &input) {
 }
 
 bool isTransition(std::string const &input) {
-  if (!input.length()) {
+  if (input.length() < 1) {
     return false;
   }
 
-  // ignore indent
-  std::string s = ws_ltrim(input);
-  size_t len = s.length();
+  // Note: input should already be left-trimmed,
+  // otherwise indent would be removed here
 
-  // forced transition
-  if (len > 0 && s[0] == '>' && s[len - 1] != '<') {
+  // forced transition; make sure intent is not to center
+  size_t len = input.length();
+  if (input[0] == '>' && input[len - 1] != '<') {
     return true;
   }
 
-  if (isForced(s)) {
+  if (isForced(input)) {
     return false;
   }
 
   // must be uppercase
-  if (!is_upper(s)) {
+  if (!is_upper(input)) {
     return false;
   }
 
@@ -76,10 +76,10 @@ bool isTransition(std::string const &input) {
   //   "CUT TO:",      "DISSOLVE TO:",  "FADE TO:",           "FLASH CUT TO:",
   //   "JUMP CUT TO:", "MATCH CUT TO:", "MATCH DISSOLVE TO:", "SMASH CUT TO:",
   //   "WIPE TO:",
-  if (s.length() < 4) {
+  if (len < 4) {
     return false;
   }
-  std::string end = s.substr(len - 4);
+  std::string end = input.substr(len - 4);
   if (end == std::string(" TO:")) {
     return true;
   }
@@ -93,7 +93,7 @@ bool isTransition(std::string const &input) {
   };
 
   for (auto str : transitions) {
-    if (s == std::string(str)) {
+    if (input == std::string(str)) {
       return true;
     }
   }
@@ -102,26 +102,25 @@ bool isTransition(std::string const &input) {
 }
 
 std::string parseTransition(std::string const &input) {
-  std::string r = ws_trim(input);
-  if (r[0] == '>') {
-    r = r.substr(1);
+  std::string output;
+  if (input[0] == '>') {
+    output = to_upper(input.substr(1));
+  } else {
+    output = to_upper(input);
   }
-
-  return to_upper(ws_ltrim(r));
+  return trim_inplace(output);
 }
 
 bool isSceneHeader(std::string const &input) {
-  const std::string s = ws_ltrim(input);
-
-  if (s.length() < 2) {
+  if (input.length() < 2) {
     return false;
   }
 
-  if (s[0] == '.' && s[1] != '.') {
+  if (input[0] == '.' && input[1] != '.') {
     return true;
   }
 
-  if (isForced(s)) {
+  if (isForced(input)) {
     return false;
   }
 
@@ -140,24 +139,30 @@ bool isSceneHeader(std::string const &input) {
   return false;
 }
 
+// returns <scene description, scene number>
 std::pair<std::string, std::string> parseSceneHeader(std::string const &input) {
   std::string first;
   std::string second;
+  bool forced_scene{false};
+
+  if (input[0] == '.' && input[1] != '.') {
+    forced_scene = true;
+  }
 
   long pos = input.find("#");
   if (pos < input.length() - 1 && input.back() == '#') {
-    first = ws_trim(input.substr(0, pos));
-    second = input.substr(pos + 1);
-    second.pop_back();
+    if (forced_scene) {
+      first = ws_trim(input.substr(1, pos - 1));
+      second = ws_trim(input.substr(pos + 1, input.length() - pos - 3));
+    } else {
+      first = ws_trim(input.substr(0, pos));
+      second = ws_trim(input.substr(pos + 1, input.length() - pos - 2));
+    }
   } else {
-    first = ws_trim(input);
+    first = ws_trim(input.substr(forced_scene ? 1 : 0));
   }
 
-  if (first[0] == '.' && first[1] != '.') {
-    return std::make_pair(ws_ltrim(first.substr(1)), trim(second));
-  } else {
-    return std::make_pair(first, trim(second));
-  }
+  return std::make_pair(first, second);
 }
 
 bool isCenter(std::string const &input) {
@@ -165,11 +170,11 @@ bool isCenter(std::string const &input) {
     return false;
   }
 
-  // ignore indent
-  std::string s = ws_ltrim(input);
-  size_t len = s.length();
+  // Note: input should already be left-trimmed,
+  // otherwise indent would be removed here
 
-  if (len > 1 && s[0] == '>' && s[len - 1] == '<') {
+  // TODO: Should input also be right-trimmed?
+  if (input[0] == '>' && input[input.length() - 1] == '<') {
     return true;
   }
 
@@ -181,42 +186,52 @@ bool isNotation(std::string const &input) {
     return false;
   }
 
-  std::string s = ws_trim(input);
-  size_t len = s.length();
+  // input should already be left-trimmed...
+  if (input[0] != '[' || input[1] != '[') {
+    return false;
+  }
 
-  if (len > 3 && s[0] == '[' && s[1] == '[' && s[len - 1] == ']' &&
-      s[len - 2] == ']') {
-    return true;
+  // check if right-trimmed to avoid copying string
+  static std::string strWhiteSpace{" \t\n\r\f\v"};
+  if (strWhiteSpace.find(input.back()) != std::string::npos) {
+    std::string s = ws_rtrim(input);
+    const size_t len = s.length();
+    if (s[len - 1] == ']' && s[len - 2] == ']') {
+      return true;
+    }
+  } else {
+    const size_t len = input.length();
+    if (input[len - 1] == ']' && input[len - 2] == ']') {
+      return true;
+    }
   }
 
   return false;
 }
 
 bool isCharacter(std::string const &input) {
-  if (!input.length()) {
+  if (input.length() < 1) {
     return false;
   }
 
-  // ignore indent
-  std::string s = ws_ltrim(input);
-  size_t len = s.length();
+  // Note: input should already be left-trimmed,
+  // otherwise indent would be removed here
 
   // forced character
-  if (len > 0 && s[0] == '@') {
+  if (input[0] == '@') {
     return true;
   }
 
-  if (isForced(s)) {
+  if (isForced(input)) {
     return false;
   }
 
-  if (input.find("(") != std::string::npos ||
-      input.find(")") != std::string::npos) {
-    size_t pos = s.find("(");
-    if (is_upper(s.substr(0, pos))) {
+  size_t pos = input.find("(");
+  if (pos != std::string::npos && input.find(")") != std::string::npos) {
+    if (is_upper(input.substr(0, pos))) {
       return true;
     }
-  } else if (is_upper(s)) {
+  } else if (is_upper(input)) {
     return true;
   }
 
@@ -224,14 +239,23 @@ bool isCharacter(std::string const &input) {
 }
 
 std::string parseCharacter(std::string const &input) {
-  std::string r = ws_ltrim(input);
-  if (r[0] == '>') {
-    r = ws_ltrim(r.substr(1));
+  // Note: input should already be left-trimmed,
+  // otherwise indent would be removed here
+  std::string output;
+
+  if (input[0] == '@') {
+    output = ws_ltrim(input.substr(1));
+  } else {
+    output = input;
   }
-  if (r[r.length() - 1] == '^') {
-    r = ws_rtrim(r.substr(0, r.length() - 1));
+
+  const size_t len = output.length();
+
+  if (output[len - 1] == '^') {
+    output = ws_rtrim(output.substr(0, len - 1));
   }
-  return to_upper(r);
+
+  return output;
 }
 
 bool isDualDialog(std::string const &input) {
@@ -249,44 +273,51 @@ bool isParenthetical(std::string const &input) {
     return false;
   }
 
-  // ignore surrounding spaces
-  std::string s = ws_trim(input);
-  size_t len = s.length();
-
-  if (len > 0 && s[0] == '(' && s[len - 1] == ')') {
-    return true;
+  // input should already be left=trimmed.
+  if (input[0] != '(') {
+    return false;
   }
 
+  // check if right-trimmed to avoid copying string
+  static std::string strWhiteSpace{" \t\n\r\f\v"};
+  if (strWhiteSpace.find(input.back()) != std::string::npos) {
+    std::string s = ws_rtrim(input);
+    const size_t len = s.length();
+    if (s[len - 1] == ')') {
+      return true;
+    }
+  } else {
+    const size_t len = input.length();
+    if (input[len - 1] == ')') {
+      return true;
+    }
+  }
   return false;
 }
 
 bool isContinuation(std::string const &input) {
-  try {
-    static const std::regex re_continuation(R"(^\s*[\s\.]$)");
+  if (input.length() < 1) {
+    return false;
+  }
 
-    if (std::regex_search(input, re_continuation)) {
-      return true;
-    }
-  } catch (std::regex_error &e) {
-    printf("regex error in isContinuation\n");
-    print_regex_error(e);
+  if (input.find_first_not_of(" \t\n\r\f\v") == std::string::npos) {
+    return true;
   }
   return false;
 }
 
 auto parseKeyValue(std::string const &input) {
-  std::string s = ws_trim(input);
   std::string key;
   std::string value;
 
-  size_t pos = s.find(':');
+  size_t pos = input.find(':');
 
   if (pos != std::string::npos) {
-    key = s.substr(0, pos);
-    value = s.substr(pos + 1);
+    key = ws_trim(input.substr(0, pos));
+    value = ws_trim(input.substr(pos + 1));
   }
 
-  return std::make_pair(key, ws_ltrim(value));
+  return std::make_pair(key, value);
 }
 
 }  // namespace
@@ -474,33 +505,25 @@ void Script::parseFountain(std::string const &text) {
   }
 
   std::vector<std::string> lines;
-
-  // remove comments, replace tabs
   try {
+    // remove comments
     static const std::regex re_comment(R"(/\*[\S\s]*?\*/)");
-    static const std::regex re_tabs(R"(\t)");
     std::string strTmp = std::regex_replace(text, re_comment, "");
-    strTmp = std::regex_replace(strTmp, re_tabs, "    ");
 
-    static const std::regex re_ampersand(R"(&(^=#?[a-zA-Z0-9]+;))");
-    static const std::regex re_asterisk(R"(\\\*)");
-    static const std::regex re_underscore(R"(\\_)");
-    static const std::regex re_colon(R"(\\:)");
-    strTmp = std::regex_replace(strTmp, re_ampersand, R"(&#38;)");
-    strTmp = std::regex_replace(strTmp, re_asterisk, R"(&#42;)");
-    strTmp = std::regex_replace(strTmp, re_underscore, R"(&#95;)");
-    strTmp = std::regex_replace(strTmp, re_colon, R"(&#58;)");
+    // replace non-entity ampersands
+    static const std::regex re_ampersand("&(?!#?[a-zA-Z0-9]+;)");
+    strTmp = std::regex_replace(strTmp, re_ampersand, "&#38;");
 
-    static const std::regex re_bracket_left(R"(\\\[)");
-    static const std::regex re_bracket_right(R"(\\\])");
-    static const std::regex re_backslash(R"(\\\\)");
-    static const std::regex re_lt(R"(\\<)");
-    static const std::regex re_gt(R"(\\>)");
-    strTmp = std::regex_replace(strTmp, re_bracket_left, R"(&#91;)");
-    strTmp = std::regex_replace(strTmp, re_bracket_right, R"(&#93;)");
-    strTmp = std::regex_replace(strTmp, re_backslash, R"(&#92;)");
-    strTmp = std::regex_replace(strTmp, re_lt, R"(&#60;)");
-    strTmp = std::regex_replace(strTmp, re_gt, R"(&#62;)");
+    // simple tab and escape sequence replacements
+    replace_all_inplace(strTmp, "\t", "    ");
+    replace_all_inplace(strTmp, R"(\*)", "&#42;");
+    replace_all_inplace(strTmp, R"(\_)", "&#95;");
+    replace_all_inplace(strTmp, R"(\:)", "&#58;");
+    replace_all_inplace(strTmp, R"(\[)", "&#91;");
+    replace_all_inplace(strTmp, R"(\])", "&#93;");
+    replace_all_inplace(strTmp, R"(\\)", "&#92;");
+    replace_all_inplace(strTmp, R"(\<)", "&#60;");
+    replace_all_inplace(strTmp, R"(\>)", "&#62;");
 
     lines = split_lines(strTmp);
   } catch (std::regex_error &e) {
@@ -513,7 +536,6 @@ void Script::parseFountain(std::string const &text) {
   try {
     // check if first line matches header format
     static const std::regex re_has_header(R"(^[^\s:]+:\s)");
-
     if (std::regex_search(text, re_has_header)) {
       has_header = true;
     }
@@ -565,10 +587,13 @@ void Script::parseFountain(std::string const &text) {
     if (isNotation(s)) {
       if (line[0] == ' ' || line[0] == '\t' || line[line.length() - 1] == ' ' ||
           line[line.length() - 1] == '\t') {
+        // treat as continuation
         append(s);
       } else {
+        // add notation to previous node
         append(s);
-        new_node(ScriptNodeType::ftnBlankLine, "");
+        // then insert blank line
+        new_node(ScriptNodeType::ftnBlankLine);
         end_node();
       }
       continue;
@@ -583,7 +608,7 @@ void Script::parseFountain(std::string const &text) {
 
     // Transition
     if (curr_node.type == ScriptNodeType::ftnUnknown && isTransition(s)) {
-      new_node(ScriptNodeType::ftnTransition, "");
+      new_node(ScriptNodeType::ftnTransition);
       append(parseTransition(s));
       end_node();
       continue;
@@ -612,17 +637,17 @@ void Script::parseFountain(std::string const &text) {
           }
         }
         if (prev_dialog_modded) {
-          new_node(ScriptNodeType::ftnDialogRight, "");
+          new_node(ScriptNodeType::ftnDialogRight);
         } else {
-          new_node(ScriptNodeType::ftnDialog, "");
+          new_node(ScriptNodeType::ftnDialog);
         }
 
-        new_node(ScriptNodeType::ftnCharacter, "");
+        new_node(ScriptNodeType::ftnCharacter);
         append(parseCharacter(s));
         end_node();
       } else {
-        new_node(ScriptNodeType::ftnDialog, "");
-        new_node(ScriptNodeType::ftnCharacter, "");
+        new_node(ScriptNodeType::ftnDialog);
+        new_node(ScriptNodeType::ftnCharacter);
         append(parseCharacter(s));
         end_node();
       }
@@ -636,7 +661,7 @@ void Script::parseFountain(std::string const &text) {
         if (ct == ScriptNodeType::ftnParenthetical ||
             ct == ScriptNodeType::ftnCharacter ||
             ct == ScriptNodeType::ftnSpeech) {
-          new_node(ScriptNodeType::ftnParenthetical, "");
+          new_node(ScriptNodeType::ftnParenthetical);
           append(ws_trim(s));
           end_node();
           continue;
@@ -652,7 +677,7 @@ void Script::parseFountain(std::string const &text) {
       ScriptNodeType ct = nodes.back().type;
       if (ct == ScriptNodeType::ftnParenthetical ||
           ct == ScriptNodeType::ftnCharacter) {
-        new_node(ScriptNodeType::ftnSpeech, "");
+        new_node(ScriptNodeType::ftnSpeech);
         append(s);
         continue;
       }
@@ -683,14 +708,14 @@ void Script::parseFountain(std::string const &text) {
     // Synopsis, can only be forced
     if (s.length() > 1 && s[0] == '=') {
       new_node(ScriptNodeType::ftnSynopsis, std::to_string(currSection));
-      append(ws_ltrim(s.substr(1)));
+      append(ws_trim(s.substr(1)));
       end_node();
       continue;
     }
 
     // Lyric, can only be forced
     if (s.length() > 1 && s[0] == '~') {
-      new_node(ScriptNodeType::ftnLyric, "");
+      new_node(ScriptNodeType::ftnLyric);
       append(s.substr(1));
       end_node();
       continue;
@@ -707,17 +732,17 @@ void Script::parseFountain(std::string const &text) {
       continue;
     }
     if (isCenter(s)) {
-      new_node(ScriptNodeType::ftnAction, "");
+      new_node(ScriptNodeType::ftnAction);
       append("<center>" + ws_trim(s.substr(1, s.length() - 2)) + "</center>");
       continue;
     }
     if (s.length() > 1 && s[0] == '!') {
-      new_node(ScriptNodeType::ftnAction, "");
+      new_node(ScriptNodeType::ftnAction);
       append(s.substr(1));
       continue;
     }
     if (curr_node.type == ScriptNodeType::ftnUnknown) {
-      new_node(ScriptNodeType::ftnAction, "");
+      new_node(ScriptNodeType::ftnAction);
       append(line);
       continue;
     }
@@ -725,8 +750,6 @@ void Script::parseFountain(std::string const &text) {
 
   end_node();
 }
-
-}  // namespace Fountain
 
 // html similar to screenplain html output (can use the same css files)
 std::string ftn2screenplain(std::string const &input,
@@ -753,97 +776,48 @@ std::string ftn2screenplain(std::string const &input,
   output += "\n</div>\n</body>\n</html>\n";
 
   try {
-    static const std::regex re_transition1("<Transition>");
-    output = std::regex_replace(output, re_transition1,
-                                R"(<div class="transition">)");
+    replace_all_inplace(output, "<Transition>", R"(<div class="transition">)");
+    replace_all_inplace(output, "</Transition>", "</div>");
 
-    static const std::regex re_transition2("</Transition>");
-    output = std::regex_replace(output, re_transition2, "</div>");
+    replace_all_inplace(output, "<SceneHeader>", R"(<h6 class="sceneheader">)");
+    replace_all_inplace(output, "</SceneHeader>", "</h6>");
 
-    static const std::regex re_sceneheader1("<SceneHeader>");
-    output = std::regex_replace(output, re_sceneheader1,
-                                R"(<h6 class="sceneheader">)");
+    replace_all_inplace(output, "<Action>", R"(<div class="action">)");
+    replace_all_inplace(output, "</Action>", "</div>");
 
-    static const std::regex re_sceneheader2("</SceneHeader>");
-    output = std::regex_replace(output, re_sceneheader2, "</h6>");
+    replace_all_inplace(output, "<Lyric>", R"(<div class="lyric">)");
+    replace_all_inplace(output, "</Lyric>", "</div>");
 
-    static const std::regex re_action1("<Action>");
-    output = std::regex_replace(output, re_action1, R"(<div class="action">)");
+    replace_all_inplace(output, "<Character>", R"(<p class="character">)");
+    replace_all_inplace(output, "</Character>", "</p>");
 
-    static const std::regex re_action2("</Action>");
-    output = std::regex_replace(output, re_action2, "</div>");
+    replace_all_inplace(output, "<Parenthetical>",
+                        R"(<p class="parenthetical">)");
+    replace_all_inplace(output, "</Parenthetical>", "</p>");
 
-    static const std::regex re_lyric1("<Lyric>");
-    output = std::regex_replace(output, re_lyric1, R"(<div class="lyric">)");
+    replace_all_inplace(output, "<Speech>", R"(<p class="speech">)");
+    replace_all_inplace(output, "</Speech>", "</p>");
 
-    static const std::regex re_lyric2("</Lyric>");
-    output = std::regex_replace(output, re_lyric2, "</div>");
+    replace_all_inplace(output, "<Dialog>", R"(<div class="dialog">)");
+    replace_all_inplace(output, "</Dialog>", "</div>");
 
-    static const std::regex re_character1("<Character>");
-    output =
-        std::regex_replace(output, re_character1, R"(<p class="character">)");
+    replace_all_inplace(output, "<DialogDual>", R"(<div class="dual">)");
+    replace_all_inplace(output, "</DialogDual>", "</div>");
 
-    static const std::regex re_character2("</Character>");
-    output = std::regex_replace(output, re_character2, "</p>");
+    replace_all_inplace(output, "<DialogLeft>", R"(<div class="left">)");
+    replace_all_inplace(output, "</DialogLeft>", "</div>");
 
-    static const std::regex re_parenthetical1("<Parenthetical>");
-    output = std::regex_replace(output, re_parenthetical1,
-                                R"(<p class="parenthetical">)");
+    replace_all_inplace(output, "<DialogRight>", R"(<div class="right">)");
+    replace_all_inplace(output, "</DialogRight>", "</div>");
 
-    static const std::regex re_parenthetical2("</Parenthetical>");
-    output = std::regex_replace(output, re_parenthetical2, "</p>");
+    replace_all_inplace(output, "<PageBreak>", R"(<div class="page-break">)");
+    replace_all_inplace(output, "</PageBreak>", "</div>");
 
-    static const std::regex re_speech1("<Speech>");
-    output = std::regex_replace(output, re_speech1, R"(<p class="speech">)");
+    replace_all_inplace(output, "<Note>", R"(<div class="note">)");
+    replace_all_inplace(output, "</Note>", "</div>");
 
-    static const std::regex re_speech2("</Speech>");
-    output = std::regex_replace(output, re_speech2, "</p>");
-
-    static const std::regex re_dialog1("<Dialog>");
-    output = std::regex_replace(output, re_dialog1, R"(<div class="dialog">)");
-
-    static const std::regex re_dialog2("</Dialog>");
-    output = std::regex_replace(output, re_dialog2, "</div>");
-
-    static const std::regex re_dialogdual1("<DialogDual>");
-    output =
-        std::regex_replace(output, re_dialogdual1, R"(<div class="dual">)");
-
-    static const std::regex re_dialogdual2("</DialogDual>");
-    output = std::regex_replace(output, re_dialogdual2, "</div>");
-
-    static const std::regex re_dialogleft1("<DialogLeft>");
-    output =
-        std::regex_replace(output, re_dialogleft1, R"(<div class="left">)");
-
-    static const std::regex re_dialogleft2("</DialogLeft>");
-    output = std::regex_replace(output, re_dialogleft2, "</div>");
-
-    static const std::regex re_dialogright1("<DialogRight>");
-    output =
-        std::regex_replace(output, re_dialogright1, R"(<div class="right">)");
-
-    static const std::regex re_dialogright2("</DialogRight>");
-    output = std::regex_replace(output, re_dialogright2, "</div>");
-
-    static const std::regex re_pagebreak1("<PageBreak>");
-    output = std::regex_replace(output, re_pagebreak1,
-                                R"(<div class="page-break">)");
-
-    static const std::regex re_pagebreak2("</PageBreak>");
-    output = std::regex_replace(output, re_pagebreak2, "</div>");
-
-    static const std::regex re_note1("<Note>");
-    output = std::regex_replace(output, re_note1, R"(<div class="note">)");
-
-    static const std::regex re_note2("</Note>");
-    output = std::regex_replace(output, re_note2, "</div>");
-
-    static const std::regex re_blankline("</?BlankLine>");
-    output = std::regex_replace(output, re_blankline, "");
-
-    static const std::regex re_continuation("</?Continuation>");
-    output = std::regex_replace(output, re_continuation, "");
+    replace_all_inplace(output, "<BlankLine>", "");
+    replace_all_inplace(output, "</BlankLine>", "");
 
     static const std::regex re_newlines(R"(\n+)");
     output = std::regex_replace(output, re_newlines, "\n");
@@ -879,103 +853,54 @@ std::string ftn2textplay(std::string const &input, std::string const &css_fn) {
   output += "\n</div>\n</body>\n</html>\n";
 
   try {
-    static const std::regex re_transition1("<Transition>");
-    output = std::regex_replace(output, re_transition1,
-                                R"(<h3 class="right-transition">)");
+    replace_all_inplace(output, "<Transition>",
+                        R"(<h3 class="right-transition">)");
+    replace_all_inplace(output, "</Transition>", "</h3>");
 
-    static const std::regex re_transition2("</Transition>");
-    output = std::regex_replace(output, re_transition2, "</h3>");
+    replace_all_inplace(output, "<SceneHeader>",
+                        R"(<h2 class="full-slugline">)");
+    replace_all_inplace(output, "</SceneHeader>", "</h2>");
 
-    static const std::regex re_sceneheader1("<SceneHeader>");
-    output = std::regex_replace(output, re_sceneheader1,
-                                R"(<h2 class="full-slugline">)");
+    replace_all_inplace(output, "<Action>", R"(<p class="action">)");
+    replace_all_inplace(output, "</Action>", "</p>");
 
-    static const std::regex re_sceneheader2("</SceneHeader>");
-    output = std::regex_replace(output, re_sceneheader2, "</h2>");
+    replace_all_inplace(output, "<Lyric>", R"(<span class="lyric">)");
+    replace_all_inplace(output, "</Lyric>", "</span>");
 
-    static const std::regex re_action1("<Action>");
-    output = std::regex_replace(output, re_action1, R"(<p class="action">)");
+    replace_all_inplace(output, "<Character>", R"(<dt class="character">)");
+    replace_all_inplace(output, "</Character>", "</dt>");
 
-    static const std::regex re_action2("</Action>");
-    output = std::regex_replace(output, re_action2, "</p>");
+    replace_all_inplace(output, "<Parenthetical>",
+                        R"(<dd class="parenthetical">)");
+    replace_all_inplace(output, "</Parenthetical>", "</dd>");
 
-    static const std::regex re_lyric1("<Lyric>");
-    output = std::regex_replace(output, re_lyric1, R"(<span class="lyric">)");
+    replace_all_inplace(output, "<Speech>", R"(<dd class="dialogue">)");
+    replace_all_inplace(output, "</Speech>", "</dd>");
 
-    static const std::regex re_lyric2("</Lyric>");
-    output = std::regex_replace(output, re_lyric2, "</span>");
+    replace_all_inplace(output, "<Dialog>", R"(<div class="dialog">)");
+    replace_all_inplace(output, "</Dialog>", "</div>");
 
-    static const std::regex re_character1("<Character>");
-    output =
-        std::regex_replace(output, re_character1, R"(<dt class="character">)");
+    replace_all_inplace(output, "<DialogDual>",
+                        R"(<div class="dialog_wrapper">)");
+    replace_all_inplace(output, "</DialogDual>", "</div>");
 
-    static const std::regex re_character2("</Character>");
-    output = std::regex_replace(output, re_character2, "</dt>");
+    replace_all_inplace(output, "<DialogLeft>", R"(<dl class="first">)");
+    replace_all_inplace(output, "</DialogLeft>", "</dl>");
 
-    static const std::regex re_parenthetical1("<Parenthetical>");
-    output = std::regex_replace(output, re_parenthetical1,
-                                R"(<dd class="parenthetical">)");
+    replace_all_inplace(output, "<DialogRight>", R"(<dl class="second">)");
+    replace_all_inplace(output, "</DialogRight>", "</dl>");
 
-    static const std::regex re_parenthetical2("</Parenthetical>");
-    output = std::regex_replace(output, re_parenthetical2, "</dd>");
+    replace_all_inplace(output, "</PageBreak>", R"(<div class="page-break">)");
+    replace_all_inplace(output, "</PageBreak>", "</div>");
 
-    static const std::regex re_speech1("<Speech>");
-    output = std::regex_replace(output, re_speech1, R"(<dd class="dialogue">)");
+    replace_all_inplace(output, "<Note>", R"(<p class="comment">)");
+    replace_all_inplace(output, "</Note>", "</p>");
 
-    static const std::regex re_speech2("</Speech>");
-    output = std::regex_replace(output, re_speech2, "</dd>");
+    replace_all_inplace(output, "<BlankLine>", "");
+    replace_all_inplace(output, "</BlankLine>", "");
 
-    static const std::regex re_dialog1("<Dialog>");
-    output = std::regex_replace(output, re_dialog1, R"(<div class="dialog">)");
-
-    static const std::regex re_dialog2("</Dialog>");
-    output = std::regex_replace(output, re_dialog2, "</div>");
-
-    static const std::regex re_dialogdual1("<DialogDual>");
-    output = std::regex_replace(output, re_dialogdual1,
-                                R"(<div class="dialog_wrapper">)");
-
-    static const std::regex re_dialogdual2("</DialogDual>");
-    output = std::regex_replace(output, re_dialogdual2, "</div>");
-
-    static const std::regex re_dialogleft1("<DialogLeft>");
-    output =
-        std::regex_replace(output, re_dialogleft1, R"(<dl class="first">)");
-
-    static const std::regex re_dialogleft2("</DialogLeft>");
-    output = std::regex_replace(output, re_dialogleft2, "</dl>");
-
-    static const std::regex re_dialogright1("<DialogRight>");
-    output =
-        std::regex_replace(output, re_dialogright1, R"(<dl class="second">)");
-
-    static const std::regex re_dialogright2("</DialogRight>");
-    output = std::regex_replace(output, re_dialogright2, "</dl>");
-
-    static const std::regex re_pagebreak1("</PageBreak>");
-    output = std::regex_replace(output, re_pagebreak1,
-                                R"(<div class="page-break">)");
-
-    static const std::regex re_pagebreak2("</PageBreak>");
-    output = std::regex_replace(output, re_pagebreak2, "</div>");
-
-    static const std::regex re_note1("<Note>");
-    output = std::regex_replace(output, re_note1, R"(<p class="comment">)");
-
-    static const std::regex re_note2("</Note>");
-    output = std::regex_replace(output, re_note2, "</p>");
-
-    static const std::regex re_blankline("</?BlankLine>");
-    output = std::regex_replace(output, re_blankline, "");
-
-    static const std::regex re_continuation("</?Continuation>");
-    output = std::regex_replace(output, re_continuation, "");
-
-    static const std::regex re_center1("<center>");
-    output = std::regex_replace(output, re_center1, R"(<p class="center">)");
-
-    static const std::regex re_center2("</center>");
-    output = std::regex_replace(output, re_center2, "</p>");
+    replace_all_inplace(output, "<center>", R"(<p class="center">)");
+    replace_all_inplace(output, "</center>", "</p>");
 
     static const std::regex re_newlines(R"(\n+)");
     output = std::regex_replace(output, re_newlines, "\n");
@@ -1011,117 +936,67 @@ std::string ftn2fdx(std::string const &input) {
   output += "\n</Content>\n</FinalDraft>\n";
 
   try {
-    static const std::regex re_transition1("<Transition>");
-    output = std::regex_replace(output, re_transition1,
-                                R"(<Paragraph Type="Transition"><Text>)");
+    replace_all_inplace(output, "<Transition>",
+                        R"(<Paragraph Type="Transition"><Text>)");
+    replace_all_inplace(output, "</Transition>", "</Text></Paragraph>");
 
-    static const std::regex re_transition2("</Transition>");
-    output = std::regex_replace(output, re_transition2, "</Text></Paragraph>");
+    replace_all_inplace(output, "<SceneHeader>",
+                        R"(<Paragraph Type="Scene Heading"><Text>)");
+    replace_all_inplace(output, "</SceneHeader>", "</Text></Paragraph>");
 
-    static const std::regex re_sceneheader1("<SceneHeader>");
-    output = std::regex_replace(output, re_sceneheader1,
-                                R"(<Paragraph Type="Scene Heading"><Text>)");
+    replace_all_inplace(output, "<Action>",
+                        R"(<Paragraph Type="Action"><Text>)");
+    replace_all_inplace(output, "</Action>", "</Text></Paragraph>");
 
-    static const std::regex re_sceneheader2("</SceneHeader>");
-    output = std::regex_replace(output, re_sceneheader2, "</Text></Paragraph>");
+    replace_all_inplace(output, "<Character>",
+                        R"(<Paragraph Type="Character"><Text>)");
+    replace_all_inplace(output, "</Character>", "</Text></Paragraph>");
 
-    static const std::regex re_action1("<Action>");
-    output = std::regex_replace(output, re_action1,
-                                R"(<Paragraph Type="Action"><Text>)");
+    replace_all_inplace(output, "<Parenthetical>",
+                        R"(<Paragraph Type="Parenthetical"><Text>)");
+    replace_all_inplace(output, "</Parenthetical>", "</Text></Paragraph>");
 
-    static const std::regex re_action2("</Action>");
-    output = std::regex_replace(output, re_action2, "</Text></Paragraph>");
+    replace_all_inplace(output, "<Speech>",
+                        R"(<Paragraph Type="Dialogue"><Text>)");
+    replace_all_inplace(output, "</Speech>", "</Text></Paragraph>");
 
-    static const std::regex re_character1("<Character>");
-    output = std::regex_replace(output, re_character1,
-                                R"(<Paragraph Type="Character"><Text>)");
+    replace_all_inplace(output, "<DualDialog>", "<Paragraph><DualDialog>");
+    replace_all_inplace(output, "</DualDialog>", "</DualDialog></Paragraph>");
 
-    static const std::regex re_character2("</Character>");
-    output = std::regex_replace(output, re_character2, "</Text></Paragraph>");
-
-    static const std::regex re_parenthetical1("<Parenthetical>");
-    output = std::regex_replace(output, re_parenthetical1,
-                                R"(<Paragraph Type="Parenthetical"><Text>)");
-
-    static const std::regex re_parenthetical2("</Parenthetical>");
-    output =
-        std::regex_replace(output, re_parenthetical2, "</Text></Paragraph>");
-
-    static const std::regex re_speech1("<Speech>");
-    output = std::regex_replace(output, re_speech1,
-                                R"(<Paragraph Type="Dialogue"><Text>)");
-
-    static const std::regex re_speech2("</Speech>");
-    output = std::regex_replace(output, re_speech2, "</Text></Paragraph>");
-
-    static const std::regex re_dualdialog1("<DualDialog>");
-    output =
-        std::regex_replace(output, re_dualdialog1, "<Paragraph><DualDialog>");
-
-    static const std::regex re_dualdialog2("</DualDialog>");
-    output =
-        std::regex_replace(output, re_dualdialog2, "</DualDialog></Paragraph>");
-
-    static const std::regex re_center1("<center>");
-    output = std::regex_replace(
-        output, re_center1,
+    replace_all_inplace(
+        output, "<center>",
         R"(<Paragraph Type="Action" Alignment="Center"><Text>)");
+    replace_all_inplace(output, "</center>", "</Text></Paragraph>");
 
-    static const std::regex re_center2("</center>");
-    output = std::regex_replace(output, re_center2, "</Text></Paragraph>");
+    replace_all_inplace(output, "<b>", R"(<Text Style="Bold">)");
+    replace_all_inplace(output, "</b>", "</Text>");
 
-    static const std::regex re_bold1("<b>");
-    output = std::regex_replace(output, re_bold1, R"(<Text Style="Bold">)");
+    replace_all_inplace(output, "<i>", R"(<Text Style="Italic">)");
+    replace_all_inplace(output, "</i>", "</Text>");
 
-    static const std::regex re_bold2("</b>");
-    output = std::regex_replace(output, re_bold2, "</Text>");
+    replace_all_inplace(output, "<u>", R"(<Text Style="Underline">)");
+    replace_all_inplace(output, "</u>", "</Text>");
 
-    static const std::regex re_italic1("<i>");
-    output = std::regex_replace(output, re_italic1, R"(<Text Style="Italic">)");
-
-    static const std::regex re_italic2("</i>");
-    output = std::regex_replace(output, re_italic2, "</Text>");
-
-    static const std::regex re_underline1("<u>");
-    output = std::regex_replace(output, re_underline1,
-                                R"(<Text Style="Underline">)");
-
-    static const std::regex re_underline2("</u>");
-    output = std::regex_replace(output, re_underline2, "</Text>");
-
-    static const std::regex re_pagebreak1("<PageBreak>");
-    output = std::regex_replace(
-        output, re_pagebreak1,
+    replace_all_inplace(
+        output, "<PageBreak>",
         R"(<Paragraph Type="Action" StartsNewPage="Yes"><Text>)");
+    replace_all_inplace(output, "</PageBreak>", "</Text></Paragraph>");
 
-    static const std::regex re_pagebreak2("</PageBreak>");
-    output = std::regex_replace(output, re_pagebreak2, "</Text></Paragraph>");
-
-    static const std::regex re_note1("<Note>");
-    output = std::regex_replace(output, re_note1, "<ScriptNote><Text>");
-
-    static const std::regex re_note2("</Note>");
-    output = std::regex_replace(output, re_note2, "</Text></ScriptNote>");
+    replace_all_inplace(output, "<Note>", "<ScriptNote><Text>");
+    replace_all_inplace(output, "</Note>", "</Text></ScriptNote>");
 
     static const std::regex re_dialog("</?Dialog(Left|Right)?>");
     output = std::regex_replace(output, re_dialog, "");
 
-    static const std::regex re_blankline("</?BlankLine>");
-    output = std::regex_replace(output, re_blankline, "");
+    replace_all_inplace(output, "<BlankLine>", "");
+    replace_all_inplace(output, "</BlankLine>", "");
 
-    static const std::regex re_continuation("</?Continuation>");
-    output = std::regex_replace(output, re_continuation, "");
+    // Don't know if these work...
+    replace_all_inplace(output, "<Lyric>", R"(<Paragraph Type="Lyric"><Text>)");
+    replace_all_inplace(output, "</Lyric>", "</Text></Paragraph>");
 
     static const std::regex re_newlines(R"(\n+)");
     output = std::regex_replace(output, re_newlines, "\n");
-
-    // Don't know if these work...
-    static const std::regex re_lyric1("<Lyric>");
-    output = std::regex_replace(output, re_lyric1,
-                                R"(<Paragraph Type="Lyric"><Text>)");
-
-    static const std::regex re_lyric2("</Lyric>");
-    output = std::regex_replace(output, re_lyric2, "</Text></Paragraph>");
   } catch (std::regex_error &e) {
     printf("regex error in ftn2fdx\n");
     print_regex_error(e);
@@ -1153,11 +1028,8 @@ std::string ftn2xml(std::string const &input, std::string const &css_fn) {
   output += "\n</Fountain>\n</body>\n</html>\n";
 
   try {
-    static const std::regex re_blankline("</?BlankLine>");
-    output = std::regex_replace(output, re_blankline, "");
-
-    static const std::regex re_continuation("</?Continuation>");
-    output = std::regex_replace(output, re_continuation, "");
+    replace_all_inplace(output, "<BlankLine>", "");
+    replace_all_inplace(output, "</BlankLine>", "");
 
     static const std::regex re_newlines(R"(\n+)");
     output = std::regex_replace(output, re_newlines, "\n");
@@ -1168,3 +1040,5 @@ std::string ftn2xml(std::string const &input, std::string const &css_fn) {
 
   return output;
 }
+
+}  // namespace Fountain

@@ -23,25 +23,43 @@
 
 #include "auxiliary.h"
 
-std::string &ltrim(std::string &s, char const *t) {
+namespace Fountain {
+
+std::string &ltrim_inplace(std::string &s, char const *t) {
   s.erase(0, s.find_first_not_of(t));
   return s;
 }
 
-std::string &rtrim(std::string &s, char const *t) {
+std::string &rtrim_inplace(std::string &s, char const *t) {
   s.erase(s.find_last_not_of(t) + 1);
   return s;
 }
 
-std::string &trim(std::string &s, char const *t) {
-  return ltrim(rtrim(s, t), t);
+std::string &trim_inplace(std::string &s, char const *t) {
+  return ltrim_inplace(rtrim_inplace(s, t), t);
 }
 
-std::string ws_ltrim(std::string s) { return ltrim(s, " \t\n\r\f\v"); }
+std::string &replace_all_inplace(std::string &subject,
+                                 const std::string &search,
+                                 const std::string &replace) {
+  size_t pos = 0;
+  while ((pos = subject.find(search, pos)) != std::string::npos) {
+    subject.replace(pos, search.length(), replace);
+    pos += replace.length();
+  }
+  return subject;
+}
 
-std::string ws_rtrim(std::string s) { return rtrim(s, " \t\n\r\f\v"); }
+std::string ws_ltrim(std::string s) { return ltrim_inplace(s, " \t\n\r\f\v"); }
 
-std::string ws_trim(std::string s) { return trim(s, " \t\n\r\f\v"); }
+std::string ws_rtrim(std::string s) { return rtrim_inplace(s, " \t\n\r\f\v"); }
+
+std::string ws_trim(std::string s) { return trim_inplace(s, " \t\n\r\f\v"); }
+
+std::string replace_all(std::string subject, const std::string &search,
+                        const std::string &replace) {
+  return replace_all_inplace(subject, search, replace);
+}
 
 bool begins_with(std::string const &input, std::string const &match) {
   return !strncmp(input.c_str(), match.c_str(), match.length());
@@ -69,17 +87,20 @@ std::vector<std::string> split_lines(std::string const &s) {
   return split_string(s, "\n");
 }
 
-std::string to_upper(std::string s) {
+std::string &to_upper_inplace(std::string &s) {
   std::transform(s.begin(), s.end(), s.begin(),
                  [](unsigned char c) { return std::toupper(c); });
   return s;
 }
 
-std::string to_lower(std::string s) {
+std::string &to_lower_inplace(std::string &s) {
   std::transform(s.begin(), s.end(), s.begin(),
                  [](unsigned char c) { return std::tolower(c); });
   return s;
 }
+
+std::string to_upper(std::string s) { return to_upper_inplace(s); }
+std::string to_lower(std::string s) { return to_lower_inplace(s); }
 
 bool is_upper(std::string const &s) {
   return std::all_of(s.begin(), s.end(),
@@ -96,51 +117,52 @@ void print_regex_error(std::regex_error &e) {
       break;
     case std::regex_constants::error_ctype:
       fprintf(stderr,
-             "%d: The expression contained an invalid character class name.\n",
-             e.code());
+              "%d: The expression contained an invalid character class name.\n",
+              e.code());
       break;
     case std::regex_constants::error_escape:
       fprintf(stderr,
-             "%d: The expression contained an invalid escaped character, "
-             "or a trailing escape.\n",
-             e.code());
+              "%d: The expression contained an invalid escaped character, "
+              "or a trailing escape.\n",
+              e.code());
       break;
     case std::regex_constants::error_backref:
       fprintf(stderr,
-             "%d: The expression contained an invalid back reference.\n",
-             e.code());
+              "%d: The expression contained an invalid back reference.\n",
+              e.code());
       break;
     case std::regex_constants::error_brack:
       fprintf(stderr,
-             "%d: The expression contained mismatched brackets ([ and ]).\n",
-             e.code());
+              "%d: The expression contained mismatched brackets ([ and ]).\n",
+              e.code());
       break;
     case std::regex_constants::error_paren:
-      fprintf(stderr,
-             "%d: The expression contained mismatched parentheses (( and )).\n",
-             e.code());
+      fprintf(
+          stderr,
+          "%d: The expression contained mismatched parentheses (( and )).\n",
+          e.code());
       break;
     case std::regex_constants::error_brace:
       fprintf(stderr,
-             "%d: The expression contained mismatched braces ({ and }).\n",
-             e.code());
+              "%d: The expression contained mismatched braces ({ and }).\n",
+              e.code());
       break;
     case std::regex_constants::error_badbrace:
       fprintf(stderr,
-             "%d: The expression contained an invalid range between braces "
-             "({ and }).\n",
-             e.code());
+              "%d: The expression contained an invalid range between braces "
+              "({ and }).\n",
+              e.code());
       break;
     case std::regex_constants::error_range:
       fprintf(stderr,
-             "%d: The expression contained an invalid character range.\n",
-             e.code());
+              "%d: The expression contained an invalid character range.\n",
+              e.code());
       break;
     case std::regex_constants::error_space:
       fprintf(stderr,
-             "%d: There was insufficient memory to convert the expression "
-             "into a finite state machine.\n",
-             e.code());
+              "%d: There was insufficient memory to convert the expression "
+              "into a finite state machine.\n",
+              e.code());
       break;
     case std::regex_constants::error_badrepeat:
       fprintf(
@@ -151,9 +173,9 @@ void print_regex_error(std::regex_error &e) {
       break;
     case std::regex_constants::error_complexity:
       fprintf(stderr,
-             "%d: The complexity of an attempted match against a regular "
-             "expression exceeded a pre-set level.\n",
-             e.code());
+              "%d: The complexity of an attempted match against a regular "
+              "expression exceeded a pre-set level.\n",
+              e.code());
       break;
     case std::regex_constants::error_stack:
       fprintf(
@@ -166,3 +188,5 @@ void print_regex_error(std::regex_error &e) {
       fprintf(stderr, "%d: unknown regex error\n", e.code());
   }
 }
+
+}  // namespace Fountain

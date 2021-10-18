@@ -7,10 +7,12 @@ AM_INIT_AUTOMAKE([subdir-objects -Wall -Werror foreign])
 AM_SILENT_RULES([yes])
 AM_PROG_AR
 LT_INIT([disable-static pic-only])
-#AC_PROG_CC_C99
+
+#: ${CXX="clang-13"}
+: ${CXXFLAGS="--std=gnu++17"}
 AC_PROG_CXX
-AC_PROG_CXXCPP
-AC_PROG_CXX_C_O
+#AC_PROG_CC_C99
+
 PKG_CHECK_MODULES([GEANY], [geany >= 1.23])
 PKG_CHECK_MODULES([WEBKIT], [webkit2gtk-4.0])
 PKG_CHECK_MODULES([CMARK], [libcmark-gfm])
