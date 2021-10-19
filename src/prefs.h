@@ -33,19 +33,19 @@ struct PreviewSettings {
   char *asciidoc_processor;
   char *fountain_processor;
   char *wiki_default;
-  gboolean pandoc_disabled;
-  gboolean pandoc_fragment;
-  gboolean pandoc_toc;
+  bool pandoc_disabled;
+  bool pandoc_fragment;
+  bool pandoc_toc;
   char *pandoc_markdown;
   char *default_font_family;
-  gboolean extended_types;
+  bool extended_types;
   int snippet_window;
   int snippet_trigger;
-  gboolean snippet_html;
-  gboolean snippet_markdown;
-  gboolean snippet_asciidoctor;
-  gboolean snippet_pandoc;
-  gboolean snippet_screenplain;
+  bool snippet_html;
+  bool snippet_markdown;
+  bool snippet_asciidoctor;
+  bool snippet_pandoc;
+  bool snippet_screenplain;
   char *extra_css;
 };
 

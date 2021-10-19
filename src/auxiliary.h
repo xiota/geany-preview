@@ -18,11 +18,13 @@
 
 #pragma once
 
+#define FOUNTAIN_WHITESPACE " \t\n\r\f\v"
+
 namespace Fountain {
 
-std::string &ltrim_inplace(std::string &s, char const *t = " \t\n\r\f\v");
-std::string &rtrim_inplace(std::string &s, char const *t = " \t\n\r\f\v");
-std::string &trim_inplace(std::string &s, char const *t = " \t\n\r\f\v");
+std::string &ltrim_inplace(std::string &s, char const *t = FOUNTAIN_WHITESPACE);
+std::string &rtrim_inplace(std::string &s, char const *t = FOUNTAIN_WHITESPACE);
+std::string &trim_inplace(std::string &s, char const *t = FOUNTAIN_WHITESPACE);
 
 std::string &replace_all_inplace(std::string &subject,
                                  const std::string &search,

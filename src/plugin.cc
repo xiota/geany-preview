@@ -25,6 +25,10 @@
 
 #include <cmark-gfm.h>
 
+#include <regex>
+#include <string>
+
+#include "auxiliary.h"
 #include "formats.h"
 #include "fountain.h"
 #include "plugin.h"
@@ -46,13 +50,13 @@ static WebKitSettings *g_wv_settings = nullptr;
 static WebKitWebContext *g_wv_context = nullptr;
 WebKitUserContentManager *g_wv_content_manager = nullptr;
 static GtkWidget *g_scrolled_win = nullptr;
-static guint g_nb_page_num = 0;
+static uint g_nb_page_num = 0;
 static GArray *g_scrollY = nullptr;
-static gulong g_load_handle = 0;
-static guint g_timeout_handle = 0;
-static gboolean g_snippet = false;
-static gulong g_handle_sidebar_switch_page = 0;
-static gulong g_handle_sidebar_show = 0;
+static ulong g_load_handle = 0;
+static ulong g_timeout_handle = 0;
+static bool g_snippet = false;
+static ulong g_handle_sidebar_switch_page = 0;
+static ulong g_handle_sidebar_show = 0;
 
 static GeanyDocument *g_current_doc = nullptr;
 
@@ -101,10 +105,10 @@ GtkWidget *plugin_configure(GtkDialog *dlg) {
 
 // void plugin_help(void) { }
 
-static gboolean preview_init(GeanyPlugin *plugin, gpointer data) {
+static bool preview_init(GeanyPlugin *plugin, gpointer data) {
   geany_plugin = plugin;
   geany_data = plugin->geany_data;
-  g_scrollY = g_array_new(true, true, sizeof(gint32));
+  g_scrollY = g_array_new(true, true, sizeof(int));
 
   open_settings();
 
@@ -337,23 +341,18 @@ static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog) {
 
 // from markdown plugin
 static char *replace_extension(char const *utf8_fn, char const *new_ext) {
-  char *fn_noext, *new_fn, *dot;
-  fn_noext = g_filename_from_utf8(utf8_fn, -1, nullptr, nullptr, nullptr);
-  dot = strrchr(fn_noext, '.');
+  char *fn_noext = g_filename_from_utf8(utf8_fn, -1, nullptr, nullptr, nullptr);
+  char *dot = strrchr(fn_noext, '.');
   if (dot != nullptr) {
     *dot = '\0';
   }
-  new_fn = g_strconcat(fn_noext, new_ext, nullptr);
+  char *new_fn = g_strconcat(fn_noext, new_ext, nullptr);
   GFREE(fn_noext);
   return new_fn;
 }
 
 // from markdown plugin
 static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
-  GtkFileFilter *filter;
-  char *fn;
-  gboolean saved = false;
-
   GeanyDocument *doc = document_get_current();
   g_return_if_fail(DOC_VALID(doc));
 
@@ -364,7 +363,7 @@ static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
   gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(save_dialog),
                                                  true);
 
-  fn = replace_extension(DOC_FILENAME(doc), ".html");
+  char *fn = replace_extension(DOC_FILENAME(doc), ".html");
   if (g_file_test(fn, G_FILE_TEST_EXISTS)) {
     // If the file exists, GtkFileChooser will change to the correct
     // directory and show the base name as a suggestion.
@@ -385,7 +384,7 @@ static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
   GFREE(fn);
 
   // add file type filters to the chooser
-  filter = gtk_file_filter_new();
+  GtkFileFilter *filter = gtk_file_filter_new();
   gtk_file_filter_set_name(filter, _("HTML Files"));
   gtk_file_filter_add_mime_type(filter, "text/html");
   gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(save_dialog), filter);
@@ -395,6 +394,7 @@ static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
   gtk_file_filter_add_pattern(filter, "*");
   gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(save_dialog), filter);
 
+  bool saved = false;
   while (!saved &&
          gtk_dialog_run(GTK_DIALOG(save_dialog)) == GTK_RESPONSE_ACCEPT) {
     char *html = update_preview(true);
@@ -419,7 +419,7 @@ static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
  * Sidebar Functions and Callbacks
  */
 static void on_sidebar_switch_page(GtkNotebook *nb, GtkWidget *page,
-                                   guint page_num, gpointer user_data) {
+                                   uint page_num, gpointer user_data) {
   if (g_nb_page_num == page_num) {
     g_current_doc = nullptr;
     update_preview(false);
@@ -484,25 +484,22 @@ static void wv_save_position_callback(GObject *object, GAsyncResult *result,
   }
 
   value = webkit_javascript_result_get_js_value(js_result);
-  guint temp = jsc_value_to_int32(value);
+  int temp = jsc_value_to_int32(value);
   if (g_scrollY->len < idx) {
     g_array_insert_val(g_scrollY, idx, temp);
   } else {
-    if (temp > 0) {
-      gint32 *scrollY = &g_array_index(g_scrollY, gint32, idx);
-      *scrollY = temp;
-    }
+    // if (temp > 0) {
+    int *scrollY = &g_array_index(g_scrollY, int, idx);
+    *scrollY = temp;
+    //}
   }
 
   webkit_javascript_result_unref(js_result);
 }
 
 static void wv_save_position() {
-  char *script = g_strdup("window.scrollY");
-
-  webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(g_viewer), script, nullptr,
-                                 wv_save_position_callback, nullptr);
-  GFREE(script);
+  webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(g_viewer), "window.scrollY",
+                                 nullptr, wv_save_position_callback, nullptr);
 }
 
 static void wv_apply_settings() {
@@ -562,19 +559,17 @@ static void wv_load_position() {
   }
   int idx = document_get_notebook_page(doc);
 
-  char *script;
+  static std::string script;
   if (g_snippet) {
-    script = g_strdup(
-        "window.scrollTo(0, 0.2*document.documentElement.scrollHeight);");
+    script = "window.scrollTo(0, 0.2*document.documentElement.scrollHeight);";
   } else if (g_scrollY->len >= idx) {
-    guint *temp = &g_array_index(g_scrollY, guint, idx);
-    script = g_strdup_printf("window.scrollTo(0, %d);", *temp);
+    int *temp = &g_array_index(g_scrollY, int, idx);
+    script = "window.scrollTo(0, " + std::to_string(*temp) + ");";
   } else {
     return;
   }
-  webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(g_viewer), script, nullptr,
-                                 nullptr, nullptr);
-  GFREE(script);
+  webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(g_viewer), script.c_str(),
+                                 nullptr, nullptr, nullptr);
 }
 
 static void wv_loading_callback(WebKitWebView *web_view,
@@ -594,7 +589,7 @@ static gboolean update_timeout_callback(gpointer user_data) {
   return false;
 }
 
-static char *update_preview(gboolean const get_contents) {
+static char *update_preview(bool const get_contents) {
   char *contents = nullptr;
 
   GeanyDocument *doc = document_get_current();
@@ -630,9 +625,8 @@ static char *update_preview(gboolean const get_contents) {
   char *work_dir = g_path_get_dirname(DOC_FILENAME(doc));
   char *text = (char *)scintilla_send_message(doc->editor->sci,
                                               SCI_GETCHARACTERPOINTER, 0, 0);
-  char *html = nullptr;
-  char *plain = nullptr;
-  GString *output = nullptr;
+  char *czPlain = nullptr;
+  std::string strOutput;
 
   // extract snippet for large document
   int position = 0;
@@ -661,178 +655,203 @@ static char *update_preview(gboolean const get_contents) {
     text = sci_get_contents_range(doc->editor->sci, start, end);
   }
 
-  // setup reg expressions to split head and body
-  static GRegex *re_has_header = nullptr;
-  static GRegex *re_is_header = nullptr;
-  static GRegex *re_format = nullptr;
-  if (!re_has_header) {
-    re_has_header = g_regex_new("^[^\\s:]+:\\s.*$", G_REGEX_MULTILINE,
-                                GRegexMatchFlags(0), nullptr);
-    re_is_header =
-        g_regex_new("^(([^\\s:]+:.*)|([\\ \\t].*))$", GRegexCompileFlags(0),
-                    GRegexMatchFlags(0), nullptr);
-    re_format = g_regex_new("(?i)^(content-type|format):\\s*([^\\n]*)$",
-                            G_REGEX_MULTILINE, GRegexMatchFlags(0), nullptr);
+  // check whether need to split head and body
+  bool has_header = false;
+  try {
+    // check if first line matches header format
+    static const std::regex re_has_header(R"(^[^\s:]+:\s)");
+    if (std::regex_search(text, re_has_header)) {
+      has_header = true;
+    }
+  } catch (std::regex_error &e) {
+    fprintf(stderr, "regex error in header check\n");
+    Fountain::print_regex_error(e);
   }
 
   // get format and split head/body
-  GString *head = g_string_new(nullptr);
-  GString *body = g_string_new(nullptr);
+  std::string strHead;
+  std::string strBody;
 
-  char *format = nullptr;
-  if (text &&
-      !g_regex_match(re_has_header, text, GRegexMatchFlags(0), nullptr)) {
-    GSTRING_FREE(body);
-    body = g_string_new(text);
-  } else if (text) {
-    GMatchInfo *match_info = nullptr;
-
-    // get format header
-    if (g_regex_match(re_format, text, GRegexMatchFlags(0), &match_info)) {
-      format = g_match_info_fetch(match_info, 2);
-    }
-    g_match_info_free(match_info);
-    match_info = nullptr;
-    if (format) {
-      g_filetype = get_filetype(format);
-      GFREE(format);
-    }
-
+  if (!has_header) {
+    strBody = text;
+  } else {
     // split head and body
     if (g_filetype == PREVIEW_FILETYPE_FOUNTAIN) {
       // fountain handles its own headers
-      body = g_string_new(text);
+      strBody = text;
     } else {
-      char **texts = g_strsplit(text, "\n", -1);
-      gboolean state_head = true;
-      int i = 0;
-      while (texts[i] != nullptr) {
-        if (state_head) {
-          if (*texts[i] != '\0') {
-            g_string_append(head, texts[i]);
-            g_string_append(head, "\n");
-            i++;
+      std::vector<std::string> lines;
+      lines = Fountain::split_lines(text);
+
+      for (auto line : lines) {
+        if (has_header) {
+          if (line != "") {
+            strHead.append(line + "\n");
           } else {
-            state_head = false;
+            has_header = false;
+            strBody.append(line + "\n");
           }
         } else {
-          g_string_append(body, texts[i]);
-          g_string_append(body, "\n");
-          i++;
+          strBody.append(line + "\n");
         }
       }
-      g_strfreev(texts);
-      texts = nullptr;
+    }
+
+    // get format header to set filetype
+    try {
+      if (!strHead.empty()) {
+        static const std::regex re_format(
+            R"((content-type|format):\s*([^\n]*))",
+            std::regex_constants::icase);
+        std::smatch format_match;
+        if (std::regex_search(strHead, format_match, re_format)) {
+          if (format_match.size() > 2) {
+            std::string format = format_match[2];
+            g_filetype = get_filetype(format.c_str());
+          }
+        }
+      }
+    } catch (std::regex_error &e) {
+      printf("regex error in format header\n");
+      Fountain::print_regex_error(e);
     }
   }
 
   switch (g_filetype) {
     case PREVIEW_FILETYPE_HTML:
       if (strcmp("disable", settings.html_processor) == 0) {
-        plain = g_strdup(_("Preview of HTML documents has been disabled."));
+        czPlain = g_strdup(_("Preview of HTML documents has been disabled."));
       } else if (SUBSTR("pandoc", settings.html_processor)) {
-        output = pandoc(work_dir, body->str, "html");
+        strOutput = pandoc(work_dir, strBody.c_str(), "html");
       } else {
-        output = g_string_new(body->str);
+        strOutput = strBody;
       }
       break;
     case PREVIEW_FILETYPE_MARKDOWN:
       if (strcmp("disable", settings.markdown_processor) == 0) {
-        plain = g_strdup(_("Preview of Markdown documents has been disabled."));
+        czPlain = g_strdup(_("Preview of Markdown documents has been disabled."));
       } else if (SUBSTR("pandoc", settings.markdown_processor)) {
-        output = pandoc(work_dir, body->str, settings.pandoc_markdown);
+        strOutput = pandoc(work_dir, strBody.c_str(), settings.pandoc_markdown);
       } else {
-        html = cmark_markdown_to_html(body->str, body->len, 0);
+        char *cstrTmp =
+            cmark_markdown_to_html(strBody.c_str(), strBody.length(), 0);
+
         char *css_fn = find_copy_css("markdown.css", PREVIEW_CSS_MARKDOWN);
         if (css_fn) {
-          plain = g_strjoin(nullptr,
-                            "<html><head><link rel='stylesheet' "
-                            "type='text/css' href='file://",
-                            css_fn, "'></head><body>", html, "</body></html>",
-                            nullptr);
-          output = g_string_new(plain);
+          strOutput =
+              "<html><head><link rel='stylesheet' "
+              "type='text/css' href='file://" +
+              std::string{css_fn} + "'></head><body>" + std::string{cstrTmp} +
+              "</body></html>";
         } else {
-          output = g_string_new(html);
+          strOutput = cstrTmp;
         }
-
         GFREE(css_fn);
-        GFREE(html);
-        GFREE(plain);
+        GFREE(cstrTmp);
       }
       break;
     case PREVIEW_FILETYPE_ASCIIDOC:
       if (strcmp("disable", settings.asciidoc_processor) == 0) {
-        plain = g_strdup(_("Preview of AsciiDoc documents has been disabled."));
+        czPlain = g_strdup(_("Preview of AsciiDoc documents has been disabled."));
       } else {
-        output = asciidoctor(work_dir, body->str);
+        char *cstrTmp = nullptr;
+        strOutput = cstrTmp = asciidoctor(work_dir, strBody.c_str());
+        GFREE(cstrTmp);
       }
       break;
-    case PREVIEW_FILETYPE_DOCBOOK:
-      output = pandoc(work_dir, body->str, "docbook");
-      break;
-    case PREVIEW_FILETYPE_LATEX:
-      output = pandoc(work_dir, body->str, "latex");
-      break;
-    case PREVIEW_FILETYPE_REST:
-      output = pandoc(work_dir, body->str, "rst");
-      break;
-    case PREVIEW_FILETYPE_TXT2TAGS:
-      output = pandoc(work_dir, body->str, "t2t");
-      break;
-    case PREVIEW_FILETYPE_GFM:
-      output = pandoc(work_dir, body->str, "gfm");
-      break;
+    case PREVIEW_FILETYPE_DOCBOOK: {
+      char *cstrTmp = nullptr;
+      strOutput = cstrTmp = pandoc(work_dir, strBody.c_str(), "docbook");
+      GFREE(cstrTmp);
+    } break;
+    case PREVIEW_FILETYPE_LATEX: {
+      char *cstrTmp = nullptr;
+      strOutput = cstrTmp = pandoc(work_dir, strBody.c_str(), "latex");
+      GFREE(cstrTmp);
+    } break;
+    case PREVIEW_FILETYPE_REST: {
+      char *cstrTmp = nullptr;
+      strOutput = cstrTmp = pandoc(work_dir, strBody.c_str(), "rst");
+      GFREE(cstrTmp);
+    } break;
+    case PREVIEW_FILETYPE_TXT2TAGS: {
+      char *cstrTmp = nullptr;
+      strOutput = cstrTmp = pandoc(work_dir, strBody.c_str(), "t2t");
+      GFREE(cstrTmp);
+    } break;
+    case PREVIEW_FILETYPE_GFM: {
+      char *cstrTmp = nullptr;
+      strOutput = cstrTmp = pandoc(work_dir, strBody.c_str(), "gfm");
+      GFREE(cstrTmp);
+    } break;
     case PREVIEW_FILETYPE_FOUNTAIN:
       if (strcmp("disable", settings.fountain_processor) == 0) {
-        plain =
+        czPlain =
             g_strdup(_("Preview of Fountain screenplays has been disabled."));
       } else if (strcmp("screenplain", settings.fountain_processor) == 0) {
-        output = screenplain(work_dir, body->str, "html");
+        char *cstrTmp = nullptr;
+        strOutput = cstrTmp = screenplain(work_dir, strBody.c_str(), "html");
+        GFREE(cstrTmp);
       } else {
         char *css_fn = find_copy_css("fountain.css", PREVIEW_CSS_FOUNTAIN);
-        std::string out = Fountain::ftn2xml(body->str, css_fn);
-        output = g_string_new(out.c_str());
-
+        strOutput = Fountain::ftn2xml(strBody.c_str(), css_fn);
         GFREE(css_fn);
       }
       break;
-    case PREVIEW_FILETYPE_TEXTILE:
-      output = pandoc(work_dir, body->str, "textile");
-      break;
-    case PREVIEW_FILETYPE_DOKUWIKI:
-      output = pandoc(work_dir, body->str, "dokuwiki");
-      break;
-    case PREVIEW_FILETYPE_TIKIWIKI:
-      output = pandoc(work_dir, body->str, "tikiwiki");
-      break;
-    case PREVIEW_FILETYPE_VIMWIKI:
-      output = pandoc(work_dir, body->str, "vimwiki");
-      break;
-    case PREVIEW_FILETYPE_TWIKI:
-      output = pandoc(work_dir, body->str, "twiki");
-      break;
-    case PREVIEW_FILETYPE_MEDIAWIKI:
-      output = pandoc(work_dir, body->str, "mediawiki");
-      break;
-    case PREVIEW_FILETYPE_WIKI:
-      output = pandoc(work_dir, body->str, settings.wiki_default);
-      break;
-    case PREVIEW_FILETYPE_MUSE:
-      output = pandoc(work_dir, body->str, "muse");
-      break;
-    case PREVIEW_FILETYPE_ORG:
-      output = pandoc(work_dir, body->str, "org");
-      break;
+    case PREVIEW_FILETYPE_TEXTILE: {
+      char *cstrTmp = nullptr;
+      strOutput = cstrTmp = pandoc(work_dir, strBody.c_str(), "textile");
+      GFREE(cstrTmp);
+    } break;
+    case PREVIEW_FILETYPE_DOKUWIKI: {
+      char *cstrTmp = nullptr;
+      strOutput = cstrTmp = pandoc(work_dir, strBody.c_str(), "dokuwiki");
+      GFREE(cstrTmp);
+    } break;
+    case PREVIEW_FILETYPE_TIKIWIKI: {
+      char *cstrTmp = nullptr;
+      strOutput = cstrTmp = pandoc(work_dir, strBody.c_str(), "tikiwiki");
+      GFREE(cstrTmp);
+    } break;
+    case PREVIEW_FILETYPE_VIMWIKI: {
+      char *cstrTmp = nullptr;
+      strOutput = cstrTmp = pandoc(work_dir, strBody.c_str(), "vimwiki");
+      GFREE(cstrTmp);
+    } break;
+    case PREVIEW_FILETYPE_TWIKI: {
+      char *cstrTmp = nullptr;
+      strOutput = cstrTmp = pandoc(work_dir, strBody.c_str(), "twiki");
+      GFREE(cstrTmp);
+    } break;
+    case PREVIEW_FILETYPE_MEDIAWIKI: {
+      char *cstrTmp = nullptr;
+      strOutput = cstrTmp = pandoc(work_dir, strBody.c_str(), "mediawiki");
+      GFREE(cstrTmp);
+    } break;
+    case PREVIEW_FILETYPE_WIKI: {
+      char *cstrTmp = nullptr;
+      strOutput = cstrTmp =
+          pandoc(work_dir, strBody.c_str(), settings.wiki_default);
+      GFREE(cstrTmp);
+    } break;
+    case PREVIEW_FILETYPE_MUSE: {
+      char *cstrTmp = nullptr;
+      strOutput = cstrTmp = pandoc(work_dir, strBody.c_str(), "muse");
+      GFREE(cstrTmp);
+    } break;
+    case PREVIEW_FILETYPE_ORG: {
+      char *cstrTmp = nullptr;
+      strOutput = cstrTmp = pandoc(work_dir, strBody.c_str(), "org");
+      GFREE(cstrTmp);
+    } break;
     case PREVIEW_FILETYPE_PLAIN:
     case PREVIEW_FILETYPE_EMAIL: {
-      g_string_prepend(body, "<pre>");
-      g_string_append(body, "</pre>");
-      output = g_string_new(body->str);
-      // plain = g_strdup(text);
+      strBody = "<pre>" + strBody + "</pre>";
+      strOutput = strBody;
     } break;
     case PREVIEW_FILETYPE_NONE:
     default:
-      plain = g_strdup_printf("Unable to process type: %s, %s.",
+      czPlain = g_strdup_printf("Unable to process type: %s, %s.",
                               doc->file_type->name, doc->encoding);
       break;
   }
@@ -841,50 +860,43 @@ static char *update_preview(gboolean const get_contents) {
     GFREE(text);
   }
 
-  if (plain) {
-    WEBVIEW_WARN(plain);
+  if (czPlain) {
+    WEBVIEW_WARN(czPlain);
     if (!get_contents) {
-      GFREE(plain);
+      GFREE(czPlain);
     } else {
-      contents = plain;
+      contents = czPlain;
     }
-  } else if (output) {
-    // combine head and body
-    if (strcmp(head->str, "") != 0 && strcmp(head->str, "\n") != 0) {
-      static GRegex *re_body = nullptr;
-      if (!re_body) {
-        re_body = g_regex_new("(?i)(<body[^>]*>)", G_REGEX_MULTILINE,
-                              GRegexMatchFlags(0), nullptr);
-      }
-
-      if (output->str &&
-          g_regex_match(re_body, output->str, GRegexMatchFlags(0), nullptr)) {
-        g_string_append(head, "</pre>\n");
-        g_string_prepend(head, "\\1\n<pre class='geany_preview_headers'>");
-        html = g_regex_replace(re_body, output->str, -1, 0, head->str,
-                               GRegexMatchFlags(0), nullptr);
-        GSTRING_FREE(output);
-        output = g_string_new(html);
-        GFREE(html);
-      } else {
-        g_string_append(head, "</pre>\n");
-        g_string_prepend(head, "<pre class='geany_preview_headers'>");
-        g_string_prepend(output, head->str);
+  } else {
+    if (strHead != "" && strHead != "\n") {
+      try {
+        if (!strHead.empty()) {
+          if (SUBSTR("<body", strOutput.c_str())) {
+            static const std::regex re_body(R"((<body[^>]*>))",
+                                            std::regex_constants::icase);
+            strHead = "$1\n<pre class='geany_preview_headers'>" + strHead +
+                      "</pre>\n";
+            strOutput = std::regex_replace(strOutput, re_body, strHead);
+          } else {
+            strOutput = "<pre class='geany_preview_headers'>" + strHead +
+                        "</pre>\n" + strOutput;
+          }
+        }
+      } catch (std::regex_error &e) {
+        printf("regex error in format header\n");
+        Fountain::print_regex_error(e);
       }
     }
 
     // output to webview
     webkit_web_context_clear_cache(g_wv_context);
-    webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), output->str, uri);
+    webkit_web_view_load_html(WEBKIT_WEB_VIEW(g_viewer), strOutput.c_str(),
+                              uri);
 
-    if (!get_contents) {
-      GSTRING_FREE(output);
-    } else
-      contents = g_string_free(output, false);
+    if (get_contents) {
+      contents = g_strdup(strOutput.c_str());
+    }
   }
-
-  GSTRING_FREE(head);
-  GSTRING_FREE(body);
 
   GFREE(uri);
   GFREE(work_dir);
@@ -1062,8 +1074,8 @@ static inline void set_snippets() {
   }
 }
 
-static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
-                                 SCNotification *notif, gpointer user_data) {
+static bool on_editor_notify(GObject *obj, GeanyEditor *editor,
+                             SCNotification *notif, gpointer user_data) {
   GeanyDocument *doc = document_get_current();
   if (!DOC_VALID(doc)) {
     WEBVIEW_WARN(_("Unknown document type."));
@@ -1072,7 +1084,7 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
 
   int length = sci_get_length(doc->editor->sci);
 
-  gboolean need_update = false;
+  bool need_update = false;
   if (notif->nmhdr.code == SCN_UPDATEUI && g_snippet &&
       (notif->updated & (SC_UPDATE_CONTENT | SC_UPDATE_SELECTION))) {
     need_update = true;

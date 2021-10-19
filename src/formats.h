@@ -36,10 +36,10 @@ char *find_css(char const *css);
 char *find_copy_css(char const *css, char const *src);
 
 // wrappers around command line programs
-GString *pandoc(char const *work_dir, char const *input, char const *in_format);
-GString *asciidoctor(char const *work_dir, char const *input);
-GString *screenplain(char const *work_dir, char const *input,
-                     char const *out_format);
+char *pandoc(char const *work_dir, char const *input, char const *in_format);
+char *asciidoctor(char const *work_dir, char const *input);
+char *screenplain(char const *work_dir, char const *input,
+                  char const *out_format);
 
 G_END_DECLS
 

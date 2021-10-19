@@ -9,7 +9,7 @@ AM_PROG_AR
 LT_INIT([disable-static pic-only])
 
 #: ${CXX="clang-13"}
-: ${CXXFLAGS="--std=gnu++17"}
+#: ${CXXFLAGS="--std=gnu++17"}
 AC_PROG_CXX
 #AC_PROG_CC_C99
 

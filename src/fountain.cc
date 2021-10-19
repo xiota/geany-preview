@@ -192,7 +192,7 @@ bool isNotation(std::string const &input) {
   }
 
   // check if right-trimmed to avoid copying string
-  static std::string strWhiteSpace{" \t\n\r\f\v"};
+  static std::string strWhiteSpace{FOUNTAIN_WHITESPACE};
   if (strWhiteSpace.find(input.back()) != std::string::npos) {
     std::string s = ws_rtrim(input);
     const size_t len = s.length();
@@ -279,7 +279,7 @@ bool isParenthetical(std::string const &input) {
   }
 
   // check if right-trimmed to avoid copying string
-  static std::string strWhiteSpace{" \t\n\r\f\v"};
+  static std::string strWhiteSpace{FOUNTAIN_WHITESPACE};
   if (strWhiteSpace.find(input.back()) != std::string::npos) {
     std::string s = ws_rtrim(input);
     const size_t len = s.length();
@@ -300,7 +300,7 @@ bool isContinuation(std::string const &input) {
     return false;
   }
 
-  if (input.find_first_not_of(" \t\n\r\f\v") == std::string::npos) {
+  if (input.find_first_not_of(FOUNTAIN_WHITESPACE) == std::string::npos) {
     return true;
   }
   return false;

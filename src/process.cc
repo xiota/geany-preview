@@ -100,7 +100,9 @@ int fmt_process_close(FmtProcess *proc) {
   }
 
   if (proc->child_pid > 0) {
-    if (proc->exit_handler > 0) g_source_remove(proc->exit_handler);
+    if (proc->exit_handler > 0) {
+      g_source_remove(proc->exit_handler);
+    }
     g_spawn_close_pid(proc->child_pid);
   }
 
@@ -154,7 +156,9 @@ bool fmt_process_run(FmtProcess *proc, char const *const str_in, size_t in_len,
     status =
         g_io_channel_read_to_end(proc->ch_out, &tail_string, &tail_len, &error);
 
-    if (tail_len > 0) g_string_append_len(str_out, tail_string, tail_len);
+    if (tail_len > 0) {
+      g_string_append_len(str_out, tail_string, tail_len);
+    }
 
     GFREE(tail_string);
 

@@ -72,13 +72,13 @@ enum PreviewShortcuts {
   PREVIEW_KEY_TOGGLE_EDITOR,
 };
 
-static gboolean preview_init(GeanyPlugin *plugin, gpointer data);
+static bool preview_init(GeanyPlugin *plugin, gpointer data);
 static void preview_cleanup(GeanyPlugin *plugin, gpointer data);
 static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
                                     gpointer pdata);
 
-static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
-                                 SCNotification *notif, gpointer user_data);
+static bool on_editor_notify(GObject *obj, GeanyEditor *editor,
+                             SCNotification *notif, gpointer user_data);
 static void on_document_signal(GObject *obj, GeanyDocument *doc,
                                gpointer user_data);
 
@@ -91,12 +91,12 @@ static void on_pref_reset_config(GtkWidget *self, GtkWidget *dialog);
 static GtkWidget *find_focus_widget(GtkWidget *widget);
 static void on_toggle_editor_preview();
 static bool on_key_binding(int key_id);
-static gboolean on_sidebar_focus(GtkWidget *widget, GtkDirectionType direction,
+static bool on_sidebar_focus(GtkWidget *widget, GtkDirectionType direction,
+                             gpointer user_data);
+static bool on_sidebar_focus_in(GtkWidget *widget, GdkEvent *event,
+                                gpointer user_data);
+static bool on_sidebar_focus_out(GtkWidget *widget, GdkEvent *event,
                                  gpointer user_data);
-static gboolean on_sidebar_focus_in(GtkWidget *widget, GdkEvent *event,
-                                    gpointer user_data);
-static gboolean on_sidebar_focus_out(GtkWidget *widget, GdkEvent *event,
-                                     gpointer user_data);
 
 static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog);
 
@@ -105,10 +105,10 @@ static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog);
 static char *replace_extension(char const *utf8_fn, char const *new_ext);
 
 static gboolean update_timeout_callback(gpointer user_data);
-static char *update_preview(gboolean const get_contents);
+static char *update_preview(bool const get_contents);
 
 static void on_sidebar_switch_page(GtkNotebook *nb, GtkWidget *page,
-                                   guint page_num, gpointer user_data);
+                                   uint page_num, gpointer user_data);
 static void on_sidebar_show(GtkNotebook *nb, gpointer user_data);
 static void on_sidebar_state_flags_changed(GtkWidget *widget,
                                            GtkStateFlags flags,
@@ -148,11 +148,6 @@ G_END_DECLS
     g_key_file_free(_z_);   \
     _z_ = nullptr;          \
   } while (0)
-
-#define REGEX_CHK(_tp, _str)                                                   \
-  (((_str) != nullptr) ? g_regex_match_simple((_tp), (_str), G_REGEX_CASELESS, \
-                                              GRegexMatchFlags(0))             \
-                       : false)
 
 #define SUBSTR(needle, haystack) (strstr((haystack), (needle)) != nullptr)
 

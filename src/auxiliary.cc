@@ -50,11 +50,17 @@ std::string &replace_all_inplace(std::string &subject,
   return subject;
 }
 
-std::string ws_ltrim(std::string s) { return ltrim_inplace(s, " \t\n\r\f\v"); }
+std::string ws_ltrim(std::string s) {
+  return ltrim_inplace(s, FOUNTAIN_WHITESPACE);
+}
 
-std::string ws_rtrim(std::string s) { return rtrim_inplace(s, " \t\n\r\f\v"); }
+std::string ws_rtrim(std::string s) {
+  return rtrim_inplace(s, FOUNTAIN_WHITESPACE);
+}
 
-std::string ws_trim(std::string s) { return trim_inplace(s, " \t\n\r\f\v"); }
+std::string ws_trim(std::string s) {
+  return trim_inplace(s, FOUNTAIN_WHITESPACE);
+}
 
 std::string replace_all(std::string subject, const std::string &search,
                         const std::string &replace) {

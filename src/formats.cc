@@ -26,13 +26,22 @@
 char *find_css(char const *css) {
   char *css_fn = g_build_filename(geany_data->app->configdir, "plugins",
                                   "preview", css, nullptr);
+
+  // cache previous result to reduce filesystem access
+  static std::string prev;
+  if (prev == css_fn) {
+    return css_fn;
+  }
+
   char *css_dn = g_path_get_dirname(css_fn);
   g_mkdir_with_parents(css_dn, 0755);
   GFREE(css_dn);
 
   if (g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
+    prev = css_fn;
     return css_fn;
   } else {
+    prev.clear();
     return nullptr;
   }
 }
@@ -40,6 +49,13 @@ char *find_css(char const *css) {
 char *find_copy_css(char const *css, char const *src) {
   char *css_fn = g_build_filename(geany_data->app->configdir, "plugins",
                                   "preview", css, nullptr);
+
+  // cache previous result to reduce filesystem access
+  static std::string prev;
+  if (prev == css_fn) {
+    return css_fn;
+  }
+
   char *css_dn = g_path_get_dirname(css_fn);
   g_mkdir_with_parents(css_dn, 0755);
   GFREE(css_dn);
@@ -55,21 +71,21 @@ char *find_copy_css(char const *css, char const *src) {
     }
   }
   if (g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
+    prev = css_fn;
     return css_fn;
   } else {
+    prev.clear();
     return nullptr;
   }
 }
 
-GString *pandoc(char const *work_dir, char const *input,
-                char const *from_format) {
+char *pandoc(char const *work_dir, char const *input, char const *from_format) {
   if (input == nullptr) {
     return nullptr;
   }
   if (settings.pandoc_disabled) {
-    GString *output =
-        g_string_new("<pre>" _("Pandoc has been disabled.") "</pre>");
-    return output;
+    return g_strjoin(nullptr, "<pre>", _("Pandoc has been disabled."), "</pre>",
+                     nullptr);
   }
 
   GPtrArray *args = g_ptr_array_new_with_free_func(g_free);
@@ -122,10 +138,10 @@ GString *pandoc(char const *work_dir, char const *input,
     return nullptr;
   }
 
-  return output;
+  return g_string_free(output, false);
 }
 
-GString *asciidoctor(char const *work_dir, char const *input) {
+char *asciidoctor(char const *work_dir, char const *input) {
   if (input == nullptr) {
     return nullptr;
   }
@@ -163,16 +179,15 @@ GString *asciidoctor(char const *work_dir, char const *input) {
   if (css_fn) {
     if (SUBSTR("</head>", output->str)) {
       try {
-        std::string out_text{output->str};
-
         std::string rep_text{
             "\n<link rel=\"stylesheet\" type=\"text/css\" href=\"file://"};
         rep_text += css_fn;
         rep_text += "\">\n</head>\n";
 
         static const std::regex re_head(R"(</head>)");
-        out_text = std::regex_replace(out_text, re_head, rep_text,
-                                      std::regex_constants::format_first_only);
+        std::string out_text =
+            std::regex_replace(output->str, re_head, rep_text,
+                               std::regex_constants::format_first_only);
 
         GSTRING_FREE(output);
         output = g_string_new(out_text.c_str());
@@ -193,11 +208,11 @@ GString *asciidoctor(char const *work_dir, char const *input) {
     }
     GFREE(css_fn);
   }
-  return output;
+  return g_string_free(output, false);
 }
 
-GString *screenplain(char const *work_dir, char const *input,
-                     char const *to_format) {
+char *screenplain(char const *work_dir, char const *input,
+                  char const *to_format) {
   if (input == nullptr) {
     return nullptr;
   }
@@ -224,7 +239,7 @@ GString *screenplain(char const *work_dir, char const *input,
   // end of args
   g_ptr_array_add(args, nullptr);
 
-  // rutn program
+  // run program
   FmtProcess *proc =
       fmt_process_open(work_dir, (char const *const *)args->pdata);
 
@@ -242,5 +257,5 @@ GString *screenplain(char const *work_dir, char const *input,
     return nullptr;
   }
 
-  return output;
+  return g_string_free(output, false);
 }
