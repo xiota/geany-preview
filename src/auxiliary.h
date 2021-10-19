@@ -18,9 +18,11 @@
 
 #pragma once
 
-#define FOUNTAIN_WHITESPACE " \t\n\r\f\v"
+#include <string>
+#include <vector>
+#include <regex>
 
-namespace Fountain {
+#define FOUNTAIN_WHITESPACE " \t\n\r\f\v"
 
 std::string &ltrim_inplace(std::string &s, char const *t = FOUNTAIN_WHITESPACE);
 std::string &rtrim_inplace(std::string &s, char const *t = FOUNTAIN_WHITESPACE);
@@ -52,6 +54,10 @@ std::string to_lower(std::string s);
 
 bool is_upper(std::string const &s);
 
-void print_regex_error(std::regex_error &e);
+std::string cstr_assign_free(char *input);
+std::string file_get_contents(std::string const &filename);
 
-}  // namespace Fountain
+bool file_set_contents(std::string const &filename,
+                       std::string const &contents);
+
+void print_regex_error(std::regex_error &e);

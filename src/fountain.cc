@@ -18,8 +18,6 @@
 
 #include <string.h>
 
-#include <regex>
-
 #include "auxiliary.h"
 #include "fountain.h"
 

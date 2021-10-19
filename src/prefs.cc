@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "auxiliary.h"
 #include "prefs.h"
 
 // Global Variables
@@ -24,65 +25,59 @@ struct PreviewSettings settings;
 // Functions
 
 void open_settings() {
-  char *conf_fn = g_build_filename(geany_data->app->configdir, "plugins",
-                                   "preview", "preview.conf", nullptr);
-  char *conf_dn = g_path_get_dirname(conf_fn);
-  g_mkdir_with_parents(conf_dn, 0755);
+  std::string conf_fn =
+      cstr_assign_free(g_build_filename(geany_data->app->configdir, "plugins",
+                                        "preview", "preview.conf", nullptr));
+  std::string conf_dn = cstr_assign_free(g_path_get_dirname(conf_fn.c_str()));
+  g_mkdir_with_parents(conf_dn.c_str(), 0755);
 
   GKeyFile *kf = g_key_file_new();
 
   // if file does not exist, create it
-  if (!g_file_test(conf_fn, G_FILE_TEST_EXISTS)) {
+  if (!g_file_test(conf_fn.c_str(), G_FILE_TEST_EXISTS)) {
     save_default_settings();
   }
 
   g_key_file_load_from_file(
-      kf, conf_fn,
+      kf, conf_fn.c_str(),
       GKeyFileFlags(G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS),
       nullptr);
 
   init_settings();
   load_settings(kf);
 
-  GFREE(conf_fn);
-  GFREE(conf_dn);
   GKEY_FILE_FREE(kf);
 }
 
 void save_default_settings() {
-  char *conf_fn = g_build_filename(geany_data->app->configdir, "plugins",
-                                   "preview", "preview.conf", nullptr);
-  char *conf_dn = g_path_get_dirname(conf_fn);
-  g_mkdir_with_parents(conf_dn, 0755);
+  static std::string conf_fn =
+      cstr_assign_free(g_build_filename(geany_data->app->configdir, "plugins",
+                                        "preview", "preview.conf", nullptr));
+  std::string conf_dn = cstr_assign_free(g_path_get_dirname(conf_fn.c_str()));
+  g_mkdir_with_parents(conf_dn.c_str(), 0755);
 
   // delete if file exists
-  GFile *file = g_file_new_for_path(conf_fn);
+  GFile *file = g_file_new_for_path(conf_fn.c_str());
   if (!g_file_trash(file, nullptr, nullptr)) {
     g_file_delete(file, nullptr, nullptr);
   }
 
   // copy default config
-  char *contents = nullptr;
-  size_t length = 0;
-  if (g_file_get_contents(PREVIEW_CONFIG, &contents, &length, nullptr)) {
-    g_file_set_contents(conf_fn, contents, length, nullptr);
-    GFREE(contents);
+  std::string contents = file_get_contents(PREVIEW_CONFIG);
+  if (!contents.empty()) {
+    file_set_contents(conf_fn, contents);
   }
-
-  GFREE(conf_dn);
-  GFREE(conf_fn);
 }
 
 void save_settings() {
   GKeyFile *kf = g_key_file_new();
-  char *contents;
-  size_t length = 0;
-  char *fn = g_build_filename(geany_data->app->configdir, "plugins", "preview",
-                              "preview.conf", nullptr);
+  static std::string conf_fn =
+      cstr_assign_free(g_build_filename(geany_data->app->configdir, "plugins",
+                                        "preview", "preview.conf", nullptr));
 
   // Load old contents in case user changed file outside of GUI
   g_key_file_load_from_file(
-      kf, fn,
+      kf, conf_fn.c_str(),
       GKeyFileFlags(G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS),
       nullptr);
 
@@ -118,13 +113,13 @@ void save_settings() {
   SET_KEY(string, "extra_css", settings.extra_css);
 
   // Store back on disk
-  contents = g_key_file_to_data(kf, &length, nullptr);
-  if (contents) {
-    g_file_set_contents(fn, contents, length, nullptr);
-    GFREE(contents);
+  size_t length = 0;
+  std::string contents =
+      cstr_assign_free(g_key_file_to_data(kf, &length, nullptr));
+  if (!contents.empty()) {
+    file_set_contents(conf_fn, contents);
   }
 
-  GFREE(fn);
   GKEY_FILE_FREE(kf);
 }
 

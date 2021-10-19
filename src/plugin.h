@@ -27,6 +27,8 @@
 #include <gtk/gtk.h>
 #include <webkit2/webkit2.h>
 
+#include <string>
+
 #ifndef g_clear_signal_handler
 #include "gobject/gsignal.h"
 // g_clear_signal_handler was added in glib 2.62
@@ -102,10 +104,11 @@ static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog);
 
 static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog);
 static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog);
-static char *replace_extension(char const *utf8_fn, char const *new_ext);
+static std::string replace_extension(std::string const &fn,
+                                     std::string const &ext);
 
 static gboolean update_timeout_callback(gpointer user_data);
-static char *update_preview(bool const get_contents);
+static std::string update_preview(bool const bGetContents);
 
 static void on_sidebar_switch_page(GtkNotebook *nb, GtkWidget *page,
                                    uint page_num, gpointer user_data);
@@ -114,7 +117,7 @@ static void on_sidebar_state_flags_changed(GtkWidget *widget,
                                            GtkStateFlags flags,
                                            gpointer user_data);
 
-static PreviewFileType get_filetype(char const *fn);
+static PreviewFileType get_filetype(std::string const &fn);
 static void set_filetype();
 static void set_snippets();
 static void wv_apply_settings();
