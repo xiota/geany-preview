@@ -67,6 +67,8 @@ void save_default_settings() {
   if (!contents.empty()) {
     file_set_contents(conf_fn, contents);
   }
+
+  g_object_unref(file);
 }
 
 void save_settings() {

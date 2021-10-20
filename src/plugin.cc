@@ -294,7 +294,7 @@ static bool on_key_binding(int key_id) {
 
 static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog) {
   std::string command =
-      R"(xdg-option ")" +
+      R"(xdg-open ")" +
       cstr_assign_free(g_build_filename(geany_data->app->configdir, "plugins",
                                         "preview", nullptr)) +
       R"(")";
@@ -456,10 +456,8 @@ static GtkWidget *find_focus_widget(GtkWidget *widget) {
 static void wv_save_position_callback(GObject *object, GAsyncResult *result,
                                       gpointer user_data) {
   GeanyDocument *doc = document_get_current();
-  if (!DOC_VALID(doc)) {
-    WEBVIEW_WARN(_("Unknown document type."));
-    return;
-  }
+  g_return_if_fail(DOC_VALID(doc));
+
   int idx = document_get_notebook_page(doc);
 
   WebKitJavascriptResult *js_result;
@@ -542,10 +540,8 @@ static void wv_apply_settings() {
 
 static void wv_load_position() {
   GeanyDocument *doc = document_get_current();
-  if (!DOC_VALID(doc)) {
-    WEBVIEW_WARN(_("Unknown document type."));
-    return;
-  }
+  g_return_if_fail(DOC_VALID(doc));
+
   int idx = document_get_notebook_page(doc);
 
   static std::string script;
@@ -818,7 +814,7 @@ static std::string update_preview(bool const bGetContents) {
     default:
       strPlain =
           "Unable to process type: " + std::string{doc->file_type->name} +
-          std::string{doc->encoding} + ".";
+          ", " + std::string{doc->encoding} + ".";
       break;
   }
 
@@ -880,9 +876,7 @@ static PreviewFileType get_filetype(std::string const &fn) {
   }
 
   GeanyDocument *doc = document_get_current();
-  if (!DOC_VALID(doc)) {
-    return PREVIEW_FILETYPE_NONE;
-  }
+  g_return_val_if_fail(DOC_VALID(doc), PREVIEW_FILETYPE_NONE);
 
   PreviewFileType filetype = PREVIEW_FILETYPE_NONE;
 
