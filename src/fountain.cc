@@ -508,12 +508,10 @@ void Script::parseFountain(std::string const &text) {
     static const std::regex re_comment(R"(/\*[\S\s]*?\*/)");
     std::string strTmp = std::regex_replace(text, re_comment, "");
 
-    // replace non-entity ampersands
-    static const std::regex re_ampersand("&(?!#?[a-zA-Z0-9]+;)");
-    strTmp = std::regex_replace(strTmp, re_ampersand, "&#38;");
-
+    // TODO: Perform escape replacements in a single pass?
     // simple tab and escape sequence replacements
     replace_all_inplace(strTmp, "\t", "    ");
+    replace_all_inplace(strTmp, R"(\&)", "&#38;");
     replace_all_inplace(strTmp, R"(\*)", "&#42;");
     replace_all_inplace(strTmp, R"(\_)", "&#95;");
     replace_all_inplace(strTmp, R"(\:)", "&#58;");
@@ -522,6 +520,11 @@ void Script::parseFountain(std::string const &text) {
     replace_all_inplace(strTmp, R"(\\)", "&#92;");
     replace_all_inplace(strTmp, R"(\<)", "&#60;");
     replace_all_inplace(strTmp, R"(\>)", "&#62;");
+    replace_all_inplace(strTmp, R"(\.)", "&#46;");
+
+    // replace non-entity ampersands
+    static const std::regex re_ampersand("&(?!#?[a-zA-Z0-9]+;)");
+    strTmp = std::regex_replace(strTmp, re_ampersand, "&#38;");
 
     lines = split_lines(strTmp);
   } catch (std::regex_error &e) {
@@ -1026,8 +1029,7 @@ std::string ftn2xml(std::string const &input, std::string const &css_fn) {
   output += "\n</Fountain>\n</body>\n</html>\n";
 
   try {
-    replace_all_inplace(output, "<BlankLine>", "");
-    replace_all_inplace(output, "</BlankLine>", "");
+    replace_all_inplace(output, "<BlankLine></BlankLine>", "");
 
     static const std::regex re_newlines(R"(\n+)");
     output = std::regex_replace(output, re_newlines, "\n");
