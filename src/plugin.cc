@@ -338,13 +338,14 @@ static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog) {
 // from markdown plugin
 static std::string replace_extension(std::string const &fn,
                                      std::string const &ext) {
-  std::string fn_noext = cstr_assign_free(
-      g_filename_from_utf8(fn.c_str(), -1, nullptr, nullptr, nullptr));
-  char *dot = strrchr(fn_noext.data(), '.');
+  char *fn_noext =
+      g_filename_from_utf8(fn.c_str(), -1, nullptr, nullptr, nullptr);
+  char *dot = strrchr(fn_noext, '.');
   if (dot != nullptr) {
     *dot = '\0';
   }
-  std::string new_fn = fn_noext.data() + ext;
+  std::string new_fn = fn_noext + ext;
+  g_free(fn_noext);
   return new_fn;
 }
 
