@@ -73,7 +73,7 @@ void save_default_settings() {
 
 void save_settings() {
   GKeyFile *kf = g_key_file_new();
-  static std::string conf_fn =
+  std::string conf_fn =
       cstr_assign_free(g_build_filename(geany_data->app->configdir, "plugins",
                                         "preview", "preview.conf", nullptr));
 
@@ -115,9 +115,8 @@ void save_settings() {
   SET_KEY(string, "extra_css", settings.extra_css);
 
   // Store back on disk
-  size_t length = 0;
   std::string contents =
-      cstr_assign_free(g_key_file_to_data(kf, &length, nullptr));
+      cstr_assign_free(g_key_file_to_data(kf, nullptr, nullptr));
   if (!contents.empty()) {
     file_set_contents(conf_fn, contents);
   }

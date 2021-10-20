@@ -318,6 +318,63 @@ auto parseKeyValue(std::string const &input) {
   return std::make_pair(key, value);
 }
 
+// replace escape sequences with entities in a single pass
+std::string &parseEscapeSequences_inplace(std::string &input) {
+  size_t pos = 0;
+  while ((pos = input.find('\\', pos)) != std::string::npos) {
+    if (pos + 1 < input.length()) {
+      switch (input[pos + 1]) {
+        case '&':
+          input.replace(pos, 2, "&#38;");
+          pos += 5;
+          break;
+        case '*':
+          input.replace(pos, 2, "&#42;");
+          pos += 5;
+          break;
+        case '_':
+          input.replace(pos, 2, "&#95;");
+          pos += 5;
+          break;
+        case ':':
+          input.replace(pos, 2, "&#58;");
+          pos += 5;
+          break;
+        case '[':
+          input.replace(pos, 2, "&#91;");
+          pos += 5;
+          break;
+        case ']':
+          input.replace(pos, 2, "&#93;");
+          pos += 5;
+          break;
+        case '\\':
+          input.replace(pos, 2, "&#92;");
+          pos += 5;
+          break;
+        case '<':
+          input.replace(pos, 2, "&#60;");
+          pos += 5;
+          break;
+        case '>':
+          input.replace(pos, 2, "&#62;");
+          pos += 5;
+          break;
+        case '.':
+          input.replace(pos, 2, "&#46;");
+          pos += 5;
+          break;
+        default:
+          pos += 2;
+          break;
+      }
+    } else {
+      pos++;
+    }
+  }
+  return input;
+}
+
 }  // namespace
 
 std::string ScriptNode::to_string(size_t const &flags) const {
@@ -508,23 +565,13 @@ void Script::parseFountain(std::string const &text) {
     static const std::regex re_comment(R"(/\*[\S\s]*?\*/)");
     std::string strTmp = std::regex_replace(text, re_comment, "");
 
-    // TODO: Perform escape replacements in a single pass?
-    // simple tab and escape sequence replacements
-    replace_all_inplace(strTmp, "\t", "    ");
-    replace_all_inplace(strTmp, R"(\&)", "&#38;");
-    replace_all_inplace(strTmp, R"(\*)", "&#42;");
-    replace_all_inplace(strTmp, R"(\_)", "&#95;");
-    replace_all_inplace(strTmp, R"(\:)", "&#58;");
-    replace_all_inplace(strTmp, R"(\[)", "&#91;");
-    replace_all_inplace(strTmp, R"(\])", "&#93;");
-    replace_all_inplace(strTmp, R"(\\)", "&#92;");
-    replace_all_inplace(strTmp, R"(\<)", "&#60;");
-    replace_all_inplace(strTmp, R"(\>)", "&#62;");
-    replace_all_inplace(strTmp, R"(\.)", "&#46;");
+    // replace non-entity, non-escaped ampersands
+    static const std::regex re_ampersand(R"(([^\\])&(?!#?[a-zA-Z0-9]+;))");
+    strTmp = std::regex_replace(strTmp, re_ampersand, "$1&#38;");
 
-    // replace non-entity ampersands
-    static const std::regex re_ampersand("&(?!#?[a-zA-Z0-9]+;)");
-    strTmp = std::regex_replace(strTmp, re_ampersand, "&#38;");
+    replace_all_inplace(strTmp, "\t", "    ");
+
+    parseEscapeSequences_inplace(strTmp);
 
     lines = split_lines(strTmp);
   } catch (std::regex_error &e) {
