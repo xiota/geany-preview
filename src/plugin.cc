@@ -584,8 +584,8 @@ static std::string update_preview(bool const bGetContents) {
 
   if (doc != gCurrentDocument) {
     gCurrentDocument = doc;
-    set_filetype();
-    set_snippets();
+    gFileType = get_filetype(doc);
+    gSnippetActive = use_snippets(doc);
   }
 
   // don't use snippets when exporting html
@@ -689,7 +689,7 @@ static std::string update_preview(bool const bGetContents) {
         if (std::regex_search(strHead, format_match, re_format)) {
           if (format_match.size() > 2) {
             std::string strFormat = format_match[2];
-            gFileType = get_filetype(strFormat.c_str());
+            gFileType = get_filetype_from_filename(strFormat.c_str());
           }
         }
       }
@@ -857,7 +857,7 @@ static std::string update_preview(bool const bGetContents) {
   return contents;
 }
 
-static PreviewFileType get_filetype(std::string const &fn) {
+static PreviewFileType get_filetype_from_filename(std::string const &fn) {
   if (fn.empty()) {
     return PREVIEW_FILETYPE_NONE;
   }
@@ -869,135 +869,149 @@ static PreviewFileType get_filetype(std::string const &fn) {
     return PREVIEW_FILETYPE_NONE;
   }
 
+  bool bSetDocFileType = false;
   GeanyDocument *doc = document_get_current();
-  g_return_val_if_fail(DOC_VALID(doc), PREVIEW_FILETYPE_NONE);
-
-  PreviewFileType filetype = PREVIEW_FILETYPE_NONE;
-
-  if (SUBSTR("gfm", strFormat.c_str())) {
-    filetype = PREVIEW_FILETYPE_GFM;
-  } else if (SUBSTR("fountain", strFormat.c_str()) ||
-             SUBSTR("spmd", strFormat.c_str())) {
-    filetype = PREVIEW_FILETYPE_FOUNTAIN;
-  } else if (SUBSTR("textile", strFormat.c_str())) {
-    filetype = PREVIEW_FILETYPE_TEXTILE;
-  } else if (SUBSTR("txt", strFormat.c_str()) ||
-             SUBSTR("plain", strFormat.c_str())) {
-    filetype = PREVIEW_FILETYPE_PLAIN;
-  } else if (SUBSTR("eml", strFormat.c_str())) {
-    filetype = PREVIEW_FILETYPE_EMAIL;
-  } else if (SUBSTR("wiki", strFormat.c_str())) {
-    if (strcmp("disable", settings.wiki_default) == 0) {
-      filetype = PREVIEW_FILETYPE_NONE;
-    } else if (SUBSTR("dokuwiki", strFormat.c_str())) {
-      filetype = PREVIEW_FILETYPE_DOKUWIKI;
-    } else if (SUBSTR("tikiwiki", strFormat.c_str())) {
-      filetype = PREVIEW_FILETYPE_TIKIWIKI;
-    } else if (SUBSTR("vimwiki", strFormat.c_str())) {
-      filetype = PREVIEW_FILETYPE_VIMWIKI;
-    } else if (SUBSTR("twiki", strFormat.c_str())) {
-      filetype = PREVIEW_FILETYPE_TWIKI;
-    } else if (SUBSTR("mediawiki", strFormat.c_str()) ||
-               SUBSTR("wikipedia", strFormat.c_str())) {
-      filetype = PREVIEW_FILETYPE_MEDIAWIKI;
-    } else {
-      filetype = PREVIEW_FILETYPE_WIKI;
-    }
-  } else if (SUBSTR("muse", strFormat.c_str())) {
-    filetype = PREVIEW_FILETYPE_MUSE;
-  } else if (SUBSTR("org", strFormat.c_str())) {
-    filetype = PREVIEW_FILETYPE_ORG;
-  } else if (SUBSTR("html", strFormat.c_str())) {
-    document_set_filetype(doc, filetypes[GEANY_FILETYPES_HTML]);
-    filetype = PREVIEW_FILETYPE_HTML;
-  } else if (SUBSTR("markdown", strFormat.c_str())) {
-    document_set_filetype(doc, filetypes[GEANY_FILETYPES_MARKDOWN]);
-    filetype = PREVIEW_FILETYPE_MARKDOWN;
-  } else if (SUBSTR("asciidoc", strFormat.c_str())) {
-    filetype = PREVIEW_FILETYPE_ASCIIDOC;
-    document_set_filetype(doc, filetypes[GEANY_FILETYPES_ASCIIDOC]);
-  } else if (SUBSTR("docbook", strFormat.c_str())) {
-    document_set_filetype(doc, filetypes[GEANY_FILETYPES_DOCBOOK]);
-    filetype = PREVIEW_FILETYPE_DOCBOOK;
-  } else if (SUBSTR("latex", strFormat.c_str())) {
-    document_set_filetype(doc, filetypes[GEANY_FILETYPES_LATEX]);
-    filetype = PREVIEW_FILETYPE_LATEX;
-  } else if (SUBSTR("rest", strFormat.c_str()) ||
-             SUBSTR("restructuredtext", strFormat.c_str())) {
-    document_set_filetype(doc, filetypes[GEANY_FILETYPES_REST]);
-    filetype = PREVIEW_FILETYPE_REST;
-  } else if (SUBSTR("txt2tags", strFormat.c_str()) ||
-             SUBSTR("t2t", strFormat.c_str())) {
-    document_set_filetype(doc, filetypes[GEANY_FILETYPES_TXT2TAGS]);
-    filetype = PREVIEW_FILETYPE_TXT2TAGS;
+  if (DOC_VALID(doc)) {
+    bSetDocFileType = true;
   }
 
-  return filetype;
+  if (SUBSTR("gfm", strFormat.c_str())) {
+    return PREVIEW_FILETYPE_GFM;
+  } else if (SUBSTR("fountain", strFormat.c_str()) ||
+             SUBSTR("spmd", strFormat.c_str())) {
+    return PREVIEW_FILETYPE_FOUNTAIN;
+  } else if (SUBSTR("textile", strFormat.c_str())) {
+    return PREVIEW_FILETYPE_TEXTILE;
+  } else if (SUBSTR("txt", strFormat.c_str()) ||
+             SUBSTR("plain", strFormat.c_str())) {
+    return PREVIEW_FILETYPE_PLAIN;
+  } else if (SUBSTR("eml", strFormat.c_str())) {
+    return PREVIEW_FILETYPE_EMAIL;
+  } else if (SUBSTR("wiki", strFormat.c_str())) {
+    if (strcmp("disable", settings.wiki_default) == 0) {
+      return PREVIEW_FILETYPE_NONE;
+    } else if (SUBSTR("dokuwiki", strFormat.c_str())) {
+      return PREVIEW_FILETYPE_DOKUWIKI;
+    } else if (SUBSTR("tikiwiki", strFormat.c_str())) {
+      return PREVIEW_FILETYPE_TIKIWIKI;
+    } else if (SUBSTR("vimwiki", strFormat.c_str())) {
+      return PREVIEW_FILETYPE_VIMWIKI;
+    } else if (SUBSTR("twiki", strFormat.c_str())) {
+      return PREVIEW_FILETYPE_TWIKI;
+    } else if (SUBSTR("mediawiki", strFormat.c_str()) ||
+               SUBSTR("wikipedia", strFormat.c_str())) {
+      return PREVIEW_FILETYPE_MEDIAWIKI;
+    } else {
+      return PREVIEW_FILETYPE_WIKI;
+    }
+  } else if (SUBSTR("muse", strFormat.c_str())) {
+    return PREVIEW_FILETYPE_MUSE;
+  } else if (SUBSTR("org", strFormat.c_str())) {
+    return PREVIEW_FILETYPE_ORG;
+  } else if (SUBSTR("html", strFormat.c_str())) {
+    if (bSetDocFileType) {
+      document_set_filetype(doc, filetypes[GEANY_FILETYPES_HTML]);
+    }
+    return PREVIEW_FILETYPE_HTML;
+  } else if (SUBSTR("markdown", strFormat.c_str())) {
+    if (bSetDocFileType) {
+      document_set_filetype(doc, filetypes[GEANY_FILETYPES_MARKDOWN]);
+    }
+    return PREVIEW_FILETYPE_MARKDOWN;
+  } else if (SUBSTR("asciidoc", strFormat.c_str())) {
+    if (bSetDocFileType) {
+      document_set_filetype(doc, filetypes[GEANY_FILETYPES_ASCIIDOC]);
+    }
+    return PREVIEW_FILETYPE_ASCIIDOC;
+  } else if (SUBSTR("docbook", strFormat.c_str())) {
+    if (bSetDocFileType) {
+      document_set_filetype(doc, filetypes[GEANY_FILETYPES_DOCBOOK]);
+    }
+    return PREVIEW_FILETYPE_DOCBOOK;
+  } else if (SUBSTR("latex", strFormat.c_str())) {
+    if (bSetDocFileType) {
+      document_set_filetype(doc, filetypes[GEANY_FILETYPES_LATEX]);
+    }
+    return PREVIEW_FILETYPE_LATEX;
+  } else if (SUBSTR("rest", strFormat.c_str()) ||
+             SUBSTR("restructuredtext", strFormat.c_str())) {
+    if (bSetDocFileType) {
+      document_set_filetype(doc, filetypes[GEANY_FILETYPES_REST]);
+    }
+    return PREVIEW_FILETYPE_REST;
+  } else if (SUBSTR("txt2tags", strFormat.c_str()) ||
+             SUBSTR("t2t", strFormat.c_str())) {
+    if (bSetDocFileType) {
+      document_set_filetype(doc, filetypes[GEANY_FILETYPES_TXT2TAGS]);
+    }
+    return PREVIEW_FILETYPE_TXT2TAGS;
+  }
+
+  return PREVIEW_FILETYPE_NONE;
 }
 
-static inline void set_filetype() {
-  GeanyDocument *doc = document_get_current();
+static PreviewFileType get_filetype(GeanyDocument *doc) {
+  g_return_val_if_fail(DOC_VALID(doc), PREVIEW_FILETYPE_NONE);
 
   switch (doc->file_type->id) {
     case GEANY_FILETYPES_HTML:
-      gFileType = PREVIEW_FILETYPE_HTML;
+      return PREVIEW_FILETYPE_HTML;
       break;
     case GEANY_FILETYPES_MARKDOWN:
-      gFileType = PREVIEW_FILETYPE_MARKDOWN;
+      return PREVIEW_FILETYPE_MARKDOWN;
       break;
     case GEANY_FILETYPES_ASCIIDOC:
-      gFileType = PREVIEW_FILETYPE_ASCIIDOC;
+      return PREVIEW_FILETYPE_ASCIIDOC;
       break;
     case GEANY_FILETYPES_DOCBOOK:
-      gFileType = PREVIEW_FILETYPE_DOCBOOK;
+      return PREVIEW_FILETYPE_DOCBOOK;
       break;
     case GEANY_FILETYPES_LATEX:
-      gFileType = PREVIEW_FILETYPE_LATEX;
+      return PREVIEW_FILETYPE_LATEX;
       break;
     case GEANY_FILETYPES_REST:
-      gFileType = PREVIEW_FILETYPE_REST;
+      return PREVIEW_FILETYPE_REST;
       break;
     case GEANY_FILETYPES_TXT2TAGS:
-      gFileType = PREVIEW_FILETYPE_TXT2TAGS;
+      return PREVIEW_FILETYPE_TXT2TAGS;
       break;
     case GEANY_FILETYPES_NONE:
       if (!settings.extended_types) {
-        gFileType = PREVIEW_FILETYPE_NONE;
+        return PREVIEW_FILETYPE_NONE;
         break;
       } else {
-        gFileType = get_filetype(DOC_FILENAME(doc));
+        return get_filetype_from_filename(DOC_FILENAME(doc));
       }
       break;
     default:
-      gFileType = PREVIEW_FILETYPE_NONE;
+      return PREVIEW_FILETYPE_NONE;
       break;
   }
+  return PREVIEW_FILETYPE_NONE;
 }
 
-static inline void set_snippets() {
-  GeanyDocument *doc = document_get_current();
+static bool use_snippets(GeanyDocument *doc) {
+  g_return_val_if_fail(DOC_VALID(doc), false);
 
-  int length = sci_get_length(doc->editor->sci);
-  if (length > settings.snippet_trigger) {
-    gSnippetActive = true;
-  } else {
-    gSnippetActive = false;
+  const int length = sci_get_length(doc->editor->sci);
+  if (length <= settings.snippet_trigger) {
+    return false;
   }
 
   switch (doc->file_type->id) {
     case GEANY_FILETYPES_ASCIIDOC:
       if (!settings.snippet_asciidoctor) {
-        gSnippetActive = false;
+        return false;
       }
       break;
     case GEANY_FILETYPES_HTML:
       if (!settings.snippet_html) {
-        gSnippetActive = false;
+        return false;
       }
       break;
     case GEANY_FILETYPES_MARKDOWN:
       if (!settings.snippet_markdown) {
-        gSnippetActive = false;
+        return false;
       }
       break;
     case GEANY_FILETYPES_NONE: {
@@ -1007,7 +1021,7 @@ static inline void set_snippets() {
         if (SUBSTR("fountain", strFormat.c_str()) ||
             SUBSTR("spmd", strFormat.c_str())) {
           if (!settings.snippet_screenplain) {
-            gSnippetActive = false;
+            return false;
           }
         }
       }
@@ -1018,10 +1032,11 @@ static inline void set_snippets() {
     case GEANY_FILETYPES_TXT2TAGS:
     default:
       if (!settings.snippet_pandoc) {
-        gSnippetActive = false;
+        return false;
       }
       break;
   }
+  return true;
 }
 
 /* ********************
@@ -1030,16 +1045,34 @@ static inline void set_snippets() {
 
 static bool on_editor_notify(GObject *obj, GeanyEditor *editor,
                              SCNotification *notif, gpointer user_data) {
+  // no update when update pending
+  if (gHandleTimeout) {
+    return false;
+  }
+
+  // no updates when preview pane is hidden
+  if (gtk_notebook_get_current_page(gSideBarNotebook) !=
+          gPreviewSideBarPageNumber ||
+      !gtk_widget_is_visible(GTK_WIDGET(gSideBarNotebook))) {
+    return false;
+  }
+
+  // no update if document invalid
   GeanyDocument *doc = document_get_current();
   if (!DOC_VALID(doc)) {
     WEBVIEW_WARN(_("Unknown document type."));
     return false;
   }
 
+  // no update if unhandled filetype
+  if (gFileType == PREVIEW_FILETYPE_NONE) {
+    return false;
+  }
+
   int length = sci_get_length(doc->editor->sci);
 
   bool need_update = false;
-  if (notif->nmhdr.code == SCN_UPDATEUI && gSnippetActive &&
+  if (gSnippetActive && notif->nmhdr.code == SCN_UPDATEUI &&
       (notif->updated & (SC_UPDATE_CONTENT | SC_UPDATE_SELECTION))) {
     need_update = true;
   }
@@ -1050,24 +1083,19 @@ static bool on_editor_notify(GObject *obj, GeanyEditor *editor,
     }
   }
 
-  if (gtk_notebook_get_current_page(gSideBarNotebook) !=
-          gPreviewSideBarPageNumber ||
-      !gtk_widget_is_visible(GTK_WIDGET(gSideBarNotebook))) {
-    // no updates when preview pane is hidden
-    return false;
-  }
-
-  if (need_update && gHandleTimeout == 0) {
-    if (doc->file_type->id != GEANY_FILETYPES_ASCIIDOC &&
-        doc->file_type->id != GEANY_FILETYPES_NONE) {
-      // delay for faster programs
+  if (need_update) {
+    if ((doc->file_type->id != GEANY_FILETYPES_ASCIIDOC &&
+         doc->file_type->id != GEANY_FILETYPES_NONE) ||
+        (gFileType == PREVIEW_FILETYPE_FOUNTAIN &&
+         strcmp("native", settings.fountain_processor) == 0)) {
+      // delay for faster programs (native html/markdown/fountain and pandoc)
       double _tt = (double)length * settings.size_factor_fast;
       int timeout = (int)_tt > settings.update_interval_fast
                         ? (int)_tt
                         : settings.update_interval_fast;
       gHandleTimeout = g_timeout_add(timeout, update_timeout_callback, nullptr);
     } else {
-      // delay for slower programs
+      // delay for slower programs (asciidoctor and screenplain)
       double _tt = (double)length * settings.size_factor_slow;
       int timeout = (int)_tt > settings.update_interval_slow
                         ? (int)_tt
@@ -1081,13 +1109,18 @@ static bool on_editor_notify(GObject *obj, GeanyEditor *editor,
 
 static void on_document_signal(GObject *obj, GeanyDocument *doc,
                                gpointer user_data) {
+  gCurrentDocument = nullptr;
+
+  // no updates when preview pane is hidden
   if (gtk_notebook_get_current_page(gSideBarNotebook) !=
           gPreviewSideBarPageNumber ||
       !gtk_widget_is_visible(GTK_WIDGET(gSideBarNotebook))) {
-    // no updates when preview pane is hidden
     return;
   }
 
-  gCurrentDocument = nullptr;
-  update_preview(false);
+  // update only when update not already pending
+  if (!gHandleTimeout) {
+    gHandleTimeout = g_timeout_add(settings.update_interval_fast,
+                                   update_timeout_callback, nullptr);
+  }
 }
