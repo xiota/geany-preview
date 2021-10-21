@@ -579,7 +579,7 @@ static std::string update_preview(bool const bGetContents) {
   GeanyDocument *doc = document_get_current();
   if (!DOC_VALID(doc)) {
     WEBVIEW_WARN(_("Unknown document type."));
-    return nullptr;
+    return {};
   }
 
   if (doc != gCurrentDocument) {

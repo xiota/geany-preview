@@ -108,7 +108,7 @@ static std::string replace_extension(std::string const &fn,
                                      std::string const &ext);
 
 static gboolean update_timeout_callback(gpointer user_data);
-static std::string update_preview(bool const bGetContents);
+static std::string update_preview(bool const bGetContents = false);
 
 static void on_sidebar_switch_page(GtkNotebook *nb, GtkWidget *page,
                                    uint page_num, gpointer user_data);
