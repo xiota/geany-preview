@@ -126,6 +126,10 @@ static bool preview_init(GeanyPlugin *plugin, gpointer data) {
   g_signal_connect(item, "activate", G_CALLBACK(on_menu_export_html), nullptr);
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
+  item = gtk_menu_item_new_with_label(_("Export to PDF..."));
+  g_signal_connect(item, "activate", G_CALLBACK(on_menu_export_pdf), nullptr);
+  gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
+
   item = gtk_separator_menu_item_new();
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
@@ -402,6 +406,73 @@ static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
     if (!file_set_contents(fn.c_str(), html)) {
       dialogs_show_msgbox(GTK_MESSAGE_ERROR,
                           _("Failed to export HTML to file."));
+    } else {
+      saved = true;
+    }
+  }
+
+  gtk_widget_destroy(save_dialog);
+}
+
+static void on_menu_export_pdf(GtkWidget *self, GtkWidget *dialog) {
+  GeanyDocument *doc = document_get_current();
+  g_return_if_fail(DOC_VALID(doc));
+
+  // PDF export only supported for Fountain
+  gFileType = get_filetype(doc);
+  if (gFileType != PREVIEW_FILETYPE_FOUNTAIN) {
+    msgwin_status_add("PDF export is available only for Fountain documents.");
+    return;
+  }
+
+  char *text = (char *)scintilla_send_message(doc->editor->sci,
+                                              SCI_GETCHARACTERPOINTER, 0, 0);
+
+  GtkWidget *save_dialog = gtk_file_chooser_dialog_new(
+      _("Save As PDF"), GTK_WINDOW(geany_data->main_widgets->window),
+      GTK_FILE_CHOOSER_ACTION_SAVE, _("Cancel"), GTK_RESPONSE_CANCEL, _("Save"),
+      GTK_RESPONSE_ACCEPT, nullptr);
+  gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(save_dialog),
+                                                 true);
+
+  std::string fn = replace_extension(DOC_FILENAME(doc), ".pdf");
+  if (g_file_test(fn.c_str(), G_FILE_TEST_EXISTS)) {
+    // If the file exists, GtkFileChooser will change to the correct
+    // directory and show the base name as a suggestion.
+    gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(save_dialog), fn.c_str());
+  } else {
+    // If the file doesn't exist, change the directory and give a
+    // suggested name for the file, since GtkFileChooser won't do it.
+    std::string dn = cstr_assign(g_path_get_dirname(fn.c_str()));
+    std::string bn = cstr_assign(g_path_get_basename(fn.c_str()));
+    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog),
+                                        dn.c_str());
+    std::string utf8_name = cstr_assign(
+        g_filename_to_utf8(bn.c_str(), -1, nullptr, nullptr, nullptr));
+    gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(save_dialog),
+                                      utf8_name.c_str());
+  }
+
+  // add file type filters to the chooser
+  GtkFileFilter *filter = gtk_file_filter_new();
+  gtk_file_filter_set_name(filter, _("PDF Files"));
+  gtk_file_filter_add_mime_type(filter, "application/pdf");
+  gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(save_dialog), filter);
+
+  filter = gtk_file_filter_new();
+  gtk_file_filter_set_name(filter, _("All Files"));
+  gtk_file_filter_add_pattern(filter, "*");
+  gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(save_dialog), filter);
+
+  bool saved = false;
+  while (!saved &&
+         gtk_dialog_run(GTK_DIALOG(save_dialog)) == GTK_RESPONSE_ACCEPT) {
+    fn = cstr_assign(
+        gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(save_dialog)));
+
+    if (!Fountain::ftn2pdf(fn, text)) {
+      dialogs_show_msgbox(GTK_MESSAGE_ERROR,
+                          _("Failed to export PDF to file."));
     } else {
       saved = true;
     }

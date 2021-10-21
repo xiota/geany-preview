@@ -32,17 +32,18 @@ enum ScriptNodeType : size_t {
   ftnBlankLine = 1ull << 4,
   ftnSceneHeader = 1ull << 5,
   ftnAction = 1ull << 6,
-  ftnTransition = 1ull << 7,
-  ftnDialog = 1ull << 8,
-  ftnDialogLeft = 1ull << 9,
-  ftnDialogRight = 1ull << 10,
-  ftnCharacter = 1ull << 11,
-  ftnParenthetical = 1ull << 12,
-  ftnSpeech = 1ull << 13,
-  ftnNotation = 1ull << 14,
-  ftnLyric = 1ull << 15,
-  ftnSection = 1ull << 16,
-  ftnSynopsis = 1ull << 17,
+  ftnActionCenter = 1ull << 7,
+  ftnTransition = 1ull << 8,
+  ftnDialog = 1ull << 9,
+  ftnDialogLeft = 1ull << 10,
+  ftnDialogRight = 1ull << 11,
+  ftnCharacter = 1ull << 12,
+  ftnParenthetical = 1ull << 13,
+  ftnSpeech = 1ull << 14,
+  ftnNotation = 1ull << 15,
+  ftnLyric = 1ull << 16,
+  ftnSection = 1ull << 17,
+  ftnSynopsis = 1ull << 18,
 };
 
 class ScriptNode {
@@ -57,6 +58,9 @@ class ScriptNode {
 
 class Script {
  public:
+  Script() = default;
+  Script(std::string const &text) { parseFountain(text); }
+
   void parseFountain(std::string const &text);
   std::string to_string(size_t const &flags = ScriptNodeType::ftnNone) const;
 
@@ -103,5 +107,8 @@ std::string ftn2fdx(std::string const &input);
 
 // native output; modern browsers can display with css
 std::string ftn2xml(std::string const &input, std::string const &css_fn = "");
+
+bool ftn2pdf(std::string const &fn, std::string const &input,
+             std::string const &css_fn = "");
 
 }  // namespace Fountain

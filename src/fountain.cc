@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <podofo/podofo.h>
 #include <string.h>
 
 #include "auxiliary.h"
@@ -418,9 +419,9 @@ std::string ScriptNode::to_string(size_t const &flags) const {
         break;
       }
       if (dialog_state) {
-        dialog_state == 1   ? output = "</Dialog>\n"
-        : dialog_state == 2 ? output = "</DialogLeft>\n"
-                            : output = "</DialogRight>\n</DualDialog>\n";
+        dialog_state == 1   ? output = "</Dialog>"
+        : dialog_state == 2 ? output = "</DialogLeft>"
+                            : output = "</DialogRight></DualDialog>";
         dialog_state = 0;
       }
       output += "<BlankLine></BlankLine>\n";
@@ -448,6 +449,12 @@ std::string ScriptNode::to_string(size_t const &flags) const {
       }
       output = "<Action>" + value + "</Action>\n";
       break;
+    case ScriptNodeType::ftnActionCenter:
+      if (flags & type) {
+        break;
+      }
+      output = "<ActionCenter>" + value + "</ActionCenter>\n";
+      break;
     case ScriptNodeType::ftnTransition:
       if (flags & type) {
         break;
@@ -459,21 +466,21 @@ std::string ScriptNode::to_string(size_t const &flags) const {
         break;
       }
       dialog_state = 1;
-      output = "<Dialog>" + key + "\n";
+      output = "<Dialog>" + key;
       break;
     case ScriptNodeType::ftnDialogLeft:
       if (flags & type) {
         break;
       }
       dialog_state = 2;
-      output = "<DualDialog>\n<DialogLeft>" + value + "\n";
+      output = "<DualDialog><DialogLeft>" + value;
       break;
     case ScriptNodeType::ftnDialogRight:
       if (flags & type) {
         break;
       }
       dialog_state = 3;
-      output = "<DialogRight>" + value + "\n";
+      output = "<DialogRight>" + value;
       break;
     case ScriptNodeType::ftnCharacter:
       if (flags & type) {
@@ -782,15 +789,18 @@ void Script::parseFountain(std::string const &text) {
     // Note: Leading whitespace is retained in Action
     if (curr_node.type == ScriptNodeType::ftnAction) {
       if (isCenter(s)) {
-        append("<center>" + ws_trim(s.substr(1, s.length() - 2)) + "</center>");
+        new_node(ScriptNodeType::ftnActionCenter);
+        append(ws_trim(s.substr(1, s.length() - 2)));
+        end_node();
       } else {
         append(line);
       }
       continue;
     }
     if (isCenter(s)) {
-      new_node(ScriptNodeType::ftnAction);
-      append("<center>" + ws_trim(s.substr(1, s.length() - 2)) + "</center>");
+      new_node(ScriptNodeType::ftnActionCenter);
+      append(ws_trim(s.substr(1, s.length() - 2)));
+      end_node();
       continue;
     }
     if (s.length() > 1 && s[0] == '!') {
@@ -872,6 +882,9 @@ std::string ftn2screenplain(std::string const &input,
 
     replace_all_inplace(output, "<Note>", R"(<div class="note">)");
     replace_all_inplace(output, "</Note>", "</div>");
+
+    replace_all_inplace(output, "<ActionCenter>", R"(<center>)");
+    replace_all_inplace(output, "</ActionCenter>", "</center>");
 
     replace_all_inplace(output, "<BlankLine>", "");
     replace_all_inplace(output, "</BlankLine>", "");
@@ -956,8 +969,8 @@ std::string ftn2textplay(std::string const &input, std::string const &css_fn) {
     replace_all_inplace(output, "<BlankLine>", "");
     replace_all_inplace(output, "</BlankLine>", "");
 
-    replace_all_inplace(output, "<center>", R"(<p class="center">)");
-    replace_all_inplace(output, "</center>", "</p>");
+    replace_all_inplace(output, "<ActionCenter>", R"(<p class="center">)");
+    replace_all_inplace(output, "</ActionCenter>", "</p>");
 
     static const std::regex re_newlines(R"(\n+)");
     output = std::regex_replace(output, re_newlines, "\n");
@@ -1021,9 +1034,9 @@ std::string ftn2fdx(std::string const &input) {
     replace_all_inplace(output, "</DualDialog>", "</DualDialog></Paragraph>");
 
     replace_all_inplace(
-        output, "<center>",
+        output, "<ActionCenter>",
         R"(<Paragraph Type="Action" Alignment="Center"><Text>)");
-    replace_all_inplace(output, "</center>", "</Text></Paragraph>");
+    replace_all_inplace(output, "</ActionCenter>", "</Text></Paragraph>");
 
     replace_all_inplace(output, "<b>", R"(<Text Style="Bold">)");
     replace_all_inplace(output, "</b>", "</Text>");
@@ -1071,9 +1084,7 @@ std::string ftn2xml(std::string const &input, std::string const &css_fn) {
     output += "\">\n";
   }
 
-  output +=
-      "</head>\n<body>\n"
-      "<Fountain>\n";
+  output += "</head>\n<body>\n";
 
   Fountain::Script script;
   script.parseFountain(input);
@@ -1082,11 +1093,9 @@ std::string ftn2xml(std::string const &input, std::string const &css_fn) {
                              Fountain::ScriptNodeType::ftnKeyValue |
                              Fountain::ScriptNodeType::ftnUnknown);
 
-  output += "\n</Fountain>\n</body>\n</html>\n";
+  output += "\n</body>\n</html>\n";
 
   try {
-    replace_all_inplace(output, "<BlankLine></BlankLine>", "");
-
     static const std::regex re_newlines(R"(\n+)");
     output = std::regex_replace(output, re_newlines, "\n");
   } catch (std::regex_error &e) {
@@ -1095,6 +1104,208 @@ std::string ftn2xml(std::string const &input, std::string const &css_fn) {
   }
 
   return output;
+}
+
+bool ftn2pdf(std::string const &fn, std::string const &input,
+             std::string const &css_fn) {
+  const int lines_per_page = 54;
+  const int line_char_length = 60;
+
+  // Set up PDF document
+  PoDoFo::PdfStreamedDocument document(fn.c_str());
+
+  PoDoFo::PdfPage *pPage = document.CreatePage(
+      PoDoFo::PdfPage::CreateStandardPageSize(PoDoFo::ePdfPageSize_Letter));
+
+  if (!pPage) {
+    PODOFO_RAISE_ERROR(PoDoFo::ePdfError_InvalidHandle);
+  }
+
+  PoDoFo::PdfPainter painter;
+  painter.SetPage(pPage);
+
+  PoDoFo::PdfFont *pFontNormal = document.CreateFont("Courier");
+  PoDoFo::PdfFont *pFontItalic = document.CreateFont("Courier-Italic");
+  PoDoFo::PdfFont *pFontBold = document.CreateFont("Courier-Bold");
+
+  if (!pFontNormal || !pFontItalic || !pFontBold) {
+    PODOFO_RAISE_ERROR(PoDoFo::ePdfError_InvalidHandle);
+  }
+
+  pFontNormal->SetFontSize(12.0);
+  pFontItalic->SetFontSize(12.0);
+  pFontBold->SetFontSize(12.0);
+  painter.SetFont(pFontNormal);
+
+  // process script
+  Fountain::Script script(input);
+
+  std::string output;
+
+  int LineNumber = 0;
+  for (auto node : script.nodes) {
+    std::string buffer =
+        node.to_string(Fountain::ScriptNodeType::ftnContinuation |
+                       Fountain::ScriptNodeType::ftnKeyValue |
+                       Fountain::ScriptNodeType::ftnUnknown);
+
+    try {
+      static const std::regex re_tags(R"(<[^>]+?>)");
+      buffer = std::regex_replace(buffer, re_tags, "");
+
+      if (buffer.find('&') != std::string::npos) {
+        replace_all_inplace(buffer, "&#38;", "&");
+        replace_all_inplace(buffer, "&#42;", "*");
+        replace_all_inplace(buffer, "&#95;", "_");
+        replace_all_inplace(buffer, "&#58;", ":");
+        replace_all_inplace(buffer, "&#91;", "[");
+        replace_all_inplace(buffer, "&#93;", "]");
+        replace_all_inplace(buffer, "&#92;", "\\");
+        replace_all_inplace(buffer, "&#60;", "<");
+        replace_all_inplace(buffer, "&#62;", ">");
+        replace_all_inplace(buffer, "&#46;", ".");
+      }
+    } catch (std::regex_error &e) {
+      printf("regex error in ftn2pdf\n");
+      print_regex_error(e);
+    }
+    switch (node.type) {
+      case ScriptNodeType::ftnAction: {
+        auto textLines = painter.GetMultiLineTextAsLines(432, buffer.c_str());
+        if (LineNumber + textLines.size() <= lines_per_page) {
+          painter.DrawMultiLineText(108, 72, 432, 648 - 12 * LineNumber,
+                                    buffer.c_str(), PoDoFo::ePdfAlignment_Left,
+                                    PoDoFo::ePdfVerticalAlignment_Top);
+          LineNumber += textLines.size();
+        } else {
+          LineNumber += textLines.size();
+          output += buffer;
+        }
+      } break;
+      case ScriptNodeType::ftnActionCenter: {
+        std::string txtCenter =
+            std::string(int((line_char_length - buffer.length()) / 2), ' ');
+        txtCenter += buffer;
+        auto textLines =
+            painter.GetMultiLineTextAsLines(432, txtCenter.c_str());
+
+        if (LineNumber + textLines.size() <= lines_per_page) {
+          painter.DrawMultiLineText(
+              108, 72, 432, 648 - 12 * LineNumber, txtCenter.c_str(),
+              PoDoFo::ePdfAlignment_Left, PoDoFo::ePdfVerticalAlignment_Top);
+          LineNumber += textLines.size();
+        } else {
+          LineNumber += textLines.size();
+          output += txtCenter;
+        }
+      } break;
+      case ScriptNodeType::ftnLyric: {
+        auto textLines = painter.GetMultiLineTextAsLines(432, buffer.c_str());
+        if (LineNumber + textLines.size() <= lines_per_page) {
+          painter.SetFont(pFontItalic);
+          painter.DrawMultiLineText(108, 72, 432, 648 - 12 * LineNumber,
+                                    buffer.c_str(), PoDoFo::ePdfAlignment_Left,
+                                    PoDoFo::ePdfVerticalAlignment_Top);
+          painter.SetFont(pFontNormal);
+          LineNumber += textLines.size();
+        } else {
+          LineNumber += textLines.size();
+          output += buffer;
+        }
+      } break;
+      case ScriptNodeType::ftnCharacter:
+        output += std::string(12, ' ');
+        output += buffer;
+        break;
+      case ScriptNodeType::ftnParenthetical:
+        output += std::string(6, ' ');
+        output += buffer;
+        break;
+      case ScriptNodeType::ftnSpeech: {
+        output += buffer;
+        auto textLines = painter.GetMultiLineTextAsLines(252, output.c_str());
+
+        if (LineNumber + textLines.size() <= lines_per_page) {
+          painter.DrawMultiLineText(180, 72, 252, 648 - 12 * LineNumber,
+                                    output.c_str(), PoDoFo::ePdfAlignment_Left,
+                                    PoDoFo::ePdfVerticalAlignment_Top);
+          LineNumber += textLines.size();
+          output.clear();
+        } else {
+          LineNumber += textLines.size();
+        }
+      } break;
+      case ScriptNodeType::ftnTransition: {
+        if (LineNumber + 7 <= lines_per_page) {
+          std::string strTransition =
+              std::string(line_char_length - node.value.length(), ' ');
+          strTransition += buffer;
+          painter.DrawMultiLineText(
+              108, 72, 432, 648 - 12 * LineNumber, strTransition.c_str(),
+              PoDoFo::ePdfAlignment_Left, PoDoFo::ePdfVerticalAlignment_Top);
+          ++LineNumber;
+        } else {
+          LineNumber += 7;
+        }
+      } break;
+      case ScriptNodeType::ftnSceneHeader:
+        if (LineNumber + 5 <= lines_per_page) {
+          painter.SetFont(pFontBold);
+          painter.DrawMultiLineText(108, 72, 432, 648 - 12 * LineNumber,
+                                    buffer.c_str(), PoDoFo::ePdfAlignment_Left,
+                                    PoDoFo::ePdfVerticalAlignment_Top);
+          painter.SetFont(pFontNormal);
+          ++LineNumber;
+        } else {
+          LineNumber += 5;
+        }
+        break;
+      case ScriptNodeType::ftnBlankLine:
+        ++LineNumber;
+        break;
+      default:
+        break;
+    }
+    if (LineNumber >= lines_per_page) {
+      painter.FinishPage();
+      pPage = document.CreatePage(
+          PoDoFo::PdfPage::CreateStandardPageSize(PoDoFo::ePdfPageSize_Letter));
+      if (!pPage) {
+        PODOFO_RAISE_ERROR(PoDoFo::ePdfError_InvalidHandle);
+      }
+      painter.SetPage(pPage);
+      LineNumber = 0;
+
+      if (node.type == ScriptNodeType::ftnSpeech) {
+        auto textLines = painter.GetMultiLineTextAsLines(252, output.c_str());
+        painter.DrawMultiLineText(180, 72, 252, 648 - 12 * LineNumber,
+                                  output.c_str(), PoDoFo::ePdfAlignment_Left,
+                                  PoDoFo::ePdfVerticalAlignment_Top);
+        LineNumber += textLines.size();
+      } else {
+        if (node.type == ScriptNodeType::ftnSceneHeader) {
+          painter.SetFont(pFontBold);
+        }
+
+        auto textLines = painter.GetMultiLineTextAsLines(432, output.c_str());
+        painter.DrawMultiLineText(108, 72, 432, 648 - 12 * LineNumber,
+                                  output.c_str(), PoDoFo::ePdfAlignment_Left,
+                                  PoDoFo::ePdfVerticalAlignment_Top);
+        LineNumber += textLines.size();
+      }
+      painter.SetFont(pFontNormal);
+      output.clear();
+    }
+  }
+
+  painter.FinishPage();
+  document.GetInfo()->SetCreator(
+      PoDoFo::PdfString("Geany Preview Fountain Processor"));
+  document.GetInfo()->SetAuthor(PoDoFo::PdfString("..."));
+  document.GetInfo()->SetTitle(PoDoFo::PdfString("..."));
+
+  document.Close();
+  return true;
 }
 
 }  // namespace Fountain

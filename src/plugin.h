@@ -104,6 +104,7 @@ static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog);
 
 static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog);
 static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog);
+static void on_menu_export_pdf(GtkWidget *self, GtkWidget *dialog);
 static std::string replace_extension(std::string const &fn,
                                      std::string const &ext);
 

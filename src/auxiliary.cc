@@ -120,16 +120,15 @@ std::string cstr_assign(char *input) {
 }
 
 std::string file_get_contents(std::string const &filename) {
-  std::string content;
   try {
     std::ifstream instream(filename.c_str(), std::ios::in);
-    content.assign((std::istreambuf_iterator<char>(instream)),
-                   (std::istreambuf_iterator<char>()));
+    std::string content((std::istreambuf_iterator<char>(instream)),
+                        (std::istreambuf_iterator<char>()));
     instream.close();
+    return content;
   } catch (...) {
-    // do nothing;
+    return {};
   }
-  return content;
 }
 
 bool file_set_contents(std::string const &filename,

@@ -16,5 +16,6 @@ AC_PROG_CXX
 PKG_CHECK_MODULES([GEANY], [geany >= 1.23])
 PKG_CHECK_MODULES([WEBKIT], [webkit2gtk-4.0])
 PKG_CHECK_MODULES([CMARK], [libcmark-gfm])
+PKG_CHECK_MODULES([PODOFO], [libpodofo])
 AC_CONFIG_FILES([Makefile compile_commands.json])
 AC_OUTPUT
