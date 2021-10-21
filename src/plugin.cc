@@ -298,8 +298,8 @@ static bool on_key_binding(int key_id) {
 static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog) {
   std::string command =
       R"(xdg-open ")" +
-      cstr_assign_free(g_build_filename(geany_data->app->configdir, "plugins",
-                                        "preview", nullptr)) +
+      cstr_assign(g_build_filename(geany_data->app->configdir, "plugins",
+                                   "preview", nullptr)) +
       R"(")";
 
   if (system(command.c_str())) {
@@ -310,8 +310,8 @@ static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog) {
 static void on_pref_edit_config(GtkWidget *self, GtkWidget *dialog) {
   open_settings();
   static std::string conf_fn =
-      cstr_assign_free(g_build_filename(geany_data->app->configdir, "plugins",
-                                        "preview", "preview.conf", nullptr));
+      cstr_assign(g_build_filename(geany_data->app->configdir, "plugins",
+                                   "preview", "preview.conf", nullptr));
   GeanyDocument *doc =
       document_open_file(conf_fn.c_str(), false, nullptr, nullptr);
   document_reload_force(doc, nullptr);
@@ -372,11 +372,11 @@ static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
   } else {
     // If the file doesn't exist, change the directory and give a
     // suggested name for the file, since GtkFileChooser won't do it.
-    std::string dn = cstr_assign_free(g_path_get_dirname(fn.c_str()));
-    std::string bn = cstr_assign_free(g_path_get_basename(fn.c_str()));
+    std::string dn = cstr_assign(g_path_get_dirname(fn.c_str()));
+    std::string bn = cstr_assign(g_path_get_basename(fn.c_str()));
     gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog),
                                         dn.c_str());
-    std::string utf8_name = cstr_assign_free(
+    std::string utf8_name = cstr_assign(
         g_filename_to_utf8(bn.c_str(), -1, nullptr, nullptr, nullptr));
     gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(save_dialog),
                                       utf8_name.c_str());
@@ -397,7 +397,7 @@ static void on_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
   while (!saved &&
          gtk_dialog_run(GTK_DIALOG(save_dialog)) == GTK_RESPONSE_ACCEPT) {
     std::string html = update_preview(true);
-    fn = cstr_assign_free(
+    fn = cstr_assign(
         gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(save_dialog)));
     if (!file_set_contents(fn.c_str(), html)) {
       dialogs_show_msgbox(GTK_MESSAGE_ERROR,
@@ -500,8 +500,8 @@ static void wv_apply_settings() {
                                           settings.default_font_family);
 
   // attach headers css
-  std::string css_fn = cstr_assign_free(
-      find_copy_css("preview-headers.css", PREVIEW_CSS_HEADERS));
+  std::string css_fn =
+      cstr_assign(find_copy_css("preview-headers.css", PREVIEW_CSS_HEADERS));
 
   if (!css_fn.empty()) {
     std::string contents = file_get_contents(css_fn);
@@ -516,14 +516,13 @@ static void wv_apply_settings() {
   }
 
   // attach extra_css
-  css_fn = cstr_assign_free(find_css(settings.extra_css));
+  css_fn = cstr_assign(find_css(settings.extra_css));
   if (css_fn.empty()) {
     if (strcmp("dark.css", settings.extra_css) == 0) {
-      css_fn =
-          cstr_assign_free(find_copy_css(settings.extra_css, PREVIEW_CSS_DARK));
+      css_fn = cstr_assign(find_copy_css(settings.extra_css, PREVIEW_CSS_DARK));
     } else if (strcmp("invert.css", settings.extra_css) == 0) {
-      css_fn = cstr_assign_free(
-          find_copy_css(settings.extra_css, PREVIEW_CSS_INVERT));
+      css_fn =
+          cstr_assign(find_copy_css(settings.extra_css, PREVIEW_CSS_INVERT));
     }
   }
 
@@ -602,14 +601,13 @@ static std::string update_preview(bool const bGetContents) {
                                  G_CALLBACK(wv_loading_callback), nullptr);
   }
   std::string uri =
-      cstr_assign_free(g_filename_to_uri(DOC_FILENAME(doc), nullptr, nullptr));
+      cstr_assign(g_filename_to_uri(DOC_FILENAME(doc), nullptr, nullptr));
   if (uri.empty() || uri.length() < 7 ||
       strncmp(uri.c_str(), "file://", 7) != 0) {
     uri = "file:///tmp/blank.html";
   }
 
-  std::string work_dir =
-      cstr_assign_free(g_path_get_dirname(DOC_FILENAME(doc)));
+  std::string work_dir = cstr_assign(g_path_get_dirname(DOC_FILENAME(doc)));
   char *text = (char *)scintilla_send_message(doc->editor->sci,
                                               SCI_GETCHARACTERPOINTER, 0, 0);
   std::string strPlain;
@@ -641,8 +639,7 @@ static std::string update_preview(bool const bGetContents) {
       end = position + 2 * amount;
     }
 
-    strBody =
-        cstr_assign_free(sci_get_contents_range(doc->editor->sci, start, end));
+    strBody = cstr_assign(sci_get_contents_range(doc->editor->sci, start, end));
   } else {
     strBody = text;
   }
@@ -719,10 +716,10 @@ static std::string update_preview(bool const bGetContents) {
         strOutput =
             pandoc(work_dir.c_str(), strBody.c_str(), settings.pandoc_markdown);
       else {
-        strOutput = cstr_assign_free(
+        strOutput = cstr_assign(
             cmark_markdown_to_html(strBody.c_str(), strBody.length(), 0));
-        std::string css_fn = cstr_assign_free(
-            find_copy_css("markdown.css", PREVIEW_CSS_MARKDOWN));
+        std::string css_fn =
+            cstr_assign(find_copy_css("markdown.css", PREVIEW_CSS_MARKDOWN));
         if (!css_fn.empty()) {
           strOutput =
               "<html><head><link rel='stylesheet' "
@@ -735,77 +732,72 @@ static std::string update_preview(bool const bGetContents) {
       if (strcmp("disable", settings.asciidoc_processor) == 0) {
         strPlain = _("Preview of AsciiDoc documents has been disabled.");
       } else {
-        strOutput =
-            cstr_assign_free(asciidoctor(work_dir.c_str(), strBody.c_str()));
+        strOutput = cstr_assign(asciidoctor(work_dir.c_str(), strBody.c_str()));
       }
       break;
     case PREVIEW_FILETYPE_DOCBOOK:
-      strOutput = cstr_assign_free(
-          pandoc(work_dir.c_str(), strBody.c_str(), "docbook"));
+      strOutput =
+          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "docbook"));
       break;
     case PREVIEW_FILETYPE_LATEX:
       strOutput =
-          cstr_assign_free(pandoc(work_dir.c_str(), strBody.c_str(), "latex"));
+          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "latex"));
       break;
     case PREVIEW_FILETYPE_REST:
-      strOutput =
-          cstr_assign_free(pandoc(work_dir.c_str(), strBody.c_str(), "rst"));
+      strOutput = cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "rst"));
       break;
     case PREVIEW_FILETYPE_TXT2TAGS:
-      strOutput =
-          cstr_assign_free(pandoc(work_dir.c_str(), strBody.c_str(), "t2t"));
+      strOutput = cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "t2t"));
       break;
     case PREVIEW_FILETYPE_GFM:
-      strOutput =
-          cstr_assign_free(pandoc(work_dir.c_str(), strBody.c_str(), "gfm"));
+      strOutput = cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "gfm"));
       break;
     case PREVIEW_FILETYPE_FOUNTAIN:
       if (strcmp("disable", settings.fountain_processor) == 0) {
         strPlain = _("Preview of Fountain screenplays has been disabled.");
       } else if (strcmp("screenplain", settings.fountain_processor) == 0) {
-        strOutput = cstr_assign_free(
-            screenplain(work_dir.c_str(), strBody.c_str(), "html"));
+        strOutput =
+            cstr_assign(screenplain(work_dir.c_str(), strBody.c_str(), "html"));
       } else {
-        std::string css_fn = cstr_assign_free(
-            find_copy_css("fountain.css", PREVIEW_CSS_FOUNTAIN));
+        std::string css_fn =
+            cstr_assign(find_copy_css("fountain.css", PREVIEW_CSS_FOUNTAIN));
         strOutput = Fountain::ftn2xml(strBody, css_fn);
       }
       break;
     case PREVIEW_FILETYPE_TEXTILE:
-      strOutput = cstr_assign_free(
-          pandoc(work_dir.c_str(), strBody.c_str(), "textile"));
+      strOutput =
+          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "textile"));
       break;
     case PREVIEW_FILETYPE_DOKUWIKI:
-      strOutput = cstr_assign_free(
-          pandoc(work_dir.c_str(), strBody.c_str(), "dokuwiki"));
+      strOutput =
+          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "dokuwiki"));
       break;
     case PREVIEW_FILETYPE_TIKIWIKI:
-      strOutput = cstr_assign_free(
-          pandoc(work_dir.c_str(), strBody.c_str(), "tikiwiki"));
+      strOutput =
+          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "tikiwiki"));
       break;
     case PREVIEW_FILETYPE_VIMWIKI:
-      strOutput = cstr_assign_free(
-          pandoc(work_dir.c_str(), strBody.c_str(), "vimwiki"));
+      strOutput =
+          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "vimwiki"));
       break;
     case PREVIEW_FILETYPE_TWIKI:
       strOutput =
-          cstr_assign_free(pandoc(work_dir.c_str(), strBody.c_str(), "twiki"));
+          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "twiki"));
       break;
     case PREVIEW_FILETYPE_MEDIAWIKI:
-      strOutput = cstr_assign_free(
-          pandoc(work_dir.c_str(), strBody.c_str(), "mediawiki"));
+      strOutput =
+          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "mediawiki"));
       break;
     case PREVIEW_FILETYPE_WIKI:
-      strOutput = cstr_assign_free(
+      strOutput = cstr_assign(
           pandoc(work_dir.c_str(), strBody.c_str(), settings.wiki_default));
       break;
     case PREVIEW_FILETYPE_MUSE:
       strOutput =
-          cstr_assign_free(pandoc(work_dir.c_str(), strBody.c_str(), "muse"));
+          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "muse"));
       break;
     case PREVIEW_FILETYPE_ORG:
-      strOutput =
-          cstr_assign_free(pandoc(work_dir.c_str(), strBody.c_str(), "org"));
+      strOutput = cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "org"));
       break;
     case PREVIEW_FILETYPE_PLAIN:
     case PREVIEW_FILETYPE_EMAIL: {
@@ -871,7 +863,7 @@ static PreviewFileType get_filetype(std::string const &fn) {
   }
 
   std::string strFormat =
-      to_lower(cstr_assign_free(g_path_get_basename(fn.c_str())));
+      to_lower(cstr_assign(g_path_get_basename(fn.c_str())));
 
   if (strFormat.empty()) {
     return PREVIEW_FILETYPE_NONE;
@@ -1010,7 +1002,7 @@ static inline void set_snippets() {
       break;
     case GEANY_FILETYPES_NONE: {
       std::string strFormat =
-          to_lower(cstr_assign_free(g_path_get_basename(DOC_FILENAME(doc))));
+          to_lower(cstr_assign(g_path_get_basename(DOC_FILENAME(doc))));
       if (!strFormat.empty()) {
         if (SUBSTR("fountain", strFormat.c_str()) ||
             SUBSTR("spmd", strFormat.c_str())) {

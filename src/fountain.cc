@@ -26,7 +26,7 @@ namespace Fountain {
 namespace {
 
 bool isForced(std::string const &input) {
-  if (input.length() < 1) {
+  if (input.empty()) {
     return false;
   }
 
@@ -48,16 +48,17 @@ bool isForced(std::string const &input) {
 }
 
 bool isTransition(std::string const &input) {
-  if (input.length() < 1) {
+  if (input.empty()) {
     return false;
   }
 
   // Note: input should already be left-trimmed,
   // otherwise indent would be removed here
 
+  const size_t len = input.length();
+
   // forced transition; make sure intent is not to center
-  size_t len = input.length();
-  if (input[0] == '>' && input[len - 1] != '<') {
+  if (input[0] == '>' && input[input.length() - 1] != '<') {
     return true;
   }
 
@@ -100,13 +101,13 @@ bool isTransition(std::string const &input) {
 }
 
 std::string parseTransition(std::string const &input) {
-  std::string output;
-  if (input[0] == '>') {
-    output = to_upper(input.substr(1));
-  } else {
-    output = to_upper(input);
+  if (input.empty()) {
+    return {};
   }
-  return trim_inplace(output);
+  if (input[0] == '>') {
+    return to_upper(ws_trim(input.substr(1)));
+  }
+  return to_upper(ws_trim(input));
 }
 
 bool isSceneHeader(std::string const &input) {
@@ -138,7 +139,8 @@ bool isSceneHeader(std::string const &input) {
 }
 
 // returns <scene description, scene number>
-std::pair<std::string, std::string> parseSceneHeader(std::string const &input) {
+// Note: in should already by length checked by isSceneHeader()
+auto parseSceneHeader(std::string const &input) {
   std::string first;
   std::string second;
   bool forced_scene{false};
@@ -147,7 +149,7 @@ std::pair<std::string, std::string> parseSceneHeader(std::string const &input) {
     forced_scene = true;
   }
 
-  long pos = input.find("#");
+  const size_t pos = input.find("#");
   if (pos < input.length() - 1 && input.back() == '#') {
     if (forced_scene) {
       first = ws_trim(input.substr(1, pos - 1));
@@ -190,7 +192,7 @@ bool isNotation(std::string const &input) {
   }
 
   // check if right-trimmed to avoid copying string
-  static std::string strWhiteSpace{FOUNTAIN_WHITESPACE};
+  static const std::string strWhiteSpace{FOUNTAIN_WHITESPACE};
   if (strWhiteSpace.find(input.back()) != std::string::npos) {
     std::string s = ws_rtrim(input);
     const size_t len = s.length();
@@ -208,7 +210,7 @@ bool isNotation(std::string const &input) {
 }
 
 bool isCharacter(std::string const &input) {
-  if (input.length() < 1) {
+  if (input.empty()) {
     return false;
   }
 
@@ -224,6 +226,7 @@ bool isCharacter(std::string const &input) {
     return false;
   }
 
+  // check for same-line parenthetical
   size_t pos = input.find("(");
   if (pos != std::string::npos && input.find(")") != std::string::npos) {
     if (is_upper(input.substr(0, pos))) {
@@ -236,9 +239,11 @@ bool isCharacter(std::string const &input) {
   return false;
 }
 
+// Note: input should already be length checked by isCharacter()
 std::string parseCharacter(std::string const &input) {
   // Note: input should already be left-trimmed,
   // otherwise indent would be removed here
+
   std::string output;
 
   if (input[0] == '@') {
@@ -247,19 +252,16 @@ std::string parseCharacter(std::string const &input) {
     output = input;
   }
 
-  const size_t len = output.length();
-
-  if (output[len - 1] == '^') {
-    output = ws_rtrim(output.substr(0, len - 1));
+  if (output.back() == '^') {
+    output = ws_rtrim(output.substr(0, output.length() - 1));
   }
 
   return output;
 }
 
+// Note: input should already be length checked by isCharacter()
 bool isDualDialog(std::string const &input) {
-  size_t len = input.length();
-
-  if (len > 0 && input[len - 1] == '^') {
+  if (input.back() == '^') {
     return true;
   }
 
@@ -294,7 +296,7 @@ bool isParenthetical(std::string const &input) {
 }
 
 bool isContinuation(std::string const &input) {
-  if (input.length() < 1) {
+  if (input.empty()) {
     return false;
   }
 
@@ -320,56 +322,66 @@ auto parseKeyValue(std::string const &input) {
 
 // replace escape sequences with entities in a single pass
 std::string &parseEscapeSequences_inplace(std::string &input) {
-  size_t pos = 0;
-  while ((pos = input.find('\\', pos)) != std::string::npos) {
-    if (pos + 1 < input.length()) {
-      switch (input[pos + 1]) {
-        case '&':
-          input.replace(pos, 2, "&#38;");
-          pos += 5;
-          break;
-        case '*':
-          input.replace(pos, 2, "&#42;");
-          pos += 5;
-          break;
-        case '_':
-          input.replace(pos, 2, "&#95;");
-          pos += 5;
-          break;
-        case ':':
-          input.replace(pos, 2, "&#58;");
-          pos += 5;
-          break;
-        case '[':
-          input.replace(pos, 2, "&#91;");
-          pos += 5;
-          break;
-        case ']':
-          input.replace(pos, 2, "&#93;");
-          pos += 5;
-          break;
-        case '\\':
-          input.replace(pos, 2, "&#92;");
-          pos += 5;
-          break;
-        case '<':
-          input.replace(pos, 2, "&#60;");
-          pos += 5;
-          break;
-        case '>':
-          input.replace(pos, 2, "&#62;");
-          pos += 5;
-          break;
-        case '.':
-          input.replace(pos, 2, "&#46;");
-          pos += 5;
-          break;
-        default:
-          pos += 2;
-          break;
-      }
-    } else {
-      pos++;
+  for (size_t pos = 0; pos < input.length();) {
+    switch (input[pos]) {
+      case '\t':
+        input.replace(pos, 1, "    ");
+        pos += 4;
+        break;
+      case '\\':
+        if (pos + 1 < input.length()) {
+          switch (input[pos + 1]) {
+            case '&':
+              input.replace(pos, 2, "&#38;");
+              pos += 5;
+              break;
+            case '*':
+              input.replace(pos, 2, "&#42;");
+              pos += 5;
+              break;
+            case '_':
+              input.replace(pos, 2, "&#95;");
+              pos += 5;
+              break;
+            case ':':
+              input.replace(pos, 2, "&#58;");
+              pos += 5;
+              break;
+            case '[':
+              input.replace(pos, 2, "&#91;");
+              pos += 5;
+              break;
+            case ']':
+              input.replace(pos, 2, "&#93;");
+              pos += 5;
+              break;
+            case '\\':
+              input.replace(pos, 2, "&#92;");
+              pos += 5;
+              break;
+            case '<':
+              input.replace(pos, 2, "&#60;");
+              pos += 5;
+              break;
+            case '>':
+              input.replace(pos, 2, "&#62;");
+              pos += 5;
+              break;
+            case '.':
+              input.replace(pos, 2, "&#46;");
+              pos += 5;
+              break;
+            default:
+              pos += 2;
+              break;
+          }
+        } else {
+          ++pos;
+        }
+        break;
+      default:
+        ++pos;
+        break;
     }
   }
   return input;
@@ -386,131 +398,131 @@ std::string ScriptNode::to_string(size_t const &flags) const {
       if (flags & type) {
         break;
       }
-      output += "<meta>\n<key>" + key + "</key>\n<value>" + value +
-                "</value>\n</meta>";
+      output = "<meta>\n<key>" + key + "</key>\n<value>" + value +
+               "</value>\n</meta>\n";
       break;
     case ScriptNodeType::ftnPageBreak:
       if (flags & type) {
         break;
       }
       if (dialog_state) {
-        dialog_state == 1   ? output += "</Dialog>\n"
-        : dialog_state == 2 ? output += "</DialogLeft>\n"
-                            : output += "</DialogRight>\n</DualDialog>\n";
+        dialog_state == 1   ? output = "</Dialog>\n"
+        : dialog_state == 2 ? output = "</DialogLeft>\n"
+                            : output = "</DialogRight>\n</DualDialog>\n";
         dialog_state = 0;
       }
-      output += "<PageBreak></PageBreak>";
+      output += "<PageBreak></PageBreak>\n";
       break;
     case ScriptNodeType::ftnBlankLine:
       if (flags & type) {
         break;
       }
       if (dialog_state) {
-        dialog_state == 1   ? output += "</Dialog>\n"
-        : dialog_state == 2 ? output += "</DialogLeft>\n"
-                            : output += "</DialogRight>\n</DualDialog>\n";
+        dialog_state == 1   ? output = "</Dialog>\n"
+        : dialog_state == 2 ? output = "</DialogLeft>\n"
+                            : output = "</DialogRight>\n</DualDialog>\n";
         dialog_state = 0;
       }
-      output += "<BlankLine></BlankLine>";
+      output += "<BlankLine></BlankLine>\n";
       break;
     case ScriptNodeType::ftnContinuation:
       if (flags & type) {
         break;
       }
-      output += "<Continuation>" + value + "</Continuation>";
+      output = "<Continuation>" + value + "</Continuation>\n";
       break;
     case ScriptNodeType::ftnSceneHeader:
       if (flags & type) {
         break;
       }
       if (!key.empty()) {
-        output += "<SceneHeader><SceneNumL>" + key + "</SceneNumL>" + value +
-                  +"<SceneNumR>" + key + "</SceneNumR></SceneHeader>";
+        output = "<SceneHeader><SceneNumL>" + key + "</SceneNumL>" + value +
+                 +"<SceneNumR>" + key + "</SceneNumR></SceneHeader>\n";
       } else {
-        output += "<SceneHeader>" + value + "</SceneHeader>";
+        output = "<SceneHeader>" + value + "</SceneHeader>\n";
       }
       break;
     case ScriptNodeType::ftnAction:
       if (flags & type) {
         break;
       }
-      output += "<Action>" + value + "</Action>";
+      output = "<Action>" + value + "</Action>\n";
       break;
     case ScriptNodeType::ftnTransition:
       if (flags & type) {
         break;
       }
-      output += "<Transition>" + value + "</Transition>";
+      output = "<Transition>" + value + "</Transition>\n";
       break;
     case ScriptNodeType::ftnDialog:
       if (flags & type) {
         break;
       }
       dialog_state = 1;
-      output += "<Dialog>" + key;
+      output = "<Dialog>" + key + "\n";
       break;
     case ScriptNodeType::ftnDialogLeft:
       if (flags & type) {
         break;
       }
       dialog_state = 2;
-      output += "<DualDialog>\n<DialogLeft>" + value;
+      output = "<DualDialog>\n<DialogLeft>" + value + "\n";
       break;
     case ScriptNodeType::ftnDialogRight:
       if (flags & type) {
         break;
       }
       dialog_state = 3;
-      output += "<DialogRight>" + value;
+      output = "<DialogRight>" + value + "\n";
       break;
     case ScriptNodeType::ftnCharacter:
       if (flags & type) {
         break;
       }
-      output += "<Character>" + value + "</Character>";
+      output = "<Character>" + value + "</Character>\n";
       break;
     case ScriptNodeType::ftnParenthetical:
       if (flags & type) {
         break;
       }
-      output += "<Parenthetical>" + value + "</Parenthetical>";
+      output = "<Parenthetical>" + value + "</Parenthetical>\n";
       break;
     case ScriptNodeType::ftnSpeech:
       if (flags & type) {
         break;
       }
-      output += "<Speech>" + value + "</Speech>";
+      output = "<Speech>" + value + "</Speech>\n";
       break;
     case ScriptNodeType::ftnNotation:
       if (flags & type) {
         break;
       }
-      output += "<Note>" + value + "</Note>";
+      output = "<Note>" + value + "</Note>\n";
       break;
     case ScriptNodeType::ftnLyric:
       if (flags & type) {
         break;
       }
-      output += "<Lyric>" + value + "</Lyric>";
+      output = "<Lyric>" + value + "</Lyric>\n";
       break;
     case ScriptNodeType::ftnSection:
       if (flags & type) {
         break;
       }
-      output += "<SectionH" + key + ">" + value + "</SectionH" + key + ">";
+      output = "<SectionH" + key + ">" + value + "</SectionH" + key + ">\n";
       break;
     case ScriptNodeType::ftnSynopsis:
       if (flags & type) {
         break;
       }
-      output += "<SynopsisH" + key + ">" + value + "</SynopsisH" + key + ">";
+      output = "<SynopsisH" + key + ">" + value + "</SynopsisH" + key + ">\n";
       break;
     case ScriptNodeType::ftnUnknown:
     default:
       if (flags & type) {
         break;
       }
-      output += "<Unknown>" + value + "</Unknown>";
+      output = "<Unknown>" + value + "</Unknown>\n";
       break;
   }
   return output;
@@ -520,10 +532,10 @@ std::string Script::to_string(size_t const &flags) const {
   std::string output{"<Fountain>\n"};
 
   for (auto node : nodes) {
-    output += node.to_string(flags) + '\n';
+    output += node.to_string(flags);
   }
 
-  output += "\n</Fountain>";
+  output += "\n</Fountain>\n";
   return output;
 }
 
@@ -568,8 +580,6 @@ void Script::parseFountain(std::string const &text) {
     // replace non-entity, non-escaped ampersands
     static const std::regex re_ampersand(R"(([^\\])&(?!#?[a-zA-Z0-9]+;))");
     strTmp = std::regex_replace(strTmp, re_ampersand, "$1&#38;");
-
-    replace_all_inplace(strTmp, "\t", "    ");
 
     parseEscapeSequences_inplace(strTmp);
 
@@ -733,7 +743,7 @@ void Script::parseFountain(std::string const &text) {
 
     // Section, can only be forced
     if (s.length() > 0 && s[0] == '#') {
-      for (uint8_t i = 1; i < 6; i++) {
+      for (uint8_t i = 1; i < 6; ++i) {
         if (s.length() > i && s[i] == '#') {
           if (i == 5) {
             new_node(ScriptNodeType::ftnSection, std::to_string(i + 1));
@@ -748,7 +758,6 @@ void Script::parseFountain(std::string const &text) {
           break;
         }
       }
-
       end_node();
       continue;
     }

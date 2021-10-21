@@ -110,7 +110,7 @@ bool is_upper(std::string const &s) {
                      [](unsigned char c) { return !std::islower(c); });
 }
 
-std::string cstr_assign_free(char *input) {
+std::string cstr_assign(char *input) {
   if (input) {
     std::string output{input};
     free(input);

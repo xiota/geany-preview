@@ -26,9 +26,9 @@ struct PreviewSettings settings;
 
 void open_settings() {
   std::string conf_fn =
-      cstr_assign_free(g_build_filename(geany_data->app->configdir, "plugins",
-                                        "preview", "preview.conf", nullptr));
-  std::string conf_dn = cstr_assign_free(g_path_get_dirname(conf_fn.c_str()));
+      cstr_assign(g_build_filename(geany_data->app->configdir, "plugins",
+                                   "preview", "preview.conf", nullptr));
+  std::string conf_dn = cstr_assign(g_path_get_dirname(conf_fn.c_str()));
   g_mkdir_with_parents(conf_dn.c_str(), 0755);
 
   GKeyFile *kf = g_key_file_new();
@@ -51,9 +51,9 @@ void open_settings() {
 
 void save_default_settings() {
   static std::string conf_fn =
-      cstr_assign_free(g_build_filename(geany_data->app->configdir, "plugins",
-                                        "preview", "preview.conf", nullptr));
-  std::string conf_dn = cstr_assign_free(g_path_get_dirname(conf_fn.c_str()));
+      cstr_assign(g_build_filename(geany_data->app->configdir, "plugins",
+                                   "preview", "preview.conf", nullptr));
+  std::string conf_dn = cstr_assign(g_path_get_dirname(conf_fn.c_str()));
   g_mkdir_with_parents(conf_dn.c_str(), 0755);
 
   // delete if file exists
@@ -74,8 +74,8 @@ void save_default_settings() {
 void save_settings() {
   GKeyFile *kf = g_key_file_new();
   std::string conf_fn =
-      cstr_assign_free(g_build_filename(geany_data->app->configdir, "plugins",
-                                        "preview", "preview.conf", nullptr));
+      cstr_assign(g_build_filename(geany_data->app->configdir, "plugins",
+                                   "preview", "preview.conf", nullptr));
 
   // Load old contents in case user changed file outside of GUI
   g_key_file_load_from_file(
@@ -115,8 +115,7 @@ void save_settings() {
   SET_KEY(string, "extra_css", settings.extra_css);
 
   // Store back on disk
-  std::string contents =
-      cstr_assign_free(g_key_file_to_data(kf, nullptr, nullptr));
+  std::string contents = cstr_assign(g_key_file_to_data(kf, nullptr, nullptr));
   if (!contents.empty()) {
     file_set_contents(conf_fn, contents);
   }
