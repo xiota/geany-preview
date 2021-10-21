@@ -17,65 +17,64 @@
  */
 
 #include <regex>
-#include <string>
 
+#include "auxiliary.h"
 #include "formats.h"
 #include "prefs.h"
 #include "process.h"
 
-char *find_css(char const *css) {
-  char *css_fn = g_build_filename(geany_data->app->configdir, "plugins",
-                                  "preview", css, nullptr);
+std::string find_css(std::string const &css_fn) {
+  std::string css_path =
+      cstr_assign(g_build_filename(geany_data->app->configdir, "plugins",
+                                   "preview", css_fn.c_str(), nullptr));
 
   // cache previous result to reduce filesystem access
-  static std::string prev;
-  if (prev == css_fn) {
-    return css_fn;
+  static std::string prev = css_path;
+  if (prev == css_path) {
+    return css_path;
   }
 
-  char *css_dn = g_path_get_dirname(css_fn);
-  g_mkdir_with_parents(css_dn, 0755);
-  GFREE(css_dn);
+  std::string css_dn = cstr_assign(g_path_get_dirname(css_path.c_str()));
+  g_mkdir_with_parents(css_dn.c_str(), 0755);
 
-  if (g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
-    prev = css_fn;
-    return css_fn;
+  if (g_file_test(css_path.c_str(), G_FILE_TEST_EXISTS)) {
+    prev = css_path;
+    return css_path;
   } else {
     prev.clear();
-    return nullptr;
+    return {};
   }
 }
 
-char *find_copy_css(char const *css, char const *src) {
-  char *css_fn = g_build_filename(geany_data->app->configdir, "plugins",
-                                  "preview", css, nullptr);
+std::string find_copy_css(std::string const &css_fn,
+                          std::string const &src_fn) {
+  std::string css_path =
+      cstr_assign(g_build_filename(geany_data->app->configdir, "plugins",
+                                   "preview", css_fn.c_str(), nullptr));
 
   // cache previous result to reduce filesystem access
-  static std::string prev;
-  if (prev == css_fn) {
-    return css_fn;
+  static std::string prev = css_path;
+  if (prev == css_path) {
+    return css_path;
   }
 
-  char *css_dn = g_path_get_dirname(css_fn);
-  g_mkdir_with_parents(css_dn, 0755);
-  GFREE(css_dn);
+  std::string css_dn = cstr_assign(g_path_get_dirname(css_path.c_str()));
+  g_mkdir_with_parents(css_dn.c_str(), 0755);
 
-  if (!g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
-    if (g_file_test(src, G_FILE_TEST_EXISTS)) {
-      char *contents = nullptr;
-      size_t length = 0;
-      if (g_file_get_contents(src, &contents, &length, nullptr)) {
-        g_file_set_contents(css_fn, contents, length, nullptr);
-        GFREE(contents);
+  if (!g_file_test(css_path.c_str(), G_FILE_TEST_EXISTS)) {
+    if (g_file_test(src_fn.c_str(), G_FILE_TEST_EXISTS)) {
+      std::string contents = file_get_contents(src_fn);
+      if (!contents.empty()) {
+        file_set_contents(css_path, contents);
       }
     }
   }
-  if (g_file_test(css_fn, G_FILE_TEST_EXISTS)) {
-    prev = css_fn;
-    return css_fn;
+  if (g_file_test(css_path.c_str(), G_FILE_TEST_EXISTS)) {
+    prev = css_path;
+    return css_path;
   } else {
     prev.clear();
-    return nullptr;
+    return {};
   }
 }
 
@@ -107,16 +106,14 @@ char *pandoc(char const *work_dir, char const *input, char const *from_format) {
 
   // use pandoc-format.css file from user config dir
   // if it does not exist, copy it from the system config dir
-  char *css = g_strdup_printf("pandoc-%s.css", from_format);
-  char *css_fn = find_css(css);
-  if (!css_fn) {
+  std::string css = cstr_assign(g_strdup_printf("pandoc-%s.css", from_format));
+  std::string css_fn = find_css(css);
+  if (css_fn.empty()) {
     css_fn = find_copy_css("pandoc.css", PREVIEW_CSS_PANDOC);
   }
-  if (css_fn) {
-    g_ptr_array_add(args, g_strdup_printf("--css=%s", css_fn));
+  if (!css_fn.empty()) {
+    g_ptr_array_add(args, g_strdup_printf("--css=%s", css_fn.c_str()));
   }
-  GFREE(css_fn);
-  GFREE(css);
 
   // end of args
   g_ptr_array_add(args, nullptr);
@@ -175,8 +172,9 @@ char *asciidoctor(char const *work_dir, char const *input) {
   }
 
   // attach asciidoctor.css if it exists
-  char *css_fn = find_copy_css("asciidoctor.css", PREVIEW_CSS_ASCIIDOCTOR);
-  if (css_fn) {
+  std::string css_fn =
+      find_copy_css("asciidoctor.css", PREVIEW_CSS_ASCIIDOCTOR);
+  if (!css_fn.empty()) {
     if (SUBSTR("</head>", output->str)) {
       try {
         std::string rep_text{
@@ -206,7 +204,6 @@ char *asciidoctor(char const *work_dir, char const *input) {
       GSTRING_FREE(output);
       output = g_string_new(out_text.c_str());
     }
-    GFREE(css_fn);
   }
   return g_string_free(output, false);
 }
@@ -228,13 +225,11 @@ char *screenplain(char const *work_dir, char const *input,
 
   // use screenplain.css file from user config dir
   // if it does not exist, copy it from the system config dir
-  char *css = g_strdup("screenplain.css");
-  char *css_fn = find_copy_css(css, PREVIEW_CSS_SCREENPLAIN);
-  if (css_fn) {
-    g_ptr_array_add(args, g_strdup_printf("--css=%s", css_fn));
+  std::string css = cstr_assign(g_strdup("screenplain.css"));
+  std::string css_fn = find_copy_css(css, PREVIEW_CSS_SCREENPLAIN);
+  if (!css_fn.empty()) {
+    g_ptr_array_add(args, g_strdup_printf("--css=%s", css_fn.c_str()));
   }
-  GFREE(css_fn);
-  GFREE(css);
 
   // end of args
   g_ptr_array_add(args, nullptr);

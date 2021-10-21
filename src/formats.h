@@ -19,6 +19,8 @@
 #ifndef PREVIEW_FORMATS_H
 #define PREVIEW_FORMATS_H
 
+#include <string>
+
 #include "plugin.h"
 #include "process.h"
 
@@ -32,8 +34,8 @@ enum PandocOptions {
   PANDOC_TOC = 2
 };
 
-char *find_css(char const *css);
-char *find_copy_css(char const *css, char const *src);
+std::string find_css(std::string const &css_fn);
+std::string find_copy_css(std::string const &css_fn, std::string const &src);
 
 // wrappers around command line programs
 char *pandoc(char const *work_dir, char const *input, char const *in_format);

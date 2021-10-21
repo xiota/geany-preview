@@ -501,7 +501,7 @@ static void wv_apply_settings() {
 
   // attach headers css
   std::string css_fn =
-      cstr_assign(find_copy_css("preview-headers.css", PREVIEW_CSS_HEADERS));
+      find_copy_css("preview-headers.css", PREVIEW_CSS_HEADERS);
 
   if (!css_fn.empty()) {
     std::string contents = file_get_contents(css_fn);
@@ -516,13 +516,12 @@ static void wv_apply_settings() {
   }
 
   // attach extra_css
-  css_fn = cstr_assign(find_css(settings.extra_css));
+  css_fn = find_css(settings.extra_css);
   if (css_fn.empty()) {
     if (strcmp("dark.css", settings.extra_css) == 0) {
-      css_fn = cstr_assign(find_copy_css(settings.extra_css, PREVIEW_CSS_DARK));
+      css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_DARK);
     } else if (strcmp("invert.css", settings.extra_css) == 0) {
-      css_fn =
-          cstr_assign(find_copy_css(settings.extra_css, PREVIEW_CSS_INVERT));
+      css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_INVERT);
     }
   }
 
@@ -719,7 +718,7 @@ static std::string update_preview(bool const bGetContents) {
         strOutput = cstr_assign(
             cmark_markdown_to_html(strBody.c_str(), strBody.length(), 0));
         std::string css_fn =
-            cstr_assign(find_copy_css("markdown.css", PREVIEW_CSS_MARKDOWN));
+            find_copy_css("markdown.css", PREVIEW_CSS_MARKDOWN);
         if (!css_fn.empty()) {
           strOutput =
               "<html><head><link rel='stylesheet' "
@@ -760,7 +759,7 @@ static std::string update_preview(bool const bGetContents) {
             cstr_assign(screenplain(work_dir.c_str(), strBody.c_str(), "html"));
       } else {
         std::string css_fn =
-            cstr_assign(find_copy_css("fountain.css", PREVIEW_CSS_FOUNTAIN));
+            find_copy_css("fountain.css", PREVIEW_CSS_FOUNTAIN);
         strOutput = Fountain::ftn2xml(strBody, css_fn);
       }
       break;
