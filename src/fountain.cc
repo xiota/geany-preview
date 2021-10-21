@@ -520,7 +520,7 @@ std::string Script::to_string(size_t const &flags) const {
   std::string output{"<Fountain>\n"};
 
   for (auto node : nodes) {
-    output += node.to_string(flags) + "\n";
+    output += node.to_string(flags) + '\n';
   }
 
   output += "\n</Fountain>";
@@ -968,7 +968,7 @@ std::string ftn2textplay(std::string const &input, std::string const &css_fn) {
 std::string ftn2fdx(std::string const &input) {
   std::string output{
       R"(<?xml version="1.0" encoding="UTF-8" standalone="no" ?>)"};
-  output += "\n";
+  output += '\n';
   output += R"(<FinalDraft DocumentType="Script" Template="No" Version="1">)";
   output += "\n<Content>\n";
 

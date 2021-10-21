@@ -42,16 +42,19 @@ GeanyPlugin *geany_plugin;
 GeanyData *geany_data;
 
 static GtkWidget *gPreviewMenu;
+static GtkWidget *gScrolledWindow = nullptr;
+
 static GtkWidget *gWebView = nullptr;
 static WebKitSettings *gWebViewSettings = nullptr;
 static WebKitWebContext *gWebViewContext = nullptr;
-WebKitUserContentManager *gWebViewContentManager = nullptr;
-static GtkWidget *gScrolledWindow = nullptr;
-static uint gPreviewSideBarPageNumber = 0;
-static GArray *g_scrollY = nullptr;
+static WebKitUserContentManager *gWebViewContentManager = nullptr;
+
+static bool gSnippetActive = false;
+static int gPreviewSideBarPageNumber = 0;
+static std::vector<int> gScrollY;
+
 static ulong gHandleLoadFinished = 0;
 static ulong gHandleTimeout = 0;
-static bool gSnippetActive = false;
 static ulong gHandleSidebarSwitchPage = 0;
 static ulong gHandleSidebarShow = 0;
 
@@ -105,7 +108,7 @@ GtkWidget *plugin_configure(GtkDialog *dlg) {
 static bool preview_init(GeanyPlugin *plugin, gpointer data) {
   geany_plugin = plugin;
   geany_data = plugin->geany_data;
-  g_scrollY = g_array_new(true, true, sizeof(int));
+  gScrollY.resize(50, 0);
 
   open_settings();
 
@@ -475,13 +478,11 @@ static void wv_save_position_callback(GObject *object, GAsyncResult *result,
 
   value = webkit_javascript_result_get_js_value(js_result);
   int temp = jsc_value_to_int32(value);
-  if (g_scrollY->len < idx) {
-    g_array_insert_val(g_scrollY, idx, temp);
+  if (gScrollY.size() <= idx) {
+    gScrollY.resize(idx + 50, 0);
+    gScrollY[idx] = temp;
   } else {
-    // if (temp > 0) {
-    int *scrollY = &g_array_index(g_scrollY, int, idx);
-    *scrollY = temp;
-    //}
+    gScrollY[idx] = temp;
   }
 
   webkit_javascript_result_unref(js_result);
@@ -548,11 +549,11 @@ static void wv_load_position() {
   static std::string script;
   if (gSnippetActive) {
     script = "window.scrollTo(0, 0.2*document.documentElement.scrollHeight);";
-  } else if (g_scrollY->len >= idx) {
-    int *temp = &g_array_index(g_scrollY, int, idx);
-    script = "window.scrollTo(0, " + std::to_string(*temp) + ");";
-  } else {
+  } else if (gScrollY.size() <= idx) {
+    gScrollY.resize(idx + 50, 0);
     return;
+  } else {
+    script = "window.scrollTo(0, " + std::to_string(gScrollY[idx]) + ");";
   }
   webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(gWebView), script.c_str(),
                                  nullptr, nullptr, nullptr);
@@ -670,13 +671,13 @@ static std::string update_preview(bool const bGetContents) {
       for (auto line : lines) {
         if (has_header) {
           if (line != "") {
-            strHead.append(line + "\n");
+            strHead.append(line + '\n');
           } else {
             has_header = false;
-            strBody.append(line + "\n");
+            strBody.append(line + '\n');
           }
         } else {
-          strBody.append(line + "\n");
+          strBody.append(line + '\n');
         }
       }
     }
