@@ -87,12 +87,20 @@ void plugin_init(GeanyData *data) {
 
   // Set keyboard shortcuts
   GeanyKeyGroup *group = plugin_set_key_group(
-      geany_plugin, "Preview", 1, (GeanyKeyGroupCallback)on_key_binding);
+      geany_plugin, "Preview", 3, (GeanyKeyGroupCallback)on_key_binding);
 
   keybindings_set_item(group, PREVIEW_KEY_TOGGLE_EDITOR, nullptr, 0,
                        GdkModifierType(0), "preview_toggle_editor",
                        _("Toggle focus between the editor and preview pane."),
                        nullptr);
+
+  keybindings_set_item(group, PREVIEW_KEY_EXPORT_HTML, nullptr, 0,
+                       GdkModifierType(0), "preview_export_html",
+                       _("Export document to HTML."), nullptr);
+
+  keybindings_set_item(group, PREVIEW_KEY_EXPORT_PDF, nullptr, 0,
+                       GdkModifierType(0), "preview_export_pdf",
+                       _("Export Fountain screenplay to PDF."), nullptr);
 
   preview_init(geany_plugin, geany_data);
 }
@@ -292,6 +300,12 @@ static bool on_key_binding(int key_id) {
   switch (key_id) {
     case PREVIEW_KEY_TOGGLE_EDITOR:
       on_toggle_editor_preview();
+      break;
+    case PREVIEW_KEY_EXPORT_HTML:
+      on_menu_export_html(nullptr, nullptr);
+      break;
+    case PREVIEW_KEY_EXPORT_PDF:
+      on_menu_export_pdf(nullptr, nullptr);
       break;
     default:
       return false;

@@ -72,6 +72,8 @@ enum PreviewFileType {
 
 enum PreviewShortcuts {
   PREVIEW_KEY_TOGGLE_EDITOR,
+  PREVIEW_KEY_EXPORT_HTML,
+  PREVIEW_KEY_EXPORT_PDF,
 };
 
 static bool preview_init(GeanyPlugin *plugin, gpointer data);

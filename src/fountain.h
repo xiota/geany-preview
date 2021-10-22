@@ -75,7 +75,9 @@ class Script {
   void parseFountain(std::string const &text);
   std::string to_string(size_t const &flags = ScriptNodeType::ftnNone) const;
 
+ public:
   std::vector<ScriptNode> nodes;
+  std::map<std::string, std::string> metadata;
 
  private:
   ScriptNode curr_node;
