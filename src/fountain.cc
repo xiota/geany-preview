@@ -67,29 +67,40 @@ bool isTransition(std::string const &input) {
     return false;
   }
 
+  // must be a reasonable length
+  if (len > 20 || len < 5) {
+    return false;
+  }
+
   // must be uppercase
   if (!is_upper(input)) {
     return false;
   }
 
-  // Standard transitions ending with, " TO:"
-  //   "CUT TO:",      "DISSOLVE TO:",  "FADE TO:",           "FLASH CUT TO:",
-  //   "JUMP CUT TO:", "MATCH CUT TO:", "MATCH DISSOLVE TO:", "SMASH CUT TO:",
-  //   "WIPE TO:",
-  if (len < 4) {
-    return false;
+  // "CUT TO:", "DISSOLVE TO:", "FADE TO:", "FLASH CUT TO:", "JUMP CUT TO:",
+  // "MATCH CUT TO:", "MATCH DISSOLVE TO:", "SMASH CUT TO:", "WIPE TO:"
+  std::string compare = input.substr(len - 4);
+  if (compare == std::string(" TO:")) {
+    return true;
   }
-  std::string end = input.substr(len - 4);
-  if (end == std::string(" TO:")) {
+
+  // "FADE OUT.", "IRIS OUT."
+  compare = input.substr(len - 5);
+  if (compare == std::string(" OUT.")) {
+    return true;
+  }
+
+  // "CUT TO BLACK."
+  compare = input.substr(0, 7);
+  if (compare == std::string("CUT TO ")) {
     return true;
   }
 
   // Other transitions
   const char *transitions[] = {
-      "CUT TO BLACK:", "DISSOLVE:",        "END CREDITS:",   "FADE IN:",
-      "FADE OUT.",     "FREEZE FRAME:",    "INTERCUT WITH:", "IRIS IN:",
-      "IRIS OUT.",     "OPENING CREDITS:", "SPLIT SCREEN:",  "STOCK SHOT:",
-      "TIME CUT:",     "TITLE OVER:",      "WIPE:",
+      "DISSOLVE:",      "END CREDITS:", "FADE IN:",         "FREEZE FRAME:",
+      "INTERCUT WITH:", "IRIS IN:",     "OPENING CREDITS:", "SPLIT SCREEN:",
+      "STOCK SHOT:",    "TIME CUT:",    "TITLE OVER:",      "WIPE:",
   };
 
   for (auto str : transitions) {
@@ -574,6 +585,8 @@ std::string Script::parseNodeText(std::string const &input) {
 }
 
 void Script::parseFountain(std::string const &text) {
+  clear();
+
   if (!text.length()) {
     return;
   }
@@ -1106,10 +1119,76 @@ std::string ftn2xml(std::string const &input, std::string const &css_fn) {
   return output;
 }
 
+namespace {
+
+std::string &decode_entities_inplace(std::string &input) {
+  try {
+    static const std::regex re_tags(R"(<[^>]+?>)");
+    input = std::regex_replace(input, re_tags, "");
+
+    if (input.find('&') != std::string::npos) {
+      replace_all_inplace(input, "&#38;", "&");
+      replace_all_inplace(input, "&#42;", "*");
+      replace_all_inplace(input, "&#95;", "_");
+      replace_all_inplace(input, "&#58;", ":");
+      replace_all_inplace(input, "&#91;", "[");
+      replace_all_inplace(input, "&#93;", "]");
+      replace_all_inplace(input, "&#92;", "\\");
+      replace_all_inplace(input, "&#60;", "<");
+      replace_all_inplace(input, "&#62;", ">");
+      replace_all_inplace(input, "&#46;", ".");
+    }
+  } catch (std::regex_error &e) {
+    printf("regex error in ftn2pdf\n");
+    print_regex_error(e);
+  }
+  return input;
+}
+
+std::string decode_entities(std::string input) {
+  return decode_entities_inplace(input);
+}
+
+int pdfTextLines(PoDoFo::PdfPainter &painter, std::string const &text,
+                 int const width = 432) {
+  auto lines = painter.GetMultiLineTextAsLines(width, text.c_str());
+  return lines.size();
+}
+
+void pdfTextAdd(PoDoFo::PdfPainter &painter, std::string text,
+                PoDoFo::PdfFont *font, int const line, int const width = 432,
+                int const left_margin = 108) {
+  const int bottom_margin = 72;
+  const int print_height = 648;
+
+  painter.SetFont(font);
+
+  painter.DrawMultiLineText(left_margin, bottom_margin, width,
+                            print_height - 12 * line, text.c_str(),
+                            PoDoFo::ePdfAlignment_Left,
+                            PoDoFo::ePdfVerticalAlignment_Top, false, true);
+}
+
+}  // namespace
+
 bool ftn2pdf(std::string const &fn, std::string const &input,
              std::string const &css_fn) {
   const int lines_per_page = 54;
   const int line_char_length = 60;
+  const int width_print = 432;
+  const int width_dialog = 252;
+  const int width_dialog_dual = 180;
+  const int indent_character = 12;
+  const int indent_parenthetical = 6;
+  const int indent_character_dual = 9;
+  const int indent_parenthetical_dual = 7;
+  const int margin_dialog = 180;
+  const int margin_dialog_left = 144;
+  const int margin_dialog_right = 360;
+  const int left_margin = 108;
+  const int bottom_margin = 72;
+  const int gap_transition = 16;
+  const int gap_sceneheader = 14;
 
   // Set up PDF document
   PoDoFo::PdfStreamedDocument document(fn.c_str());
@@ -1140,130 +1219,238 @@ bool ftn2pdf(std::string const &fn, std::string const &input,
   // process script
   Fountain::Script script(input);
 
-  std::string output;
+  size_t const flags = Fountain::ScriptNodeType::ftnContinuation |
+                       Fountain::ScriptNodeType::ftnKeyValue |
+                       Fountain::ScriptNodeType::ftnUnknown;
+
+  static uint8_t dialog_state = 0;
+  std::string output{};
+  std::string outputDialog{};
+  std::string outputDialogLeft{};
+  std::string outputDialogRight{};
 
   int LineNumber = 0;
   for (auto node : script.nodes) {
-    std::string buffer =
-        node.to_string(Fountain::ScriptNodeType::ftnContinuation |
-                       Fountain::ScriptNodeType::ftnKeyValue |
-                       Fountain::ScriptNodeType::ftnUnknown);
+    std::string buffer = decode_entities(node.value + "\n");
 
-    try {
-      static const std::regex re_tags(R"(<[^>]+?>)");
-      buffer = std::regex_replace(buffer, re_tags, "");
-
-      if (buffer.find('&') != std::string::npos) {
-        replace_all_inplace(buffer, "&#38;", "&");
-        replace_all_inplace(buffer, "&#42;", "*");
-        replace_all_inplace(buffer, "&#95;", "_");
-        replace_all_inplace(buffer, "&#58;", ":");
-        replace_all_inplace(buffer, "&#91;", "[");
-        replace_all_inplace(buffer, "&#93;", "]");
-        replace_all_inplace(buffer, "&#92;", "\\");
-        replace_all_inplace(buffer, "&#60;", "<");
-        replace_all_inplace(buffer, "&#62;", ">");
-        replace_all_inplace(buffer, "&#46;", ".");
-      }
-    } catch (std::regex_error &e) {
-      printf("regex error in ftn2pdf\n");
-      print_regex_error(e);
-    }
     switch (node.type) {
-      case ScriptNodeType::ftnAction: {
-        auto textLines = painter.GetMultiLineTextAsLines(432, buffer.c_str());
-        if (LineNumber + textLines.size() <= lines_per_page) {
-          painter.DrawMultiLineText(108, 72, 432, 648 - 12 * LineNumber,
-                                    buffer.c_str(), PoDoFo::ePdfAlignment_Left,
-                                    PoDoFo::ePdfVerticalAlignment_Top);
-          LineNumber += textLines.size();
+      case ScriptNodeType::ftnKeyValue:
+        if (flags & node.type) {
+          break;
+        }
+        // Not used for PDF
+        // TODO: Title Page
+        break;
+      case ScriptNodeType::ftnPageBreak:
+        if (flags & node.type) {
+          break;
+        }
+        LineNumber += lines_per_page;
+        break;
+      case ScriptNodeType::ftnBlankLine:
+        if (flags & node.type) {
+          break;
+        }
+        if (dialog_state == 1) {
+          int textLines = pdfTextLines(painter, outputDialog, width_dialog);
+          if (LineNumber + textLines <= lines_per_page) {
+            pdfTextAdd(painter, outputDialog, pFontNormal, LineNumber,
+                       width_dialog, margin_dialog);
+            outputDialog.clear();
+            dialog_state = 0;
+            LineNumber += textLines;
+          } else {
+            LineNumber += textLines;
+          }
+        } else if (dialog_state == 2) {
+          // Don't write DialogLeft without DialogRight
+        } else if (dialog_state == 3) {
+          int textLines_right =
+              pdfTextLines(painter, outputDialogRight, width_dialog_dual);
+          int textLines_left =
+              pdfTextLines(painter, outputDialogLeft, width_dialog_dual);
+          int textLines = std::max<int>(textLines_left, textLines_right);
+          if (LineNumber + textLines <= lines_per_page) {
+            pdfTextAdd(painter, outputDialogRight, pFontNormal, LineNumber,
+                       width_dialog_dual, margin_dialog_right);
+            pdfTextAdd(painter, outputDialogLeft, pFontNormal, LineNumber,
+                       width_dialog_dual, margin_dialog_left);
+            outputDialogLeft.clear();
+            outputDialogRight.clear();
+            dialog_state = 0;
+            LineNumber += textLines;
+            // LineNumber += 2;
+            // ++LineNumber;
+          } else {
+            LineNumber += textLines;
+          }
+        }
+        ++LineNumber;
+        break;
+      case ScriptNodeType::ftnContinuation:
+        if (flags & node.type) {
+          break;
+        }
+        // Not used for PDF
+        break;
+      case ScriptNodeType::ftnSceneHeader: {
+        if (flags & node.type) {
+          break;
+        }
+        // TODO: Need to add scene numbers
+        int textLines = pdfTextLines(painter, buffer);
+        if (LineNumber + gap_sceneheader <= lines_per_page) {
+          pdfTextAdd(painter, buffer, pFontBold, LineNumber);
+          LineNumber += textLines;
         } else {
-          LineNumber += textLines.size();
+          LineNumber += gap_sceneheader;
+          output += buffer;
+        }
+      } break;
+      case ScriptNodeType::ftnAction: {
+        if (flags & node.type) {
+          break;
+        }
+        int textLines = pdfTextLines(painter, buffer);
+        if (LineNumber + textLines <= lines_per_page) {
+          pdfTextAdd(painter, buffer, pFontNormal, LineNumber);
+          LineNumber += textLines;
+        } else {
+          LineNumber += textLines;
           output += buffer;
         }
       } break;
       case ScriptNodeType::ftnActionCenter: {
-        std::string txtCenter =
-            std::string(int((line_char_length - buffer.length()) / 2), ' ');
-        txtCenter += buffer;
-        auto textLines =
-            painter.GetMultiLineTextAsLines(432, txtCenter.c_str());
-
-        if (LineNumber + textLines.size() <= lines_per_page) {
-          painter.DrawMultiLineText(
-              108, 72, 432, 648 - 12 * LineNumber, txtCenter.c_str(),
-              PoDoFo::ePdfAlignment_Left, PoDoFo::ePdfVerticalAlignment_Top);
-          LineNumber += textLines.size();
-        } else {
-          LineNumber += textLines.size();
-          output += txtCenter;
+        if (flags & node.type) {
+          break;
         }
-      } break;
-      case ScriptNodeType::ftnLyric: {
-        auto textLines = painter.GetMultiLineTextAsLines(432, buffer.c_str());
-        if (LineNumber + textLines.size() <= lines_per_page) {
-          painter.SetFont(pFontItalic);
-          painter.DrawMultiLineText(108, 72, 432, 648 - 12 * LineNumber,
-                                    buffer.c_str(), PoDoFo::ePdfAlignment_Left,
-                                    PoDoFo::ePdfVerticalAlignment_Top);
-          painter.SetFont(pFontNormal);
-          LineNumber += textLines.size();
+        buffer = std::string(int((line_char_length - buffer.length() + 1) / 2.),
+                             ' ') +
+                 buffer;
+
+        int textLines = pdfTextLines(painter, buffer);
+        if (LineNumber + textLines <= lines_per_page) {
+          pdfTextAdd(painter, buffer, pFontNormal, LineNumber);
+          LineNumber += textLines;
         } else {
-          LineNumber += textLines.size();
+          LineNumber += textLines;
           output += buffer;
         }
       } break;
+      case ScriptNodeType::ftnTransition: {
+        if (flags & node.type) {
+          break;
+        }
+        buffer =
+            std::string(line_char_length - buffer.length() + 1, ' ') + buffer;
+
+        int textLines = pdfTextLines(painter, buffer);
+        if (LineNumber + gap_transition <= lines_per_page) {
+          pdfTextAdd(painter, buffer, pFontNormal, LineNumber);
+          LineNumber += textLines;
+        } else {
+          LineNumber += gap_transition;
+          output += buffer;
+        }
+      } break;
+      case ScriptNodeType::ftnDialog:
+        if (flags & node.type) {
+          break;
+        }
+        dialog_state = 1;
+        break;
+      case ScriptNodeType::ftnDialogLeft:
+        if (flags & node.type) {
+          break;
+        }
+        dialog_state = 2;
+        break;
+      case ScriptNodeType::ftnDialogRight:
+        if (flags & node.type) {
+          break;
+        }
+        dialog_state = 3;
+        break;
+
       case ScriptNodeType::ftnCharacter:
-        output += std::string(12, ' ');
-        output += buffer;
+        if (flags & node.type) {
+          break;
+        }
+        if (dialog_state == 1) {
+          outputDialog += std::string(indent_character, ' ');
+          outputDialog += buffer;
+        } else if (dialog_state == 2) {
+          outputDialogLeft += std::string(indent_character_dual, ' ');
+          outputDialogLeft += buffer;
+        } else if (dialog_state == 3) {
+          outputDialogRight += std::string(indent_character_dual, ' ');
+          outputDialogRight += buffer;
+        }
         break;
       case ScriptNodeType::ftnParenthetical:
-        output += std::string(6, ' ');
-        output += buffer;
+        if (flags & node.type) {
+          break;
+        }
+        if (dialog_state == 1) {
+          outputDialog += std::string(indent_parenthetical, ' ');
+          outputDialog += buffer;
+        } else if (dialog_state == 2) {
+          outputDialogLeft += std::string(indent_parenthetical_dual, ' ');
+          outputDialogLeft += buffer;
+        } else if (dialog_state == 3) {
+          outputDialogRight += std::string(indent_parenthetical_dual, ' ');
+          outputDialogRight += buffer;
+        }
         break;
       case ScriptNodeType::ftnSpeech: {
-        output += buffer;
-        auto textLines = painter.GetMultiLineTextAsLines(252, output.c_str());
-
-        if (LineNumber + textLines.size() <= lines_per_page) {
-          painter.DrawMultiLineText(180, 72, 252, 648 - 12 * LineNumber,
-                                    output.c_str(), PoDoFo::ePdfAlignment_Left,
-                                    PoDoFo::ePdfVerticalAlignment_Top);
-          LineNumber += textLines.size();
-          output.clear();
-        } else {
-          LineNumber += textLines.size();
+        if (flags & node.type) {
+          break;
+        }
+        if (dialog_state == 1) {
+          outputDialog += buffer;
+        } else if (dialog_state == 2) {
+          outputDialogLeft += buffer;
+        } else if (dialog_state == 3) {
+          outputDialogRight += buffer;
         }
       } break;
-      case ScriptNodeType::ftnTransition: {
-        if (LineNumber + 7 <= lines_per_page) {
-          std::string strTransition =
-              std::string(line_char_length - node.value.length(), ' ');
-          strTransition += buffer;
-          painter.DrawMultiLineText(
-              108, 72, 432, 648 - 12 * LineNumber, strTransition.c_str(),
-              PoDoFo::ePdfAlignment_Left, PoDoFo::ePdfVerticalAlignment_Top);
-          ++LineNumber;
+      case ScriptNodeType::ftnNotation:
+        if (flags & node.type) {
+          break;
+        }
+        // not used for PDF
+        break;
+      case ScriptNodeType::ftnLyric: {
+        if (flags & node.type) {
+          break;
+        }
+        int textLines = pdfTextLines(painter, buffer);
+        if (LineNumber + textLines <= lines_per_page) {
+          pdfTextAdd(painter, buffer, pFontItalic, LineNumber);
+          LineNumber += textLines;
         } else {
-          LineNumber += 7;
+          LineNumber += textLines;
+          output += buffer;
         }
       } break;
-      case ScriptNodeType::ftnSceneHeader:
-        if (LineNumber + 5 <= lines_per_page) {
-          painter.SetFont(pFontBold);
-          painter.DrawMultiLineText(108, 72, 432, 648 - 12 * LineNumber,
-                                    buffer.c_str(), PoDoFo::ePdfAlignment_Left,
-                                    PoDoFo::ePdfVerticalAlignment_Top);
-          painter.SetFont(pFontNormal);
-          ++LineNumber;
-        } else {
-          LineNumber += 5;
+      case ScriptNodeType::ftnSection:
+        if (flags & node.type) {
+          break;
         }
+        // Not used for PDF
         break;
-      case ScriptNodeType::ftnBlankLine:
-        ++LineNumber;
+      case ScriptNodeType::ftnSynopsis:
+        if (flags & node.type) {
+          break;
+        }
+        // Not used for PDF
         break;
+      case ScriptNodeType::ftnUnknown:
       default:
+        if (flags & node.type) {
+          break;
+        }
+        // Not used for PDF
         break;
     }
     if (LineNumber >= lines_per_page) {
@@ -1276,25 +1463,44 @@ bool ftn2pdf(std::string const &fn, std::string const &input,
       painter.SetPage(pPage);
       LineNumber = 0;
 
-      if (node.type == ScriptNodeType::ftnSpeech) {
-        auto textLines = painter.GetMultiLineTextAsLines(252, output.c_str());
-        painter.DrawMultiLineText(180, 72, 252, 648 - 12 * LineNumber,
-                                  output.c_str(), PoDoFo::ePdfAlignment_Left,
-                                  PoDoFo::ePdfVerticalAlignment_Top);
-        LineNumber += textLines.size();
-      } else {
-        if (node.type == ScriptNodeType::ftnSceneHeader) {
-          painter.SetFont(pFontBold);
-        }
+      if (dialog_state == 1 && !outputDialog.empty()) {
+        int textLines = pdfTextLines(painter, outputDialog, width_dialog);
+        pdfTextAdd(painter, outputDialog, pFontNormal, LineNumber, width_dialog,
+                   margin_dialog);
+        outputDialog.clear();
+        dialog_state = 0;
+        LineNumber += textLines + 1;
+      } else if (dialog_state == 2) {
+        // Don't write DialogLeft without DialogRight
+      } else if (dialog_state == 3 &&
+                 (!outputDialogLeft.empty() || !outputDialogRight.empty())) {
+        int textLines_left =
+            pdfTextLines(painter, outputDialogLeft, width_dialog_dual);
+        int textLines_right =
+            pdfTextLines(painter, outputDialogRight, width_dialog_dual);
+        int textLines = std::max<int>(textLines_left, textLines_right);
 
-        auto textLines = painter.GetMultiLineTextAsLines(432, output.c_str());
-        painter.DrawMultiLineText(108, 72, 432, 648 - 12 * LineNumber,
-                                  output.c_str(), PoDoFo::ePdfAlignment_Left,
-                                  PoDoFo::ePdfVerticalAlignment_Top);
-        LineNumber += textLines.size();
+        pdfTextAdd(painter, outputDialogLeft, pFontNormal, LineNumber,
+                   width_dialog_dual, margin_dialog_left);
+        pdfTextAdd(painter, outputDialogRight, pFontNormal, LineNumber,
+                   width_dialog_dual, margin_dialog_right);
+        outputDialogLeft.clear();
+        outputDialogRight.clear();
+        dialog_state = 0;
+        LineNumber += textLines + 1;
+      } else if (!output.empty()) {
+        if (node.type == ScriptNodeType::ftnSceneHeader) {
+          int textLines = pdfTextLines(painter, output);
+          pdfTextAdd(painter, output, pFontBold, LineNumber);
+          output.clear();
+          LineNumber += textLines;
+        } else {
+          int textLines = pdfTextLines(painter, output);
+          pdfTextAdd(painter, output, pFontNormal, LineNumber);
+          output.clear();
+          LineNumber += textLines;
+        }
       }
-      painter.SetFont(pFontNormal);
-      output.clear();
     }
   }
 

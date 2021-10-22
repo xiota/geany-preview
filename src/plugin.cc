@@ -551,8 +551,8 @@ static void wv_save_position_callback(GObject *object, GAsyncResult *result,
   int temp = jsc_value_to_int32(value);
   if (gScrollY.size() <= idx) {
     gScrollY.resize(idx + 50, 0);
-    gScrollY[idx] = temp;
-  } else {
+  }
+  if (temp > 0) {
     gScrollY[idx] = temp;
   }
 

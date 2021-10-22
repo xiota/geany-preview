@@ -50,6 +50,12 @@ class ScriptNode {
  public:
   std::string to_string(size_t const &flags = ScriptNodeType::ftnNone) const;
 
+  void clear() {
+    type = ScriptNodeType::ftnUnknown;
+    key.clear();
+    value.clear();
+  }
+
  public:
   ScriptNodeType type = ScriptNodeType::ftnUnknown;
   std::string key;
@@ -60,6 +66,11 @@ class Script {
  public:
   Script() = default;
   Script(std::string const &text) { parseFountain(text); }
+
+  void clear() {
+    nodes.clear();
+    curr_node.clear();
+  }
 
   void parseFountain(std::string const &text);
   std::string to_string(size_t const &flags = ScriptNodeType::ftnNone) const;
@@ -80,10 +91,7 @@ class Script {
     if (curr_node.type != ScriptNodeType::ftnUnknown) {
       curr_node.value = parseNodeText(curr_node.value);
       nodes.push_back(curr_node);
-
-      curr_node.type = ScriptNodeType::ftnUnknown;
-      curr_node.key = "";
-      curr_node.value = "";
+      curr_node.clear();
     }
   }
   void append(std::string const &s) {
