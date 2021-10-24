@@ -963,6 +963,9 @@ static PreviewFileType get_filetype_from_filename(std::string const &fn) {
     return PREVIEW_FILETYPE_GFM;
   } else if (SUBSTR("fountain", strFormat.c_str()) ||
              SUBSTR("spmd", strFormat.c_str())) {
+    if (bSetDocFileType) {
+      document_set_filetype(doc, filetypes[GEANY_FILETYPES_FOUNTAIN]);
+    }
     return PREVIEW_FILETYPE_FOUNTAIN;
   } else if (SUBSTR("textile", strFormat.c_str())) {
     return PREVIEW_FILETYPE_TEXTILE;
@@ -1058,6 +1061,9 @@ static PreviewFileType get_filetype(GeanyDocument *doc) {
       break;
     case GEANY_FILETYPES_TXT2TAGS:
       return PREVIEW_FILETYPE_TXT2TAGS;
+      break;
+    case GEANY_FILETYPES_FOUNTAIN:
+      return PREVIEW_FILETYPE_FOUNTAIN;
       break;
     case GEANY_FILETYPES_NONE:
       if (!settings.extended_types) {
