@@ -86,8 +86,9 @@ void plugin_init(GeanyData *data) {
   GEANY_PSC("document-reload", on_document_signal);
 
   // Set keyboard shortcuts
-  GeanyKeyGroup *group = plugin_set_key_group(
-      geany_plugin, "Preview", 3, (GeanyKeyGroupCallback)on_key_binding);
+  GeanyKeyGroup *group =
+      plugin_set_key_group(geany_plugin, "Preview", PREVIEW_KEY_COUNT,
+                           (GeanyKeyGroupCallback)on_key_binding);
 
   keybindings_set_item(group, PREVIEW_KEY_TOGGLE_EDITOR, nullptr, 0,
                        GdkModifierType(0), "preview_toggle_editor",
@@ -963,7 +964,7 @@ static PreviewFileType get_filetype_from_filename(std::string const &fn) {
     return PREVIEW_FILETYPE_GFM;
   } else if (SUBSTR("fountain", strFormat.c_str()) ||
              SUBSTR("spmd", strFormat.c_str())) {
-    if (bSetDocFileType) {
+    if (GEANY_FILETYPES_FOUNTAIN != PREVIEW_FILETYPE_NOEXIST && bSetDocFileType) {
       document_set_filetype(doc, filetypes[GEANY_FILETYPES_FOUNTAIN]);
     }
     return PREVIEW_FILETYPE_FOUNTAIN;

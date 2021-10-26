@@ -29,17 +29,6 @@
 
 #include <string>
 
-#ifndef g_clear_signal_handler
-#include "gobject/gsignal.h"
-// g_clear_signal_handler was added in glib 2.62
-#define g_clear_signal_handler(handler, instance)      \
-  do {                                                 \
-    if (handler != nullptr && *handler != 0) {         \
-      g_signal_handler_disconnect(instance, *handler); \
-      *handler = 0;                                    \
-    }                                                  \
-  } while (0)
-#endif  // g_clear_signal_handler
 
 G_BEGIN_DECLS
 
@@ -68,12 +57,22 @@ enum PreviewFileType {
   PREVIEW_FILETYPE_TXT2TAGS,
   PREVIEW_FILETYPE_VIMWIKI,
   PREVIEW_FILETYPE_WIKI,
+
+  PREVIEW_FILETYPE_COUNT
 };
+
+#define PREVIEW_FILETYPE_NOEXIST PREVIEW_FILETYPE_COUNT
+
+#ifndef GEANY_FILETYPES_FOUNTAIN
+#define GEANY_FILETYPES_FOUNTAIN PREVIEW_FILETYPE_NOEXIST
+#endif
 
 enum PreviewShortcuts {
   PREVIEW_KEY_TOGGLE_EDITOR,
   PREVIEW_KEY_EXPORT_HTML,
   PREVIEW_KEY_EXPORT_PDF,
+
+  PREVIEW_KEY_COUNT
 };
 
 static bool preview_init(GeanyPlugin *plugin, gpointer data);
@@ -126,6 +125,18 @@ static bool use_snippets(GeanyDocument *doc);
 static void wv_apply_settings();
 
 G_END_DECLS
+
+#ifndef g_clear_signal_handler
+#include "gobject/gsignal.h"
+// g_clear_signal_handler was added in glib 2.62
+#define g_clear_signal_handler(handler, instance)      \
+  do {                                                 \
+    if (handler != nullptr && *handler != 0) {         \
+      g_signal_handler_disconnect(instance, *handler); \
+      *handler = 0;                                    \
+    }                                                  \
+  } while (0)
+#endif  // g_clear_signal_handler
 
 #define GEANY_PSC(sig, cb)                                                  \
   plugin_signal_connect(geany_plugin, nullptr, (sig), true, G_CALLBACK(cb), \

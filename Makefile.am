@@ -11,7 +11,7 @@ cf_doc_DATA = \
 cf_datadir = $(datadir)/geany-plugins/@PACKAGE@
 cf_data_DATA = \
 	data/preview.conf \
-	data/preview-headers.css \
+	data/preview.css \
 	data/asciidoctor.css \
 	data/fountain.css \
 	data/markdown.css \
@@ -28,7 +28,7 @@ preview_la_CXXFLAGS = $(GEANY_CFLAGS) $(WEBKIT_CFLAGS) $(CMARK_CFLAGS) $(PODOFO_
 	-DPREVIEW_README=\""$(cf_docdir)/README.md"\" \
 	-DPREVIEW_FAQ=\""$(cf_docdir)/CQA.md"\" \
 	-DPREVIEW_CONFIG=\""$(cf_datadir)/preview.conf"\" \
-	-DPREVIEW_CSS_HEADERS=\""$(cf_datadir)/preview-headers.css"\" \
+	-DPREVIEW_CSS_HEADERS=\""$(cf_datadir)/preview.css"\" \
 	-DPREVIEW_CSS_PANDOC=\""$(cf_datadir)/pandoc.css"\" \
 	-DPREVIEW_CSS_ASCIIDOCTOR=\""$(cf_datadir)/asciidoctor.css"\" \
 	-DPREVIEW_CSS_FOUNTAIN=\""$(cf_datadir)/fountain.css"\" \
