@@ -587,7 +587,7 @@ static void wv_apply_settings() {
 
   // attach headers css
   std::string css_fn =
-      find_copy_css("preview-headers.css", PREVIEW_CSS_HEADERS);
+      find_copy_css("preview.css", PREVIEW_CSS_HEADERS);
 
   if (!css_fn.empty()) {
     std::string contents = file_get_contents(css_fn);

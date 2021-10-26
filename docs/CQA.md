@@ -60,13 +60,13 @@ You can edit `css` files in the configuration folder.  Create the files if they 
 * `pandoc-rst.css`
 * `pandoc-t2t.css`
 * `pandoc-textile.css`
-* `preview-headers.css`
+* `preview.css`
 
 W3Schools has a [CSS Tutorial](https://www.w3schools.com/css/) that you may find helpful.
 
 > Is there a dark theme?
 
-The default `css` files use rules that attempt to detect when the desktop environment is set to a dark theme.  If detection fails, or you need to customize the appearance further, you can change the `extra_css` option in the config file.
+The default `css` files has @media rules that are intended to automatically apply a dark theme when the desktop environment is set to a dark theme.  If detection fails, or you need to customize the appearance further, you can change the `extra_css` option in the config file.
 ```
 extra_css=dark.css
 ```
