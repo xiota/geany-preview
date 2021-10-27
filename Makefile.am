@@ -17,8 +17,9 @@ cf_data_DATA = \
 	data/markdown.css \
 	data/pandoc.css \
 	data/screenplain.css \
-	data/dark.css \
-	data/invert.css
+	data/extra-dark.css \
+	data/extra-invert.css \
+	data/extra-media.css 
 
 geany_plugindir = $(libdir)/geany
 geany_plugin_LTLIBRARIES = preview.la
@@ -34,8 +35,9 @@ preview_la_CXXFLAGS = $(GEANY_CFLAGS) $(WEBKIT_CFLAGS) $(CMARK_CFLAGS) $(PODOFO_
 	-DPREVIEW_CSS_FOUNTAIN=\""$(cf_datadir)/fountain.css"\" \
 	-DPREVIEW_CSS_MARKDOWN=\""$(cf_datadir)/markdown.css"\" \
 	-DPREVIEW_CSS_SCREENPLAIN=\""$(cf_datadir)/screenplain.css"\" \
-	-DPREVIEW_CSS_DARK=\""$(cf_datadir)/dark.css"\" \
-	-DPREVIEW_CSS_INVERT=\""$(cf_datadir)/invert.css"\"
+	-DPREVIEW_CSS_EXTRA_DARK=\""$(cf_datadir)/extra-dark.css"\" \
+	-DPREVIEW_CSS_EXTRA_INVERT=\""$(cf_datadir)/extra-invert.css"\" \
+	-DPREVIEW_CSS_EXTRA_MEDIA=\""$(cf_datadir)/extra-media.css"\"
 preview_la_LIBADD = $(GEANY_LIBS) $(WEBKIT_LIBS) $(CMARK_LIBS) $(PODOFO_LIBS)
 preview_la_LDFLAGS = -module -avoid-version
 preview_la_SOURCES = \

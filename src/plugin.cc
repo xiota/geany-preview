@@ -596,10 +596,12 @@ static void wv_apply_settings() {
   // attach extra_css
   css_fn = find_css(settings.extra_css);
   if (css_fn.empty()) {
-    if (strcmp("dark.css", settings.extra_css) == 0) {
-      css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_DARK);
-    } else if (strcmp("invert.css", settings.extra_css) == 0) {
-      css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_INVERT);
+    if (utils_str_equal("extra-media.css", settings.extra_css)) {
+      css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_EXTRA_MEDIA);
+    } else if (utils_str_equal("extra-dark.css", settings.extra_css)) {
+      css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_EXTRA_DARK);
+    } else if (utils_str_equal("extra-invert.css", settings.extra_css)) {
+      css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_EXTRA_INVERT);
     }
   }
 
@@ -778,7 +780,7 @@ static std::string update_preview(bool const bGetContents) {
 
   switch (gFileType) {
     case PREVIEW_FILETYPE_HTML:
-      if (strcmp("disable", settings.html_processor) == 0) {
+      if (utils_str_equal("disable", settings.html_processor)) {
         strPlain = _("Preview of HTML documents has been disabled.");
       } else if (SUBSTR("pandoc", settings.html_processor))
         strOutput = pandoc(work_dir.c_str(), strBody.c_str(), "html");
@@ -787,7 +789,7 @@ static std::string update_preview(bool const bGetContents) {
       }
       break;
     case PREVIEW_FILETYPE_MARKDOWN:
-      if (strcmp("disable", settings.markdown_processor) == 0) {
+      if (utils_str_equal("disable", settings.markdown_processor)) {
         strPlain = _("Preview of Markdown documents has been disabled.");
       } else if (SUBSTR("pandoc", settings.markdown_processor))
         strOutput =
@@ -797,7 +799,7 @@ static std::string update_preview(bool const bGetContents) {
       }
       break;
     case PREVIEW_FILETYPE_ASCIIDOC:
-      if (strcmp("disable", settings.asciidoc_processor) == 0) {
+      if (utils_str_equal("disable", settings.asciidoc_processor)) {
         strPlain = _("Preview of AsciiDoc documents has been disabled.");
       } else {
         strOutput = cstr_assign(asciidoctor(work_dir.c_str(), strBody.c_str()));
@@ -821,9 +823,9 @@ static std::string update_preview(bool const bGetContents) {
       strOutput = cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "gfm"));
       break;
     case PREVIEW_FILETYPE_FOUNTAIN:
-      if (strcmp("disable", settings.fountain_processor) == 0) {
+      if (utils_str_equal("disable", settings.fountain_processor)) {
         strPlain = _("Preview of Fountain screenplays has been disabled.");
-      } else if (strcmp("screenplain", settings.fountain_processor) == 0) {
+      } else if (utils_str_equal("screenplain", settings.fountain_processor)) {
         strOutput =
             cstr_assign(screenplain(work_dir.c_str(), strBody.c_str(), "html"));
       } else {
@@ -960,7 +962,7 @@ static PreviewFileType get_filetype_from_string(std::string const &fn) {
   } else if (SUBSTR("eml", strFormat.c_str())) {
     return PREVIEW_FILETYPE_EMAIL;
   } else if (SUBSTR("wiki", strFormat.c_str())) {
-    if (strcmp("disable", settings.wiki_default) == 0) {
+    if (utils_str_equal("disable", settings.wiki_default)) {
       return PREVIEW_FILETYPE_NONE;
     } else if (SUBSTR("dokuwiki", strFormat.c_str())) {
       return PREVIEW_FILETYPE_DOKUWIKI;
@@ -1162,7 +1164,7 @@ static bool on_editor_notify(GObject *obj, GeanyEditor *editor,
     } else if ((doc->file_type->id != GEANY_FILETYPES_ASCIIDOC &&
                 doc->file_type->id != GEANY_FILETYPES_NONE) ||
                (gFileType == PREVIEW_FILETYPE_FOUNTAIN &&
-                strcmp("native", settings.fountain_processor) == 0)) {
+                utils_str_equal("native", settings.fountain_processor))) {
       // delay for faster programs (native html/markdown/fountain and pandoc)
       double _tt = (double)length * settings.size_factor_fast;
       int timeout = (int)_tt > settings.update_interval_fast

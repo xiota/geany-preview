@@ -66,10 +66,12 @@ W3Schools has a [CSS Tutorial](https://www.w3schools.com/css/) that you may find
 
 > Is there a dark theme?
 
-The default `css` files has @media rules that are intended to automatically apply a dark theme when the desktop environment is set to a dark theme.  When switching between light and dark themes, detection may fail until logging out and back into the desktop.  If detection still fails, or you need to customize the appearance further, you can change the `extra_css` option in the config file.
-```
-extra_css=dark.css
-```
+You can customize the overall appearance of the Preview pane by setting the `extra_css` option to a `css` file.  A few files are provided:
+
+* `extra-media.css` – This is the default setting.  This file contains `@media` rules that are active when the desktop has a dark theme.  It may not work with all desktop environments.  In some cases, the theme may not always be properly applied.  When switching between light and dark themes, logging out of the desktop manager may be required.
+* `extra-dark.css` – This is a dark theme based on colors in the [Sleepy Pastel](https://geany.org/download/themes/) theme.
+* `extra-invert.css` – This theme simply inverts all colors.
+* `disable` – Use this setting to turn off the setting.
 
 To allow plain text messages to be styled, the stylesheet is applied directly to the webview when the plugin is loaded.  If the stylesheet is edited, click the "Reload Config" button in *Edit/Plugin Preferences/Preview*.
 
@@ -117,3 +119,11 @@ The preview plugin uses several `css` files.  You probably have a mix of old and
 > Why does the plugin sometimes say "Unable to process type" or display files with strange formatting?
 
 To improve performance, updates are disabled when the preview is not visible or the document is not actively being edited.  This sometimes results in glitches that go away when editing is resumed.  Recent changes have been made to the plugin to reduce how often this happens.
+
+> Why don't HTML documents don't look the same in Preview as in the Chromium (and Firefox)?
+
+Although the rendering engine used by the webview is related to the one in Chromium, it uses a default stylesheet that is different from the one used by Chromium.  You can add rules to your stylesheet or use a "stylesheet reset".
+
+> Why doesn't _____ context menu item work when _____?
+
+The context menu is currently created by the webview.  Making it work as expected will take quite a bit of time and effort.
