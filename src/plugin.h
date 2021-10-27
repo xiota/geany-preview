@@ -118,7 +118,7 @@ static void on_sidebar_state_flags_changed(GtkWidget *widget,
                                            GtkStateFlags flags,
                                            gpointer user_data);
 
-static PreviewFileType get_filetype_from_filename(std::string const &fn);
+static PreviewFileType get_filetype_from_string(std::string const &fn);
 static PreviewFileType get_filetype(GeanyDocument *doc);
 static bool use_snippets(GeanyDocument *doc);
 static void wv_apply_settings();

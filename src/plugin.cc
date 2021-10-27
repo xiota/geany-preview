@@ -766,7 +766,7 @@ static std::string update_preview(bool const bGetContents) {
         if (std::regex_search(strHead, format_match, re_format)) {
           if (format_match.size() > 2) {
             std::string strFormat = format_match[2];
-            gFileType = get_filetype_from_filename(strFormat.c_str());
+            gFileType = get_filetype_from_string(strFormat.c_str());
           }
         }
       }
@@ -925,7 +925,7 @@ static std::string update_preview(bool const bGetContents) {
   return contents;
 }
 
-static PreviewFileType get_filetype_from_filename(std::string const &fn) {
+static PreviewFileType get_filetype_from_string(std::string const &fn) {
   if (fn.empty()) {
     return PREVIEW_FILETYPE_NONE;
   }
@@ -1055,7 +1055,7 @@ static PreviewFileType get_filetype(GeanyDocument *doc) {
         return PREVIEW_FILETYPE_NONE;
         break;
       } else {
-        return get_filetype_from_filename(DOC_FILENAME(doc));
+        return get_filetype_from_string(DOC_FILENAME(doc));
       }
       break;
     default:
@@ -1139,11 +1139,6 @@ static bool on_editor_notify(GObject *obj, GeanyEditor *editor,
     return false;
   }
 
-  // no update if unhandled filetype
-  if (gFileType == PREVIEW_FILETYPE_NONE) {
-    return false;
-  }
-
   int length = sci_get_length(doc->editor->sci);
 
   bool need_update = false;
@@ -1159,10 +1154,15 @@ static bool on_editor_notify(GObject *obj, GeanyEditor *editor,
   }
 
   if (need_update) {
-    if ((doc->file_type->id != GEANY_FILETYPES_ASCIIDOC &&
-         doc->file_type->id != GEANY_FILETYPES_NONE) ||
-        (gFileType == PREVIEW_FILETYPE_FOUNTAIN &&
-         strcmp("native", settings.fountain_processor) == 0)) {
+    if (gFileType == PREVIEW_FILETYPE_NONE) {
+      // slow update when unhandled filetype;
+      // needed to catch filetype change
+      gHandleTimeout = g_timeout_add(5 * settings.update_interval_slow,
+                                     update_timeout_callback, nullptr);
+    } else if ((doc->file_type->id != GEANY_FILETYPES_ASCIIDOC &&
+                doc->file_type->id != GEANY_FILETYPES_NONE) ||
+               (gFileType == PREVIEW_FILETYPE_FOUNTAIN &&
+                strcmp("native", settings.fountain_processor) == 0)) {
       // delay for faster programs (native html/markdown/fountain and pandoc)
       double _tt = (double)length * settings.size_factor_fast;
       int timeout = (int)_tt > settings.update_interval_fast
