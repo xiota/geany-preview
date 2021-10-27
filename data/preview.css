@@ -39,6 +39,12 @@ pre.geany_preview_headers {
 	padding-top: 0.5rem;
 	padding-bottom: 0.5rem;
 }
+
 pre.geany_preview_headers + * {
-	padding-top: 1.5em;
+	padding-top: 1.5rem;
+}
+
+pre.geany_preview_headers + table {
+	padding-top: 1.5rem;
+	margin-top: 1.5rem;
 }

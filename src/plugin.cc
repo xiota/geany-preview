@@ -23,8 +23,6 @@
 #include "config.h"
 #endif
 
-#include <cmark-gfm.h>
-
 #include "auxiliary.h"
 #include "formats.h"
 #include "fountain.h"
@@ -581,8 +579,7 @@ static void wv_apply_settings() {
                                           settings.default_font_family);
 
   // attach headers css
-  std::string css_fn =
-      find_copy_css("preview.css", PREVIEW_CSS_HEADERS);
+  std::string css_fn = find_copy_css("preview.css", PREVIEW_CSS_HEADERS);
 
   if (!css_fn.empty()) {
     std::string contents = file_get_contents(css_fn);
@@ -796,16 +793,7 @@ static std::string update_preview(bool const bGetContents) {
         strOutput =
             pandoc(work_dir.c_str(), strBody.c_str(), settings.pandoc_markdown);
       else {
-        strOutput = cstr_assign(
-            cmark_markdown_to_html(strBody.c_str(), strBody.length(), 0));
-        std::string css_fn =
-            find_copy_css("markdown.css", PREVIEW_CSS_MARKDOWN);
-        if (!css_fn.empty()) {
-          strOutput =
-              "<html><head><link rel='stylesheet' "
-              "type='text/css' href='file://" +
-              css_fn + "'></head><body>" + strOutput + "</body></html>";
-        }
+        strOutput = cmark_gfm(strBody);
       }
       break;
     case PREVIEW_FILETYPE_ASCIIDOC:
@@ -959,7 +947,8 @@ static PreviewFileType get_filetype_from_filename(std::string const &fn) {
     return PREVIEW_FILETYPE_GFM;
   } else if (SUBSTR("fountain", strFormat.c_str()) ||
              SUBSTR("spmd", strFormat.c_str())) {
-    if (GEANY_FILETYPES_FOUNTAIN != PREVIEW_FILETYPE_NOEXIST && bSetDocFileType) {
+    if (GEANY_FILETYPES_FOUNTAIN != PREVIEW_FILETYPE_NOEXIST &&
+        bSetDocFileType) {
       document_set_filetype(doc, filetypes[GEANY_FILETYPES_FOUNTAIN]);
     }
     return PREVIEW_FILETYPE_FOUNTAIN;

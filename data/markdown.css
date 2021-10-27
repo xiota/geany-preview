@@ -107,7 +107,7 @@ figcaption {
 	padding: 0;
 }
 
-table, td, th {
+table, thead, td, tr, th {
     border-collapse: collapse;
     border: 1px solid gray;
 }
@@ -115,7 +115,7 @@ table {
 	margin-top: 1rem;
 	margin-bottom: 1rem;
 }
-td {
+thead, td, tr, th {
 	padding: 0.25rem;
 }
 q { quotes: "“" "”" "‘" "’"; }

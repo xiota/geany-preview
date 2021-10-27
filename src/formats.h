@@ -19,6 +19,9 @@
 #ifndef PREVIEW_FORMATS_H
 #define PREVIEW_FORMATS_H
 
+#include <cmark-gfm-core-extensions.h>
+#include <cmark-gfm.h>
+
 #include <string>
 
 #include "plugin.h"
@@ -42,6 +45,10 @@ char *pandoc(char const *work_dir, char const *input, char const *in_format);
 char *asciidoctor(char const *work_dir, char const *input);
 char *screenplain(char const *work_dir, char const *input,
                   char const *out_format);
+
+static void addMarkdownExtension(cmark_parser *parser,
+                                 std::string const &extName);
+std::string cmark_gfm(std::string const &input);
 
 G_END_DECLS
 

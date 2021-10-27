@@ -244,3 +244,43 @@ char *screenplain(char const *work_dir, char const *input,
 
   return g_string_free(output, false);
 }
+
+// This function makes enabling cmark-gfm extensions easier
+static void addMarkdownExtension(cmark_parser *parser,
+                                 std::string const &extName) {
+  cmark_syntax_extension *ext = cmark_find_syntax_extension(extName.c_str());
+  if (ext) {
+    cmark_parser_attach_syntax_extension(parser, ext);
+  }
+}
+
+std::string cmark_gfm(std::string const &input) {
+  int options = CMARK_OPT_TABLE_PREFER_STYLE_ATTRIBUTES | CMARK_OPT_FOOTNOTES |
+                CMARK_OPT_SMART;
+
+  cmark_gfm_core_extensions_ensure_registered();
+
+  cmark_parser *parser = cmark_parser_new(options);
+
+  addMarkdownExtension(parser, "strikethrough");
+  addMarkdownExtension(parser, "table");
+
+  cmark_node *doc;
+  cmark_parser_feed(parser, input.c_str(), input.length());
+  doc = cmark_parser_finish(parser);
+  cmark_parser_free(parser);
+
+  // Render
+  std::string output = cstr_assign(cmark_render_html(doc, options, nullptr));
+  cmark_node_free(doc);
+
+  std::string css_fn = find_copy_css("markdown.css", PREVIEW_CSS_MARKDOWN);
+  if (!css_fn.empty()) {
+    output =
+        "<html><head><link rel='stylesheet' "
+        "type='text/css' href='file://" +
+        css_fn + "'></head><body>" + output + "</body></html>";
+  }
+
+  return output;
+}
