@@ -29,7 +29,6 @@
 
 #include <string>
 
-
 G_BEGIN_DECLS
 
 extern GeanyPlugin *geany_plugin;
@@ -126,18 +125,6 @@ static void wv_apply_settings();
 
 G_END_DECLS
 
-#ifndef g_clear_signal_handler
-#include "gobject/gsignal.h"
-// g_clear_signal_handler was added in glib 2.62
-#define g_clear_signal_handler(handler, instance)      \
-  do {                                                 \
-    if (handler != nullptr && *handler != 0) {         \
-      g_signal_handler_disconnect(instance, *handler); \
-      *handler = 0;                                    \
-    }                                                  \
-  } while (0)
-#endif  // g_clear_signal_handler
-
 #define GEANY_PSC(sig, cb)                                                  \
   plugin_signal_connect(geany_plugin, nullptr, (sig), true, G_CALLBACK(cb), \
                         nullptr)
@@ -167,5 +154,17 @@ G_END_DECLS
   } while (0)
 
 #define SUBSTR(needle, haystack) (strstr((haystack), (needle)) != nullptr)
+
+#ifndef g_clear_signal_handler
+#include "gobject/gsignal.h"
+// g_clear_signal_handler was added in glib 2.62
+#define g_clear_signal_handler(handler, instance)      \
+  do {                                                 \
+    if (handler != nullptr && *handler != 0) {         \
+      g_signal_handler_disconnect(instance, *handler); \
+      *handler = 0;                                    \
+    }                                                  \
+  } while (0)
+#endif  // g_clear_signal_handler
 
 #endif  // PREVIEW_PLUGIN_H

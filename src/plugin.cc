@@ -211,12 +211,7 @@ static bool preview_init(GeanyPlugin *plugin, gpointer data) {
 }
 
 static void preview_cleanup(GeanyPlugin *plugin, gpointer data) {
-  // fmt_prefs_deinit();
-  gtk_notebook_remove_page(gSideBarNotebook, gPreviewSideBarPageNumber);
-
-  gtk_widget_destroy(gWebView);
   gtk_widget_destroy(gScrolledWindow);
-
   gtk_widget_destroy(gPreviewMenu);
 
   g_clear_signal_handler(&gHandleSidebarSwitchPage,
