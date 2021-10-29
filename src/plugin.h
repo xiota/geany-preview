@@ -71,7 +71,7 @@ enum PreviewShortcuts {
   PREVIEW_KEY_EXPORT_HTML,
   PREVIEW_KEY_EXPORT_PDF,
 
-  PREVIEW_KEY_COUNT
+  PREVIEW_KEY_COUNT,
 };
 
 static bool preview_init(GeanyPlugin *plugin, gpointer data);

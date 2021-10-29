@@ -77,6 +77,15 @@ To allow plain text messages to be styled, the stylesheet is applied directly to
 
 When developing new `css` rules, it's more convenient to use one of the other stylesheets that's refreshed more frequently, like `markdown.css`. Then when you're done, copy the rules to the file you want to use for the `extra_css` option.
 
+> When Geany is first started, the tab is gray before the first Preview is generated.  Is there any way to change the color?
+
+Copy `/usr/share/geany/geany.css` to `~/.config/geany/geany.css`.  Restart Geany after adding rules similar to the following:
+```
+#geany-preview-sidebar-page {
+	background: white;
+}
+```
+
 > Can Preview show changes without having to scroll?
 
 I would like the preview to automatically scroll to the section being edited, but don't currently know how to program this.

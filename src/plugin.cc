@@ -183,11 +183,14 @@ static bool preview_init(GeanyPlugin *plugin, gpointer data) {
   gPreviewSideBarPageNumber = gtk_notebook_append_page(
       gSideBarNotebook, gScrolledWindow, gtk_label_new(_("Preview")));
 
+  // show preview pane
   gtk_widget_show_all(gScrolledWindow);
   gtk_notebook_set_current_page(gSideBarNotebook, gPreviewSideBarPageNumber);
 
   gSideBarPreviewPage =
       gtk_notebook_get_nth_page(gSideBarNotebook, gPreviewSideBarPageNumber);
+
+  gtk_widget_set_name(GTK_WIDGET(gSideBarPreviewPage), "geany-preview-sidebar-page");
 
   // signal handlers to update notebook
   gHandleSidebarSwitchPage =
@@ -205,6 +208,7 @@ static bool preview_init(GeanyPlugin *plugin, gpointer data) {
   if (gHandleTimeout == 0) {
     gHandleTimeout = g_timeout_add(2000, update_timeout_callback, nullptr);
   }
+
   return true;
 }
 
