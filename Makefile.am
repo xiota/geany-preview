@@ -19,7 +19,7 @@ cf_data_DATA = \
 	data/screenplain.css \
 	data/extra-dark.css \
 	data/extra-invert.css \
-	data/extra-media.css 
+	data/extra-media.css
 
 geany_plugindir = $(libdir)/geany
 geany_plugin_LTLIBRARIES = preview.la

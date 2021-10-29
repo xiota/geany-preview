@@ -28,12 +28,6 @@ std::string find_css(std::string const &css_fn) {
       cstr_assign(g_build_filename(geany_data->app->configdir, "plugins",
                                    "preview", css_fn.c_str(), nullptr));
 
-  // cache previous result to reduce filesystem access
-  static std::string prev = css_path;
-  if (prev == css_path) {
-    return css_path;
-  }
-
   std::string css_dn = cstr_assign(g_path_get_dirname(css_path.c_str()));
   g_mkdir_with_parents(css_dn.c_str(), 0755);
 
