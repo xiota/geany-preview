@@ -258,6 +258,7 @@ std::string cmark_gfm(std::string const &input) {
 
   addMarkdownExtension(parser, "strikethrough");
   addMarkdownExtension(parser, "table");
+  addMarkdownExtension(parser, "tasklist");
 
   cmark_node *doc;
   cmark_parser_feed(parser, input.c_str(), input.length());
