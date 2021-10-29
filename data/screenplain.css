@@ -1,12 +1,9 @@
-/* https://www.nfi.edu/screenplay-format/ */
-/* http://www.scriptwritingsecrets.com/DualDialogue.htm */
-
 html {
 	font-size: 8pt;
 }
 /* Styles for Screenplain */
 #wrapper {
-	font-family: "Courier Prime", "Courier Screenplay", Courier, monospace;
+	font-family: "Courier Prime", Courier, monospace;
 	font-size: 1em;
 	line-height: 1.0;
 	text-align: left;

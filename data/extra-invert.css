@@ -3,4 +3,9 @@ html {
 }
 img {
    filter: invert(100%);
+   opacity: .75;
+   transition: opacity .4s ease-in-out;
+}
+img:hover {
+   opacity: 1;
 }

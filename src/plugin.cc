@@ -288,8 +288,10 @@ static void on_toggle_editor_preview() {
       GtkWidget *page = gtk_notebook_get_nth_page(gSideBarNotebook,
                                                   gPreviewSideBarPageNumber);
       gtk_widget_child_focus(page, GTK_DIR_TAB_FORWARD);
+      g_signal_emit_by_name (G_OBJECT(gSideBarNotebook), "grab-focus", nullptr);
     } else {
       keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
+      g_signal_emit_by_name (G_OBJECT(gSideBarNotebook), "grab-notify", nullptr);
     }
   }
 }
