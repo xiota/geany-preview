@@ -43,7 +43,6 @@ void open_settings() {
       GKeyFileFlags(G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS),
       nullptr);
 
-  init_settings();
   load_settings(kf);
 
   GKEY_FILE_FREE(kf);
@@ -158,30 +157,4 @@ void load_settings(GKeyFile *kf) {
   LOAD_KEY_BOOLEAN(snippet_screenplain, true);
 
   LOAD_KEY_STRING(extra_css, "disabled");
-}
-
-void init_settings() {
-  settings.update_interval_slow = 200;
-  settings.size_factor_slow = 0.004;
-  settings.update_interval_fast = 25;
-  settings.size_factor_fast = 0.001;
-  settings.html_processor = g_strdup("native");
-  settings.markdown_processor = g_strdup("native");
-  settings.asciidoc_processor = g_strdup("asciidoctor");
-  settings.fountain_processor = g_strdup("screenplain");
-  settings.wiki_default = g_strdup("mediawiki");
-  settings.pandoc_disabled = false;
-  settings.pandoc_fragment = false;
-  settings.pandoc_toc = false;
-  settings.pandoc_markdown = g_strdup("markdown");
-  settings.default_font_family = g_strdup("serif");
-  settings.extended_types = true;
-  settings.snippet_window = 5000;
-  settings.snippet_trigger = 100000;
-  settings.snippet_html = false;
-  settings.snippet_markdown = true;
-  settings.snippet_asciidoctor = true;
-  settings.snippet_pandoc = true;
-  settings.snippet_screenplain = true;
-  settings.extra_css = g_strdup("disabled");
 }

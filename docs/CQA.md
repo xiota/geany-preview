@@ -131,7 +131,7 @@ To improve performance, updates are disabled when the preview is not visible or 
 
 > Why don't HTML documents don't look the same in Preview as in the Chromium (and Firefox)?
 
-Although the rendering engine used by the webview is related to the one in Chromium, it uses a default stylesheet that is different from the one used by Chromium.  You can add rules to your stylesheet or use a "stylesheet reset".
+Although the rendering engine used by the webview is related to the one in Chromium, it uses a default stylesheet that is different from the one used by Chromium.  The "quirks" modes may also be different.  You can try adding rules to your stylesheet or using a "stylesheet reset".  If formatting is important, test your documents in the target web browsers.
 
 > Why doesn't _____ context menu item work when _____?
 

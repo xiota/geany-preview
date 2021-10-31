@@ -190,7 +190,8 @@ static bool preview_init(GeanyPlugin *plugin, gpointer data) {
   gSideBarPreviewPage =
       gtk_notebook_get_nth_page(gSideBarNotebook, gPreviewSideBarPageNumber);
 
-  gtk_widget_set_name(GTK_WIDGET(gSideBarPreviewPage), "geany-preview-sidebar-page");
+  gtk_widget_set_name(GTK_WIDGET(gSideBarPreviewPage),
+                      "geany-preview-sidebar-page");
 
   // signal handlers to update notebook
   gHandleSidebarSwitchPage =
@@ -288,10 +289,10 @@ static void on_toggle_editor_preview() {
       GtkWidget *page = gtk_notebook_get_nth_page(gSideBarNotebook,
                                                   gPreviewSideBarPageNumber);
       gtk_widget_child_focus(page, GTK_DIR_TAB_FORWARD);
-      g_signal_emit_by_name (G_OBJECT(gSideBarNotebook), "grab-focus", nullptr);
+      g_signal_emit_by_name(G_OBJECT(gSideBarNotebook), "grab-focus", nullptr);
     } else {
       keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
-      g_signal_emit_by_name (G_OBJECT(gSideBarNotebook), "grab-notify", nullptr);
+      g_signal_emit_by_name(G_OBJECT(gSideBarNotebook), "grab-notify", nullptr);
     }
   }
 }
@@ -595,7 +596,6 @@ static void wv_apply_settings() {
           WEBKIT_USER_STYLE_LEVEL_AUTHOR, nullptr, nullptr);
       webkit_user_content_manager_add_style_sheet(gWebViewContentManager,
                                                   stylesheet);
-      webkit_user_style_sheet_unref(stylesheet);
     }
   }
 
@@ -619,7 +619,6 @@ static void wv_apply_settings() {
           WEBKIT_USER_STYLE_LEVEL_AUTHOR, nullptr, nullptr);
       webkit_user_content_manager_add_style_sheet(gWebViewContentManager,
                                                   stylesheet);
-      webkit_user_style_sheet_unref(stylesheet);
     }
   }
 }
@@ -658,6 +657,47 @@ static gboolean update_timeout_callback(gpointer user_data) {
   update_preview(false);
   gHandleTimeout = 0;
   return false;
+}
+
+static std::string &combine_head_body(std::string &strHead,
+                                      std::string &strOutput) {
+  trim_inplace(strHead);
+  if (!strHead.empty()) {
+    if (strOutput.substr(0, 1023).find("<body") != std::string::npos) {
+      try {
+        static const std::regex re_body(R"((<body[^>]*>))",
+                                        std::regex_constants::icase);
+        strHead =
+            "$1\n<pre class='geany_preview_headers'>" + strHead + "</pre>\n";
+        strOutput = std::regex_replace(strOutput, re_body, strHead);
+      } catch (std::regex_error &e) {
+        printf("regex error in combine_head_body\n");
+        print_regex_error(e);
+      }
+    } else {
+      strOutput = "<pre class='geany_preview_headers'>" + strHead + "</pre>\n" +
+                  strOutput;
+    }
+  }
+
+  if (strOutput.substr(0, 511).find("<style") == std::string::npos &&
+      strOutput.substr(0, 127).find("<!") != std::string::npos) {
+    if (strOutput.substr(0, 127).find("<head") != std::string::npos) {
+      try {
+        static const std::regex re_head(R"((<head[^>]*>))",
+                                        std::regex_constants::icase);
+        strOutput =
+            std::regex_replace(strOutput, re_head, "$1\n<style></style>");
+      } catch (std::regex_error &e) {
+        printf("regex error in combine_head_body\n");
+        print_regex_error(e);
+      }
+    } else {
+      size_t pos = strOutput.find(">");
+      strOutput.insert(pos, "<head><style></style></head>");
+    }
+  }
+  return strOutput;
 }
 
 static std::string update_preview(bool const bGetContents) {
@@ -746,8 +786,7 @@ static std::string update_preview(bool const bGetContents) {
   if (has_header) {
     // split head and body
     if (gFileType != PREVIEW_FILETYPE_FOUNTAIN) {
-      std::vector<std::string> lines;
-      lines = split_lines(strBody);
+      std::vector<std::string> lines = split_lines(strBody);
       strBody.clear();
 
       for (auto line : lines) {
@@ -897,25 +936,7 @@ static std::string update_preview(bool const bGetContents) {
       contents = strPlain;
     }
   } else {
-    if (strHead != "" && strHead != "\n") {
-      try {
-        if (!strHead.empty()) {
-          if (SUBSTR("<body", strOutput.c_str())) {
-            static const std::regex re_body(R"((<body[^>]*>))",
-                                            std::regex_constants::icase);
-            strHead = "$1\n<pre class='geany_preview_headers'>" + strHead +
-                      "</pre>\n";
-            strOutput = std::regex_replace(strOutput, re_body, strHead);
-          } else {
-            strOutput = "<pre class='geany_preview_headers'>" + strHead +
-                        "</pre>\n" + strOutput;
-          }
-        }
-      } catch (std::regex_error &e) {
-        printf("regex error in format header\n");
-        print_regex_error(e);
-      }
-    }
+    strOutput = combine_head_body(strHead, strOutput);
 
     // output to webview
     webkit_web_context_clear_cache(gWebViewContext);
@@ -951,80 +972,80 @@ static PreviewFileType get_filetype_from_string(std::string const &fn) {
     bSetDocFileType = true;
   }
 
-  if (SUBSTR("gfm", strFormat.c_str())) {
-    return PREVIEW_FILETYPE_GFM;
-  } else if (SUBSTR("fountain", strFormat.c_str()) ||
-             SUBSTR("spmd", strFormat.c_str())) {
-    if (GEANY_FILETYPES_FOUNTAIN != PREVIEW_FILETYPE_NOEXIST &&
+  if (strFormat.find("fountain") != std::string::npos ||
+      strFormat.find("spmd") != std::string::npos) {
+    if (PreviewFileType(GEANY_FILETYPES_FOUNTAIN) != PREVIEW_FILETYPE_NOEXIST &&
         bSetDocFileType) {
       document_set_filetype(doc, filetypes[GEANY_FILETYPES_FOUNTAIN]);
     }
     return PREVIEW_FILETYPE_FOUNTAIN;
-  } else if (SUBSTR("textile", strFormat.c_str())) {
-    return PREVIEW_FILETYPE_TEXTILE;
-  } else if (SUBSTR("txt", strFormat.c_str()) ||
-             SUBSTR("plain", strFormat.c_str())) {
-    return PREVIEW_FILETYPE_PLAIN;
-  } else if (SUBSTR("eml", strFormat.c_str())) {
-    return PREVIEW_FILETYPE_EMAIL;
-  } else if (SUBSTR("wiki", strFormat.c_str())) {
-    if (utils_str_equal("disable", settings.wiki_default)) {
-      return PREVIEW_FILETYPE_NONE;
-    } else if (SUBSTR("dokuwiki", strFormat.c_str())) {
-      return PREVIEW_FILETYPE_DOKUWIKI;
-    } else if (SUBSTR("tikiwiki", strFormat.c_str())) {
-      return PREVIEW_FILETYPE_TIKIWIKI;
-    } else if (SUBSTR("vimwiki", strFormat.c_str())) {
-      return PREVIEW_FILETYPE_VIMWIKI;
-    } else if (SUBSTR("twiki", strFormat.c_str())) {
-      return PREVIEW_FILETYPE_TWIKI;
-    } else if (SUBSTR("mediawiki", strFormat.c_str()) ||
-               SUBSTR("wikipedia", strFormat.c_str())) {
-      return PREVIEW_FILETYPE_MEDIAWIKI;
-    } else {
-      return PREVIEW_FILETYPE_WIKI;
-    }
-  } else if (SUBSTR("muse", strFormat.c_str())) {
-    return PREVIEW_FILETYPE_MUSE;
-  } else if (SUBSTR("org", strFormat.c_str())) {
-    return PREVIEW_FILETYPE_ORG;
-  } else if (SUBSTR("html", strFormat.c_str())) {
+  } else if (strFormat.find("html") != std::string::npos) {
     if (bSetDocFileType) {
       document_set_filetype(doc, filetypes[GEANY_FILETYPES_HTML]);
     }
     return PREVIEW_FILETYPE_HTML;
-  } else if (SUBSTR("markdown", strFormat.c_str())) {
+  } else if (strFormat.find("markdown") != std::string::npos) {
     if (bSetDocFileType) {
       document_set_filetype(doc, filetypes[GEANY_FILETYPES_MARKDOWN]);
     }
     return PREVIEW_FILETYPE_MARKDOWN;
-  } else if (SUBSTR("asciidoc", strFormat.c_str())) {
+  } else if (strFormat.find("txt") != std::string::npos ||
+             strFormat.find("plain") != std::string::npos) {
+    return PREVIEW_FILETYPE_PLAIN;
+  } else if (strFormat.find("gfm") != std::string::npos) {
+    return PREVIEW_FILETYPE_GFM;
+  } else if (strFormat.find("eml") != std::string::npos) {
+    return PREVIEW_FILETYPE_EMAIL;
+  } else if (strFormat.find("asciidoc") != std::string::npos) {
     if (bSetDocFileType) {
       document_set_filetype(doc, filetypes[GEANY_FILETYPES_ASCIIDOC]);
     }
     return PREVIEW_FILETYPE_ASCIIDOC;
-  } else if (SUBSTR("docbook", strFormat.c_str())) {
-    if (bSetDocFileType) {
-      document_set_filetype(doc, filetypes[GEANY_FILETYPES_DOCBOOK]);
-    }
-    return PREVIEW_FILETYPE_DOCBOOK;
-  } else if (SUBSTR("latex", strFormat.c_str())) {
+  } else if (strFormat.find("latex") != std::string::npos) {
     if (bSetDocFileType) {
       document_set_filetype(doc, filetypes[GEANY_FILETYPES_LATEX]);
     }
     return PREVIEW_FILETYPE_LATEX;
-  } else if (SUBSTR("rest", strFormat.c_str()) ||
-             SUBSTR("restructuredtext", strFormat.c_str())) {
+  } else if (strFormat.find("rest") != std::string::npos ||
+             strFormat.find("restructuredtext") != std::string::npos) {
     if (bSetDocFileType) {
       document_set_filetype(doc, filetypes[GEANY_FILETYPES_REST]);
     }
     return PREVIEW_FILETYPE_REST;
-  } else if (SUBSTR("txt2tags", strFormat.c_str()) ||
-             SUBSTR("t2t", strFormat.c_str())) {
+  } else if (strFormat.find("txt2tags") != std::string::npos ||
+             strFormat.find("t2t") != std::string::npos) {
     if (bSetDocFileType) {
       document_set_filetype(doc, filetypes[GEANY_FILETYPES_TXT2TAGS]);
     }
     return PREVIEW_FILETYPE_TXT2TAGS;
+  } else if (strFormat.find("textile") != std::string::npos) {
+    return PREVIEW_FILETYPE_TEXTILE;
+  } else if (strFormat.find("docbook") != std::string::npos) {
+    if (bSetDocFileType) {
+      document_set_filetype(doc, filetypes[GEANY_FILETYPES_DOCBOOK]);
+    }
+    return PREVIEW_FILETYPE_DOCBOOK;
+  } else if (strFormat.find("wiki") != std::string::npos) {
+    if (utils_str_equal("disable", settings.wiki_default)) {
+      return PREVIEW_FILETYPE_NONE;
+    } else if (strFormat.find("dokuwiki") != std::string::npos) {
+      return PREVIEW_FILETYPE_DOKUWIKI;
+    } else if (strFormat.find("tikiwiki") != std::string::npos) {
+      return PREVIEW_FILETYPE_TIKIWIKI;
+    } else if (strFormat.find("vimwiki") != std::string::npos) {
+      return PREVIEW_FILETYPE_VIMWIKI;
+    } else if (strFormat.find("twiki") != std::string::npos) {
+      return PREVIEW_FILETYPE_TWIKI;
+    } else if (strFormat.find("mediawiki") != std::string::npos ||
+               strFormat.find("wikipedia") != std::string::npos) {
+      return PREVIEW_FILETYPE_MEDIAWIKI;
+    } else {
+      return PREVIEW_FILETYPE_WIKI;
+    }
+  } else if (strFormat.find("muse") != std::string::npos) {
+    return PREVIEW_FILETYPE_MUSE;
+  } else if (strFormat.find("org") != std::string::npos) {
+    return PREVIEW_FILETYPE_ORG;
   }
 
   return PREVIEW_FILETYPE_NONE;
@@ -1059,6 +1080,7 @@ static PreviewFileType get_filetype(GeanyDocument *doc) {
       return PREVIEW_FILETYPE_FOUNTAIN;
       break;
     case GEANY_FILETYPES_NONE:
+    case GEANY_FILETYPES_XML:
       if (!settings.extended_types) {
         return PREVIEW_FILETYPE_NONE;
         break;
@@ -1101,8 +1123,8 @@ static bool use_snippets(GeanyDocument *doc) {
       std::string strFormat =
           to_lower(cstr_assign(g_path_get_basename(DOC_FILENAME(doc))));
       if (!strFormat.empty()) {
-        if (SUBSTR("fountain", strFormat.c_str()) ||
-            SUBSTR("spmd", strFormat.c_str())) {
+        if (strFormat.find("fountain") != std::string::npos ||
+            strFormat.find("spmd") != std::string::npos) {
           if (!settings.snippet_screenplain) {
             return false;
           }

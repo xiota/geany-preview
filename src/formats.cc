@@ -159,7 +159,7 @@ char *asciidoctor(char const *work_dir, char const *input) {
   std::string css_fn =
       find_copy_css("asciidoctor.css", PREVIEW_CSS_ASCIIDOCTOR);
   if (!css_fn.empty()) {
-    if (SUBSTR("</head>", output->str)) {
+    if (G_LIKELY(SUBSTR("</head>", output->str))) {
       try {
         std::string rep_text{
             "\n<link rel=\"stylesheet\" type=\"text/css\" href=\"file://"};

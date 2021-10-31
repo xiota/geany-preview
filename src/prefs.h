@@ -23,33 +23,45 @@
 
 G_BEGIN_DECLS
 
-struct PreviewSettings {
-  int update_interval_slow;
-  double size_factor_slow;
-  int update_interval_fast;
-  double size_factor_fast;
-  char *html_processor;
-  char *markdown_processor;
-  char *asciidoc_processor;
-  char *fountain_processor;
-  char *wiki_default;
-  bool pandoc_disabled;
-  bool pandoc_fragment;
-  bool pandoc_toc;
-  char *pandoc_markdown;
-  char *default_font_family;
-  bool extended_types;
-  int snippet_window;
-  int snippet_trigger;
-  bool snippet_html;
-  bool snippet_markdown;
-  bool snippet_asciidoctor;
-  bool snippet_pandoc;
-  bool snippet_screenplain;
-  char *extra_css;
+class PreviewSettings {
+ public:
+  PreviewSettings() {
+    html_processor = g_strdup("native");
+    markdown_processor = g_strdup("native");
+    asciidoc_processor = g_strdup("asciidoctor");
+    fountain_processor = g_strdup("screenplain");
+    wiki_default = g_strdup("mediawiki");
+    pandoc_markdown = g_strdup("markdown");
+    default_font_family = g_strdup("serif");
+    extra_css = g_strdup("disabled");
+  }
+
+ public:
+  int update_interval_slow = 200;
+  double size_factor_slow = 0.004;
+  int update_interval_fast = 25;
+  double size_factor_fast = 0.001;
+  char *html_processor = nullptr;
+  char *markdown_processor = nullptr;
+  char *asciidoc_processor = nullptr;
+  char *fountain_processor = nullptr;
+  char *wiki_default = nullptr;
+  bool pandoc_disabled = false;
+  bool pandoc_fragment = false;
+  bool pandoc_toc = false;
+  char *pandoc_markdown = nullptr;
+  char *default_font_family = nullptr;
+  bool extended_types = true;
+  int snippet_window = 5000;
+  int snippet_trigger = 100000;
+  bool snippet_html = false;
+  bool snippet_markdown = true;
+  bool snippet_asciidoctor = true;
+  bool snippet_pandoc = true;
+  bool snippet_screenplain = true;
+  char *extra_css = nullptr;
 };
 
-void init_settings();
 void open_settings();
 void load_settings(GKeyFile *kf);
 void save_settings();
