@@ -25,32 +25,29 @@ G_BEGIN_DECLS
 
 class PreviewSettings {
  public:
-  PreviewSettings() {
-    html_processor = g_strdup("native");
-    markdown_processor = g_strdup("native");
-    asciidoc_processor = g_strdup("asciidoctor");
-    fountain_processor = g_strdup("screenplain");
-    wiki_default = g_strdup("mediawiki");
-    pandoc_markdown = g_strdup("markdown");
-    default_font_family = g_strdup("serif");
-    extra_css = g_strdup("disabled");
-  }
+  PreviewSettings() = default;
+  ~PreviewSettings() = default;
+
+  void open();
+  void load(GKeyFile *kf);
+  void save();
+  void save_default();
 
  public:
   int update_interval_slow = 200;
   double size_factor_slow = 0.004;
   int update_interval_fast = 25;
   double size_factor_fast = 0.001;
-  char *html_processor = nullptr;
-  char *markdown_processor = nullptr;
-  char *asciidoc_processor = nullptr;
-  char *fountain_processor = nullptr;
-  char *wiki_default = nullptr;
+  std::string html_processor{"native"};
+  std::string markdown_processor{"native"};
+  std::string asciidoc_processor{"asciidoctor"};
+  std::string fountain_processor{"screenplain"};
+  std::string wiki_default{"mediawiki"};
   bool pandoc_disabled = false;
   bool pandoc_fragment = false;
   bool pandoc_toc = false;
-  char *pandoc_markdown = nullptr;
-  char *default_font_family = nullptr;
+  std::string pandoc_markdown{"markdown"};
+  std::string default_font_family{"serif"};
   bool extended_types = true;
   int snippet_window = 5000;
   int snippet_trigger = 100000;
@@ -59,13 +56,8 @@ class PreviewSettings {
   bool snippet_asciidoctor = true;
   bool snippet_pandoc = true;
   bool snippet_screenplain = true;
-  char *extra_css = nullptr;
+  std::string extra_css{"disabled"};
 };
-
-void open_settings();
-void load_settings(GKeyFile *kf);
-void save_settings();
-void save_default_settings();
 
 G_END_DECLS
 
@@ -77,56 +69,58 @@ G_END_DECLS
 #define SET_KEY(T, key, _val) \
   g_key_file_set_##T(kf, PLUGIN_GROUP, (key), (_val))
 
-#define LOAD_KEY_STRING(key, def)        \
+#define SET_KEY_STRING(key, _val) \
+  g_key_file_set_string(kf, PLUGIN_GROUP, (key), (_val.c_str()))
+
+#define GET_KEY_STRING(key, def)         \
   do {                                   \
     if (HAS_KEY(#key)) {                 \
       char *val = GET_KEY(string, #key); \
       if (val) {                         \
-        settings.key = g_strdup(val);    \
+        (key) = cstr_assign(val);        \
       } else {                           \
-        settings.key = g_strdup((def));  \
+        (key) = std::string(def);        \
       }                                  \
-      g_free(val);                       \
     }                                    \
   } while (0)
 
-#define LOAD_KEY_BOOLEAN(key, def)           \
-  do {                                       \
-    if (HAS_KEY(#key)) {                     \
-      settings.key = GET_KEY(boolean, #key); \
-    } else {                                 \
-      settings.key = (def);                  \
-    }                                        \
+#define GET_KEY_BOOLEAN(key, def)   \
+  do {                              \
+    if (HAS_KEY(#key)) {            \
+      key = GET_KEY(boolean, #key); \
+    } else {                        \
+      key = (def);                  \
+    }                               \
   } while (0)
 
-#define LOAD_KEY_INTEGER(key, def, min) \
+#define GET_KEY_INTEGER(key, def, min)  \
   do {                                  \
     if (HAS_KEY(#key)) {                \
       int val = GET_KEY(integer, #key); \
       if (val) {                        \
         if (val < (min)) {              \
-          settings.key = (min);         \
+          key = (min);                  \
         } else {                        \
-          settings.key = val;           \
+          key = val;                    \
         }                               \
       } else {                          \
-        settings.key = (def);           \
+        key = (def);                    \
       }                                 \
     }                                   \
   } while (0)
 
-#define LOAD_KEY_DOUBLE(key, def, min) \
+#define GET_KEY_DOUBLE(key, def, min)  \
   do {                                 \
     if (HAS_KEY(#key)) {               \
       int val = GET_KEY(double, #key); \
       if (val) {                       \
         if (val < (min)) {             \
-          settings.key = (min);        \
+          key = (min);                 \
         } else {                       \
-          settings.key = val;          \
+          key = val;                   \
         }                              \
       } else {                         \
-        settings.key = (def);          \
+        key = (def);                   \
       }                                \
     }                                  \
   } while (0)

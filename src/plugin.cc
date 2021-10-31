@@ -58,7 +58,7 @@ static ulong gHandleSidebarShow = 0;
 
 static GeanyDocument *gCurrentDocument = nullptr;
 
-extern struct PreviewSettings settings;
+PreviewSettings gSettings;
 
 PreviewFileType gFileType = PREVIEW_FILETYPE_NONE;
 GtkNotebook *gSideBarNotebook = nullptr;
@@ -117,7 +117,7 @@ static bool preview_init(GeanyPlugin *plugin, gpointer data) {
   geany_data = plugin->geany_data;
   gScrollY.resize(50, 0);
 
-  open_settings();
+  gSettings.open();
 
   // set up menu
   GeanyKeyGroup *group;
@@ -327,7 +327,7 @@ static void on_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog) {
 }
 
 static void on_pref_edit_config(GtkWidget *self, GtkWidget *dialog) {
-  open_settings();
+  gSettings.open();
   static std::string conf_fn =
       cstr_assign(g_build_filename(geany_data->app->configdir, "plugins",
                                    "preview", "preview.conf", nullptr));
@@ -341,16 +341,16 @@ static void on_pref_edit_config(GtkWidget *self, GtkWidget *dialog) {
 }
 
 static void on_pref_reload_config(GtkWidget *self, GtkWidget *dialog) {
-  open_settings();
+  gSettings.open();
   wv_apply_settings();
 }
 
 static void on_pref_save_config(GtkWidget *self, GtkWidget *dialog) {
-  save_settings();
+  gSettings.save();
 }
 
 static void on_pref_reset_config(GtkWidget *self, GtkWidget *dialog) {
-  save_default_settings();
+  gSettings.save_default();
 }
 
 static void on_menu_preferences(GtkWidget *self, GtkWidget *dialog) {
@@ -583,7 +583,7 @@ static void wv_apply_settings() {
   webkit_user_content_manager_remove_all_style_sheets(gWebViewContentManager);
 
   webkit_settings_set_default_font_family(gWebViewSettings,
-                                          settings.default_font_family);
+                                          gSettings.default_font_family.c_str());
 
   // attach headers css
   std::string css_fn = find_copy_css("preview.css", PREVIEW_CSS_HEADERS);
@@ -600,14 +600,14 @@ static void wv_apply_settings() {
   }
 
   // attach extra_css
-  css_fn = find_css(settings.extra_css);
+  css_fn = find_css(gSettings.extra_css);
   if (css_fn.empty()) {
-    if (utils_str_equal("extra-media.css", settings.extra_css)) {
-      css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_EXTRA_MEDIA);
-    } else if (utils_str_equal("extra-dark.css", settings.extra_css)) {
-      css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_EXTRA_DARK);
-    } else if (utils_str_equal("extra-invert.css", settings.extra_css)) {
-      css_fn = find_copy_css(settings.extra_css, PREVIEW_CSS_EXTRA_INVERT);
+    if (gSettings.extra_css == "extra-media.css") {
+      css_fn = find_copy_css(gSettings.extra_css, PREVIEW_CSS_EXTRA_MEDIA);
+    } else if (gSettings.extra_css == "extra-dark.css") {
+      css_fn = find_copy_css(gSettings.extra_css, PREVIEW_CSS_EXTRA_DARK);
+    } else if (gSettings.extra_css == "extra-invert.css") {
+      css_fn = find_copy_css(gSettings.extra_css, PREVIEW_CSS_EXTRA_INVERT);
     }
   }
 
@@ -741,32 +741,35 @@ static std::string update_preview(bool const bGetContents) {
   std::string strBody;
 
   // extract snippet for large document
-  int position = 0;
-  int line = sci_get_current_line(doc->editor->sci);
+  {
+    int position = 0;
+    int nLine = sci_get_current_line(doc->editor->sci);
 
-  int length = sci_get_length(doc->editor->sci);
-  if (gSnippetActive) {
-    if (line > 0) {
-      position = sci_get_position_from_line(doc->editor->sci, line);
-    }
-    int start = 0;
-    int end = 0;
-    int amount = settings.snippet_window / 3;
-    // get beginning and end and set scroll position
-    if (position > amount) {
-      start = position - amount;
-    } else {
-      start = 0;
-    }
-    if (position + 2 * amount > length) {
-      end = length;
-    } else {
-      end = position + 2 * amount;
-    }
+    int length = sci_get_length(doc->editor->sci);
+    if (gSnippetActive) {
+      if (nLine > 0) {
+        position = sci_get_position_from_line(doc->editor->sci, nLine);
+      }
+      int start = 0;
+      int end = 0;
+      int amount = gSettings.snippet_window / 3;
+      // get beginning and end and set scroll position
+      if (position > amount) {
+        start = position - amount;
+      } else {
+        start = 0;
+      }
+      if (position + 2 * amount > length) {
+        end = length;
+      } else {
+        end = position + 2 * amount;
+      }
 
-    strBody = cstr_assign(sci_get_contents_range(doc->editor->sci, start, end));
-  } else {
-    strBody = text;
+      strBody =
+          cstr_assign(sci_get_contents_range(doc->editor->sci, start, end));
+    } else {
+      strBody = text;
+    }
   }
 
   // check whether need to split head and body
@@ -825,54 +828,50 @@ static std::string update_preview(bool const bGetContents) {
 
   switch (gFileType) {
     case PREVIEW_FILETYPE_HTML:
-      if (utils_str_equal("disable", settings.html_processor)) {
+      if (gSettings.html_processor == "disable") {
         strPlain = _("Preview of HTML documents has been disabled.");
-      } else if (SUBSTR("pandoc", settings.html_processor))
-        strOutput = pandoc(work_dir.c_str(), strBody.c_str(), "html");
+      } else if (gSettings.html_processor.find("pandoc"))
+        strOutput = pandoc(work_dir, strBody, "html");
       else {
         strOutput = strBody;
       }
       break;
     case PREVIEW_FILETYPE_MARKDOWN:
-      if (utils_str_equal("disable", settings.markdown_processor)) {
+      if (gSettings.markdown_processor == "disable") {
         strPlain = _("Preview of Markdown documents has been disabled.");
-      } else if (SUBSTR("pandoc", settings.markdown_processor))
-        strOutput =
-            pandoc(work_dir.c_str(), strBody.c_str(), settings.pandoc_markdown);
+      } else if (gSettings.markdown_processor.find("pandoc"))
+        strOutput = pandoc(work_dir, strBody, gSettings.pandoc_markdown);
       else {
         strOutput = cmark_gfm(strBody);
       }
       break;
     case PREVIEW_FILETYPE_ASCIIDOC:
-      if (utils_str_equal("disable", settings.asciidoc_processor)) {
+      if (gSettings.asciidoc_processor == "disable") {
         strPlain = _("Preview of AsciiDoc documents has been disabled.");
       } else {
-        strOutput = cstr_assign(asciidoctor(work_dir.c_str(), strBody.c_str()));
+        strOutput = asciidoctor(work_dir, strBody);
       }
       break;
     case PREVIEW_FILETYPE_DOCBOOK:
-      strOutput =
-          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "docbook"));
+      strOutput = pandoc(work_dir, strBody, "docbook");
       break;
     case PREVIEW_FILETYPE_LATEX:
-      strOutput =
-          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "latex"));
+      strOutput = pandoc(work_dir, strBody, "latex");
       break;
     case PREVIEW_FILETYPE_REST:
-      strOutput = cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "rst"));
+      strOutput = pandoc(work_dir, strBody, "rst");
       break;
     case PREVIEW_FILETYPE_TXT2TAGS:
-      strOutput = cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "t2t"));
+      strOutput = pandoc(work_dir, strBody, "t2t");
       break;
     case PREVIEW_FILETYPE_GFM:
-      strOutput = cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "gfm"));
+      strOutput = pandoc(work_dir, strBody, "gfm");
       break;
     case PREVIEW_FILETYPE_FOUNTAIN:
-      if (utils_str_equal("disable", settings.fountain_processor)) {
+      if (gSettings.fountain_processor == "disable") {
         strPlain = _("Preview of Fountain screenplays has been disabled.");
-      } else if (utils_str_equal("screenplain", settings.fountain_processor)) {
-        strOutput =
-            cstr_assign(screenplain(work_dir.c_str(), strBody.c_str(), "html"));
+      } else if (gSettings.fountain_processor == "screenplain") {
+        strOutput = screenplain(work_dir, strBody, "html");
       } else {
         std::string css_fn =
             find_copy_css("fountain.css", PREVIEW_CSS_FOUNTAIN);
@@ -880,39 +879,31 @@ static std::string update_preview(bool const bGetContents) {
       }
       break;
     case PREVIEW_FILETYPE_TEXTILE:
-      strOutput =
-          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "textile"));
+      strOutput = pandoc(work_dir, strBody, "textile");
       break;
     case PREVIEW_FILETYPE_DOKUWIKI:
-      strOutput =
-          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "dokuwiki"));
+      strOutput = pandoc(work_dir, strBody, "dokuwiki");
       break;
     case PREVIEW_FILETYPE_TIKIWIKI:
-      strOutput =
-          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "tikiwiki"));
+      strOutput = pandoc(work_dir, strBody, "tikiwiki");
       break;
     case PREVIEW_FILETYPE_VIMWIKI:
-      strOutput =
-          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "vimwiki"));
+      strOutput = pandoc(work_dir, strBody, "vimwiki");
       break;
     case PREVIEW_FILETYPE_TWIKI:
-      strOutput =
-          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "twiki"));
+      strOutput = pandoc(work_dir, strBody, "twiki");
       break;
     case PREVIEW_FILETYPE_MEDIAWIKI:
-      strOutput =
-          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "mediawiki"));
+      strOutput = pandoc(work_dir, strBody, "mediawiki");
       break;
     case PREVIEW_FILETYPE_WIKI:
-      strOutput = cstr_assign(
-          pandoc(work_dir.c_str(), strBody.c_str(), settings.wiki_default));
+      strOutput = pandoc(work_dir, strBody, gSettings.wiki_default);
       break;
     case PREVIEW_FILETYPE_MUSE:
-      strOutput =
-          cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "muse"));
+      strOutput = pandoc(work_dir, strBody, "muse");
       break;
     case PREVIEW_FILETYPE_ORG:
-      strOutput = cstr_assign(pandoc(work_dir.c_str(), strBody.c_str(), "org"));
+      strOutput = pandoc(work_dir, strBody, "org");
       break;
     case PREVIEW_FILETYPE_PLAIN:
     case PREVIEW_FILETYPE_EMAIL: {
@@ -1026,7 +1017,7 @@ static PreviewFileType get_filetype_from_string(std::string const &fn) {
     }
     return PREVIEW_FILETYPE_DOCBOOK;
   } else if (strFormat.find("wiki") != std::string::npos) {
-    if (utils_str_equal("disable", settings.wiki_default)) {
+    if (gSettings.wiki_default == "disable") {
       return PREVIEW_FILETYPE_NONE;
     } else if (strFormat.find("dokuwiki") != std::string::npos) {
       return PREVIEW_FILETYPE_DOKUWIKI;
@@ -1081,7 +1072,7 @@ static PreviewFileType get_filetype(GeanyDocument *doc) {
       break;
     case GEANY_FILETYPES_NONE:
     case GEANY_FILETYPES_XML:
-      if (!settings.extended_types) {
+      if (!gSettings.extended_types) {
         return PREVIEW_FILETYPE_NONE;
         break;
       } else {
@@ -1099,23 +1090,23 @@ static bool use_snippets(GeanyDocument *doc) {
   g_return_val_if_fail(DOC_VALID(doc), false);
 
   const int length = sci_get_length(doc->editor->sci);
-  if (length <= settings.snippet_trigger) {
+  if (length <= gSettings.snippet_trigger) {
     return false;
   }
 
   switch (doc->file_type->id) {
     case GEANY_FILETYPES_ASCIIDOC:
-      if (!settings.snippet_asciidoctor) {
+      if (!gSettings.snippet_asciidoctor) {
         return false;
       }
       break;
     case GEANY_FILETYPES_HTML:
-      if (!settings.snippet_html) {
+      if (!gSettings.snippet_html) {
         return false;
       }
       break;
     case GEANY_FILETYPES_MARKDOWN:
-      if (!settings.snippet_markdown) {
+      if (!gSettings.snippet_markdown) {
         return false;
       }
       break;
@@ -1125,7 +1116,7 @@ static bool use_snippets(GeanyDocument *doc) {
       if (!strFormat.empty()) {
         if (strFormat.find("fountain") != std::string::npos ||
             strFormat.find("spmd") != std::string::npos) {
-          if (!settings.snippet_screenplain) {
+          if (!gSettings.snippet_screenplain) {
             return false;
           }
         }
@@ -1136,7 +1127,7 @@ static bool use_snippets(GeanyDocument *doc) {
     case GEANY_FILETYPES_REST:
     case GEANY_FILETYPES_TXT2TAGS:
     default:
-      if (!settings.snippet_pandoc) {
+      if (!gSettings.snippet_pandoc) {
         return false;
       }
       break;
@@ -1187,24 +1178,24 @@ static bool on_editor_notify(GObject *obj, GeanyEditor *editor,
     if (gFileType == PREVIEW_FILETYPE_NONE) {
       // slow update when unhandled filetype;
       // needed to catch filetype change
-      gHandleTimeout = g_timeout_add(5 * settings.update_interval_slow,
+      gHandleTimeout = g_timeout_add(5 * gSettings.update_interval_slow,
                                      update_timeout_callback, nullptr);
     } else if ((doc->file_type->id != GEANY_FILETYPES_ASCIIDOC &&
                 doc->file_type->id != GEANY_FILETYPES_NONE) ||
                (gFileType == PREVIEW_FILETYPE_FOUNTAIN &&
-                utils_str_equal("native", settings.fountain_processor))) {
+                gSettings.fountain_processor == "native")) {
       // delay for faster programs (native html/markdown/fountain and pandoc)
-      double _tt = (double)length * settings.size_factor_fast;
-      int timeout = (int)_tt > settings.update_interval_fast
+      double _tt = (double)length * gSettings.size_factor_fast;
+      int timeout = (int)_tt > gSettings.update_interval_fast
                         ? (int)_tt
-                        : settings.update_interval_fast;
+                        : gSettings.update_interval_fast;
       gHandleTimeout = g_timeout_add(timeout, update_timeout_callback, nullptr);
     } else {
       // delay for slower programs (asciidoctor and screenplain)
-      double _tt = (double)length * settings.size_factor_slow;
-      int timeout = (int)_tt > settings.update_interval_slow
+      double _tt = (double)length * gSettings.size_factor_slow;
+      int timeout = (int)_tt > gSettings.update_interval_slow
                         ? (int)_tt
-                        : settings.update_interval_slow;
+                        : gSettings.update_interval_slow;
       gHandleTimeout = g_timeout_add(timeout, update_timeout_callback, nullptr);
     }
   }
@@ -1225,7 +1216,7 @@ static void on_document_signal(GObject *obj, GeanyDocument *doc,
 
   // update only when update not already pending
   if (!gHandleTimeout) {
-    gHandleTimeout = g_timeout_add(settings.update_interval_fast,
+    gHandleTimeout = g_timeout_add(gSettings.update_interval_fast,
                                    update_timeout_callback, nullptr);
   }
 }

@@ -27,9 +27,7 @@
 #include "plugin.h"
 #include "process.h"
 
-G_BEGIN_DECLS
-
-extern struct PreviewSettings settings;
+extern struct PreviewSettings gSettings;
 
 enum PandocOptions {
   PANDOC_NONE = 0,
@@ -41,15 +39,16 @@ std::string find_css(std::string const &css_fn);
 std::string find_copy_css(std::string const &css_fn, std::string const &src);
 
 // wrappers around command line programs
-char *pandoc(char const *work_dir, char const *input, char const *in_format);
-char *asciidoctor(char const *work_dir, char const *input);
-char *screenplain(char const *work_dir, char const *input,
-                  char const *out_format);
+std::string pandoc(std::string const &work_dir, std::string const &input,
+                   std::string const &in_format);
+
+std::string asciidoctor(std::string const &work_dir, std::string const &input);
+
+std::string screenplain(std::string const &work_dir, std::string const &input,
+                        std::string const &out_format);
 
 static void addMarkdownExtension(cmark_parser *parser,
                                  std::string const &extName);
 std::string cmark_gfm(std::string const &input);
-
-G_END_DECLS
 
 #endif  // PREVIEW_FORMATS_H
