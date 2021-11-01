@@ -21,6 +21,7 @@
 #define FMT_PROCESS_H
 
 #include <string>
+#include <vector>
 
 #include "plugin.h"
 
@@ -29,10 +30,10 @@ G_BEGIN_DECLS
 typedef struct FmtProcess FmtProcess;
 
 FmtProcess *fmt_process_open(std::string const &work_dir,
-                             const char *const *argv);
+                             std::vector<std::string> const &argv_str);
 int fmt_process_close(FmtProcess *proc);
-bool fmt_process_run(FmtProcess *proc, const char *str_in, size_t in_len,
-                     GString *str_out);
+bool fmt_process_run(FmtProcess *proc, std::string const &str_in,
+                     std::string &str_out);
 
 G_END_DECLS
 

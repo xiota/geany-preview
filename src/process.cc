@@ -58,15 +58,21 @@ static void on_process_exited(GPid pid, int status, FmtProcess *proc) {
 }
 
 FmtProcess *fmt_process_open(std::string const &work_dir,
-                             char const *const *const argv) {
+                             std::vector<std::string> const &argv_str) {
   FmtProcess *proc;
   GError *error = nullptr;
   int fd_in = -1, fd_out = -1;
 
   proc = g_new0(FmtProcess, 1);
 
+  std::vector<char *> argv;
+  for (int i = 0; i < argv_str.size(); ++i) {
+    argv.push_back(const_cast<char *>(argv_str[i].c_str()));
+  }
+  argv.push_back(nullptr);
+
   if (!g_spawn_async_with_pipes(
-          work_dir.c_str(), (char **)argv, nullptr,
+          work_dir.c_str(), (char **)argv.data(), nullptr,
           GSpawnFlags(G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD), nullptr,
           nullptr, &proc->child_pid, &fd_in, &fd_out, nullptr, &error)) {
     g_warning(_("Failed to create subprocess: %s"), error->message);
@@ -110,23 +116,23 @@ int fmt_process_close(FmtProcess *proc) {
   return ret_code;
 }
 
-bool fmt_process_run(FmtProcess *proc, char const *const str_in, size_t in_len,
-                     GString *str_out) {
+bool fmt_process_run(FmtProcess *proc, std::string const &str_in,
+                     std::string &str_out) {
   GIOStatus status;
   GError *error = nullptr;
   bool read_complete = false;
   size_t in_off = 0;
 
-  if (str_in && in_len) {
-    do {  // until all text is pushed into process's stdin
-
+  if (!str_in.empty()) {
+    do {
+      // until all text is pushed into process's stdin
       size_t bytes_written = 0;
-      size_t write_size_remaining = in_len - in_off;
+      size_t write_size_remaining = str_in.size() - in_off;
       size_t size_to_write = MIN(write_size_remaining, IO_BUF_SIZE);
 
       // Write some data to process's stdin
       error = nullptr;
-      status = g_io_channel_write_chars(proc->ch_in, str_in + in_off,
+      status = g_io_channel_write_chars(proc->ch_in, str_in.c_str() + in_off,
                                         size_to_write, &bytes_written, &error);
 
       in_off += bytes_written;
@@ -138,7 +144,7 @@ bool fmt_process_run(FmtProcess *proc, char const *const str_in, size_t in_len,
         return false;
       }
 
-    } while (in_off < in_len);
+    } while (in_off < str_in.size());
   }
 
   // Flush it and close it down
@@ -157,7 +163,7 @@ bool fmt_process_run(FmtProcess *proc, char const *const str_in, size_t in_len,
         g_io_channel_read_to_end(proc->ch_out, &tail_string, &tail_len, &error);
 
     if (tail_len > 0) {
-      g_string_append_len(str_out, tail_string, tail_len);
+      str_out.append(tail_string);
     }
 
     GFREE(tail_string);

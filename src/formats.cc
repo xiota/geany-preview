@@ -72,21 +72,21 @@ std::string pandoc(std::string const &work_dir, std::string const &input,
            std::string("</pre>");
   }
 
-  std::vector<char *> args;
-  args.push_back(g_strdup("pandoc"));
+  std::vector<std::string> args_str;
+  args_str.push_back("pandoc");
 
   if (!from_format.empty()) {
-    args.push_back(g_strdup_printf("--from=%s", from_format.c_str()));
+    args_str.push_back("--from=" + from_format);
   }
-  args.push_back(g_strdup("--to=html"));
-  args.push_back(g_strdup("--quiet"));
+  args_str.push_back("--to=html");
+  args_str.push_back("--quiet");
 
   if (!gSettings.pandoc_fragment) {
-    args.push_back(g_strdup("--standalone"));
+    args_str.push_back("--standalone");
   }
   if (gSettings.pandoc_toc) {
-    args.push_back(g_strdup("--toc"));
-    args.push_back(g_strdup("--toc-depth=6"));
+    args_str.push_back("--toc");
+    args_str.push_back("--toc-depth=6");
   }
 
   // use pandoc-format.css file from user config dir
@@ -97,28 +97,25 @@ std::string pandoc(std::string const &work_dir, std::string const &input,
     css_fn = find_copy_css("pandoc.css", PREVIEW_CSS_PANDOC);
   }
   if (!css_fn.empty()) {
-    args.push_back(g_strdup_printf("--css=%s", css_fn.c_str()));
+    args_str.push_back("--css=" + css_fn);
   }
 
-  // end of args
-  args.push_back(nullptr);
-
-  FmtProcess *proc = fmt_process_open(work_dir, (char **)args.data());
+  // run program
+  FmtProcess *proc = fmt_process_open(work_dir, args_str);
 
   if (!proc) {
     // command not found, FmtProcess will print warning
     return {};
   }
 
-  GString *output = g_string_sized_new(input.length());
-  if (!fmt_process_run(proc, input.c_str(), input.length(), output)) {
+  std::string strOutput;
+  if (!fmt_process_run(proc, input, strOutput)) {
     g_warning(_("Failed to format document range"));
-    GSTRING_FREE(output);
     fmt_process_close(proc);
     return {};
   }
 
-  return cstr_assign(g_string_free(output, false));
+  return strOutput;
 }
 
 std::string asciidoctor(std::string const &work_dir, std::string const &input) {
@@ -126,34 +123,30 @@ std::string asciidoctor(std::string const &work_dir, std::string const &input) {
     return {};
   }
 
-  std::vector<char *> args;
-  args.push_back(g_strdup("asciidoctor"));
+  std::vector<std::string> args_str;
+  args_str.push_back("asciidoctor");
 
   if (!work_dir.empty()) {
-    args.push_back(g_strdup_printf("--base-dir=%s", work_dir.c_str()));
+    args_str.push_back("--base-dir=" + work_dir);
   }
-  args.push_back(g_strdup("--quiet"));
-  args.push_back(g_strdup("--out-file=-"));
-  args.push_back(g_strdup("-"));
-  args.push_back(nullptr);  // end of args
+  args_str.push_back("--quiet");
+  args_str.push_back("--out-file=-");
+  args_str.push_back("-");
 
-  FmtProcess *proc =
-      fmt_process_open(work_dir, (char **)args.data());
+  // run program
+  FmtProcess *proc = fmt_process_open(work_dir, args_str);
 
   if (!proc) {
     // command not found
     return {};
   }
 
-  GString *output = g_string_sized_new(input.length());
-  if (!fmt_process_run(proc, input.c_str(), input.length(), output)) {
+  std::string strOutput;
+  if (!fmt_process_run(proc, input, strOutput)) {
     g_warning(_("Failed to format document range"));
-    GSTRING_FREE(output);
     fmt_process_close(proc);
     return {};
   }
-
-  std::string strOutput = cstr_assign(g_string_free(output, false));
 
   // attach asciidoctor.css if it exists
   std::string css_fn =
@@ -184,13 +177,13 @@ std::string screenplain(std::string const &work_dir, std::string const &input,
     return {};
   }
 
-  std::vector<char *> args;
-  args.push_back(g_strdup("screenplain"));
+  std::vector<std::string> args_str;
+  args_str.push_back("screenplain");
 
   if (!to_format.empty()) {
-    args.push_back(g_strdup_printf("--format=%s", to_format.c_str()));
+    args_str.push_back("--format=" + to_format);
   } else {
-    args.push_back(g_strdup("--format=html"));
+    args_str.push_back("--format=html");
   }
 
   // use screenplain.css file from user config dir
@@ -198,30 +191,25 @@ std::string screenplain(std::string const &work_dir, std::string const &input,
   std::string css = cstr_assign(g_strdup("screenplain.css"));
   std::string css_fn = find_copy_css(css, PREVIEW_CSS_SCREENPLAIN);
   if (!css_fn.empty()) {
-    args.push_back(g_strdup_printf("--css=%s", css_fn.c_str()));
+    args_str.push_back("--css=" + css_fn);
   }
 
-  // end of args
-  args.push_back(nullptr);
-
   // run program
-  FmtProcess *proc =
-      fmt_process_open(work_dir, (char **)args.data());
+  FmtProcess *proc = fmt_process_open(work_dir, args_str);
 
   if (!proc) {
     // command not found, FmtProcess will print warning
     return {};
   }
 
-  GString *output = g_string_sized_new(input.length());
-  if (!fmt_process_run(proc, input.c_str(), input.length(), output)) {
+  std::string strOutput;
+  if (!fmt_process_run(proc, input, strOutput)) {
     g_warning(_("Failed to format document range"));
-    GSTRING_FREE(output);
     fmt_process_close(proc);
     return nullptr;
   }
 
-  return cstr_assign(g_string_free(output, false));
+  return strOutput;
 }
 
 // This function makes enabling cmark-gfm extensions easier
