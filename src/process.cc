@@ -57,7 +57,7 @@ static void on_process_exited(GPid pid, int status, FmtProcess *proc) {
   proc->return_code = status;
 }
 
-FmtProcess *fmt_process_open(char const *const work_dir,
+FmtProcess *fmt_process_open(std::string const &work_dir,
                              char const *const *const argv) {
   FmtProcess *proc;
   GError *error = nullptr;
@@ -66,7 +66,7 @@ FmtProcess *fmt_process_open(char const *const work_dir,
   proc = g_new0(FmtProcess, 1);
 
   if (!g_spawn_async_with_pipes(
-          work_dir, (char **)argv, nullptr,
+          work_dir.c_str(), (char **)argv, nullptr,
           GSpawnFlags(G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD), nullptr,
           nullptr, &proc->child_pid, &fd_in, &fd_out, nullptr, &error)) {
     g_warning(_("Failed to create subprocess: %s"), error->message);

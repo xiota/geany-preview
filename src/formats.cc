@@ -72,21 +72,21 @@ std::string pandoc(std::string const &work_dir, std::string const &input,
            std::string("</pre>");
   }
 
-  GPtrArray *args = g_ptr_array_new_with_free_func(g_free);
-  g_ptr_array_add(args, g_strdup("pandoc"));
+  std::vector<char *> args;
+  args.push_back(g_strdup("pandoc"));
 
   if (!from_format.empty()) {
-    g_ptr_array_add(args, g_strdup_printf("--from=%s", from_format.c_str()));
+    args.push_back(g_strdup_printf("--from=%s", from_format.c_str()));
   }
-  g_ptr_array_add(args, g_strdup("--to=html"));
-  g_ptr_array_add(args, g_strdup("--quiet"));
+  args.push_back(g_strdup("--to=html"));
+  args.push_back(g_strdup("--quiet"));
 
   if (!gSettings.pandoc_fragment) {
-    g_ptr_array_add(args, g_strdup("--standalone"));
+    args.push_back(g_strdup("--standalone"));
   }
   if (gSettings.pandoc_toc) {
-    g_ptr_array_add(args, g_strdup("--toc"));
-    g_ptr_array_add(args, g_strdup("--toc-depth=6"));
+    args.push_back(g_strdup("--toc"));
+    args.push_back(g_strdup("--toc-depth=6"));
   }
 
   // use pandoc-format.css file from user config dir
@@ -97,20 +97,18 @@ std::string pandoc(std::string const &work_dir, std::string const &input,
     css_fn = find_copy_css("pandoc.css", PREVIEW_CSS_PANDOC);
   }
   if (!css_fn.empty()) {
-    g_ptr_array_add(args, g_strdup_printf("--css=%s", css_fn.c_str()));
+    args.push_back(g_strdup_printf("--css=%s", css_fn.c_str()));
   }
 
   // end of args
-  g_ptr_array_add(args, nullptr);
+  args.push_back(nullptr);
 
-  FmtProcess *proc =
-      fmt_process_open(work_dir.c_str(), (char const *const *)args->pdata);
+  FmtProcess *proc = fmt_process_open(work_dir, (char **)args.data());
 
   if (!proc) {
     // command not found, FmtProcess will print warning
     return {};
   }
-  g_ptr_array_free(args, true);
 
   GString *output = g_string_sized_new(input.length());
   if (!fmt_process_run(proc, input.c_str(), input.length(), output)) {
@@ -128,25 +126,24 @@ std::string asciidoctor(std::string const &work_dir, std::string const &input) {
     return {};
   }
 
-  GPtrArray *args = g_ptr_array_new_with_free_func(g_free);
-  g_ptr_array_add(args, g_strdup("asciidoctor"));
+  std::vector<char *> args;
+  args.push_back(g_strdup("asciidoctor"));
 
   if (!work_dir.empty()) {
-    g_ptr_array_add(args, g_strdup_printf("--base-dir=%s", work_dir.c_str()));
+    args.push_back(g_strdup_printf("--base-dir=%s", work_dir.c_str()));
   }
-  g_ptr_array_add(args, g_strdup("--quiet"));
-  g_ptr_array_add(args, g_strdup("--out-file=-"));
-  g_ptr_array_add(args, g_strdup("-"));
-  g_ptr_array_add(args, nullptr);  // end of args
+  args.push_back(g_strdup("--quiet"));
+  args.push_back(g_strdup("--out-file=-"));
+  args.push_back(g_strdup("-"));
+  args.push_back(nullptr);  // end of args
 
   FmtProcess *proc =
-      fmt_process_open(work_dir.c_str(), (char const *const *)args->pdata);
+      fmt_process_open(work_dir, (char **)args.data());
 
   if (!proc) {
     // command not found
     return {};
   }
-  g_ptr_array_free(args, true);
 
   GString *output = g_string_sized_new(input.length());
   if (!fmt_process_run(proc, input.c_str(), input.length(), output)) {
@@ -187,13 +184,13 @@ std::string screenplain(std::string const &work_dir, std::string const &input,
     return {};
   }
 
-  GPtrArray *args = g_ptr_array_new_with_free_func(g_free);
-  g_ptr_array_add(args, g_strdup("screenplain"));
+  std::vector<char *> args;
+  args.push_back(g_strdup("screenplain"));
 
   if (!to_format.empty()) {
-    g_ptr_array_add(args, g_strdup_printf("--format=%s", to_format.c_str()));
+    args.push_back(g_strdup_printf("--format=%s", to_format.c_str()));
   } else {
-    g_ptr_array_add(args, g_strdup("--format=html"));
+    args.push_back(g_strdup("--format=html"));
   }
 
   // use screenplain.css file from user config dir
@@ -201,21 +198,20 @@ std::string screenplain(std::string const &work_dir, std::string const &input,
   std::string css = cstr_assign(g_strdup("screenplain.css"));
   std::string css_fn = find_copy_css(css, PREVIEW_CSS_SCREENPLAIN);
   if (!css_fn.empty()) {
-    g_ptr_array_add(args, g_strdup_printf("--css=%s", css_fn.c_str()));
+    args.push_back(g_strdup_printf("--css=%s", css_fn.c_str()));
   }
 
   // end of args
-  g_ptr_array_add(args, nullptr);
+  args.push_back(nullptr);
 
   // run program
   FmtProcess *proc =
-      fmt_process_open(work_dir.c_str(), (char const *const *)args->pdata);
+      fmt_process_open(work_dir, (char **)args.data());
 
   if (!proc) {
     // command not found, FmtProcess will print warning
     return {};
   }
-  g_ptr_array_free(args, true);
 
   GString *output = g_string_sized_new(input.length());
   if (!fmt_process_run(proc, input.c_str(), input.length(), output)) {
