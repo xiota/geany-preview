@@ -60,4 +60,4 @@ std::string file_get_contents(std::string const &filename);
 bool file_set_contents(std::string const &filename,
                        std::string const &contents);
 
-void print_regex_error(std::regex_error &e);
+void print_regex_error(std::regex_error &e, char const *file, int const line);

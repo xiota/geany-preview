@@ -144,8 +144,7 @@ bool isSceneHeader(std::string const &input) {
       return true;
     }
   } catch (std::regex_error &e) {
-    printf("regex error in isSceneHeader\n");
-    print_regex_error(e);
+    print_regex_error(e, __FILE__, __LINE__);
   }
   return false;
 }
@@ -578,8 +577,7 @@ std::string Script::parseNodeText(std::string const &input) {
 
     return output;
   } catch (std::regex_error &e) {
-    printf("regex error in parseNodeText\n");
-    print_regex_error(e);
+    print_regex_error(e, __FILE__, __LINE__);
     return input;
   }
 }
@@ -605,8 +603,7 @@ void Script::parseFountain(std::string const &text) {
 
     lines = split_lines(strTmp);
   } catch (std::regex_error &e) {
-    printf("regex error in parseFountain\n");
-    print_regex_error(e);
+    print_regex_error(e, __FILE__, __LINE__);
   }
 
   // determine whether to try to extract header
@@ -618,8 +615,7 @@ void Script::parseFountain(std::string const &text) {
       has_header = true;
     }
   } catch (std::regex_error &e) {
-    printf("regex error in header check\n");
-    print_regex_error(e);
+    print_regex_error(e, __FILE__, __LINE__);
   }
 
   // used for synposis
@@ -937,8 +933,7 @@ std::string ftn2screenplain(std::string const &input,
     static const std::regex re_newlines(R"(\n+)");
     output = std::regex_replace(output, re_newlines, "\n");
   } catch (std::regex_error &e) {
-    printf("regex error in ftn2screenplain\n");
-    print_regex_error(e);
+    print_regex_error(e, __FILE__, __LINE__);
   }
 
   return output;
@@ -1025,8 +1020,7 @@ std::string ftn2textplay(std::string const &input, std::string const &css_fn) {
     //   <span class="revised"></span>
 
   } catch (std::regex_error &e) {
-    printf("regex error in ftn2textplay\n");
-    print_regex_error(e);
+    print_regex_error(e, __FILE__, __LINE__);
   }
 
   return output;
@@ -1113,8 +1107,7 @@ std::string ftn2fdx(std::string const &input) {
     static const std::regex re_newlines(R"(\n+)");
     output = std::regex_replace(output, re_newlines, "\n");
   } catch (std::regex_error &e) {
-    printf("regex error in ftn2fdx\n");
-    print_regex_error(e);
+    print_regex_error(e, __FILE__, __LINE__);
   }
 
   return output;
@@ -1144,8 +1137,7 @@ std::string ftn2xml(std::string const &input, std::string const &css_fn) {
     static const std::regex re_newlines(R"(\n+)");
     output = std::regex_replace(output, re_newlines, "\n");
   } catch (std::regex_error &e) {
-    printf("regex error in ftn2xml\n");
-    print_regex_error(e);
+    print_regex_error(e, __FILE__, __LINE__);
   }
 
   return output;
@@ -1325,8 +1317,7 @@ std::string &decode_entities_inplace(std::string &input) {
       replace_all_inplace(input, "&#46;", ".");
     }
   } catch (std::regex_error &e) {
-    printf("regex error in ftn2pdf\n");
-    print_regex_error(e);
+    print_regex_error(e, __FILE__, __LINE__);
   }
   return input;
 }

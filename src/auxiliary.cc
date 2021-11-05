@@ -144,84 +144,92 @@ bool file_set_contents(std::string const &filename,
   }
 }
 
-void print_regex_error(std::regex_error &e) {
+void print_regex_error(std::regex_error &e, char const *file, int const line) {
   switch (e.code()) {
     case std::regex_constants::error_collate:
-      fprintf(
-          stderr,
-          "%d: The expression contained an invalid collating element name.\n",
-          e.code());
+      fprintf(stderr,
+              "%s:%d / %d: The expression contained an invalid collating "
+              "element name.\n",
+              file, line, e.code());
       break;
     case std::regex_constants::error_ctype:
       fprintf(stderr,
-              "%d: The expression contained an invalid character class name.\n",
-              e.code());
+              "%s:%d / %d: The expression contained an invalid character"
+              " class name.\n",
+              file, line, e.code());
       break;
     case std::regex_constants::error_escape:
-      fprintf(stderr,
-              "%d: The expression contained an invalid escaped character, "
-              "or a trailing escape.\n",
-              e.code());
+      fprintf(
+          stderr,
+          "%s:%d / %d: The expression contained an invalid escaped character, "
+          "or a trailing escape.\n",
+          file, line, e.code());
       break;
     case std::regex_constants::error_backref:
-      fprintf(stderr,
-              "%d: The expression contained an invalid back reference.\n",
-              e.code());
+      fprintf(
+          stderr,
+          "%s:%d / %d: The expression contained an invalid back reference.\n",
+          file, line, e.code());
       break;
     case std::regex_constants::error_brack:
       fprintf(stderr,
-              "%d: The expression contained mismatched brackets ([ and ]).\n",
-              e.code());
+              "%s:%d / %d: The expression contained mismatched brackets "
+              "([ and ]).\n",
+              file, line, e.code());
       break;
     case std::regex_constants::error_paren:
-      fprintf(
-          stderr,
-          "%d: The expression contained mismatched parentheses (( and )).\n",
-          e.code());
+      fprintf(stderr,
+              "%s:%d / %d: The expression contained mismatched parentheses "
+              "(( and )).\n",
+              file, line, e.code());
       break;
     case std::regex_constants::error_brace:
-      fprintf(stderr,
-              "%d: The expression contained mismatched braces ({ and }).\n",
-              e.code());
+      fprintf(
+          stderr,
+          "%s:%d / %d: The expression contained mismatched braces ({ and }).\n",
+          file, line, e.code());
       break;
     case std::regex_constants::error_badbrace:
       fprintf(stderr,
-              "%d: The expression contained an invalid range between braces "
-              "({ and }).\n",
-              e.code());
+              "%s:%d / %d: The expression contained an invalid range between "
+              "braces ({ and }).\n",
+              file, line, e.code());
       break;
     case std::regex_constants::error_range:
-      fprintf(stderr,
-              "%d: The expression contained an invalid character range.\n",
-              e.code());
+      fprintf(
+          stderr,
+          "%s:%d / %d: The expression contained an invalid character range.\n",
+          file, line, e.code());
       break;
     case std::regex_constants::error_space:
-      fprintf(stderr,
-              "%d: There was insufficient memory to convert the expression "
-              "into a finite state machine.\n",
-              e.code());
+      fprintf(
+          stderr,
+          "%s:%d / %d: There was insufficient memory to convert the expression "
+          "into a finite state machine.\n",
+          file, line, e.code());
       break;
     case std::regex_constants::error_badrepeat:
-      fprintf(
-          stderr,
-          "%d: The expression contained a repeat specifier (one of *?+{) that "
-          "was not preceded by a valid regular expression.\n",
-          e.code());
+      fprintf(stderr,
+              "%s:%d / %d: The expression contained a repeat specifier (one of "
+              "*?+{) that was not preceded by a valid regular expression.\n",
+              file, line, e.code());
       break;
     case std::regex_constants::error_complexity:
-      fprintf(stderr,
-              "%d: The complexity of an attempted match against a regular "
-              "expression exceeded a pre-set level.\n",
-              e.code());
-      break;
-    case std::regex_constants::error_stack:
       fprintf(
           stderr,
-          "%d: There was insufficient memory to determine whether the regular "
-          "expression could match the specified character sequence.\n",
-          e.code());
+          "%s:%d / %d: The complexity of an attempted match against a regular "
+          "expression exceeded a pre-set level.\n",
+          file, line, e.code());
+      break;
+    case std::regex_constants::error_stack:
+      fprintf(stderr,
+              "%s:%d / %d: There was insufficient memory to determine "
+              "whether the regular expression could match the specified "
+              "character sequence.\n",
+              file, line, e.code());
       break;
     default:
-      fprintf(stderr, "%d: unknown regex error\n", e.code());
+      fprintf(stderr, "%s:%d / %d: unknown regex error\n", file, line,
+              e.code());
   }
 }

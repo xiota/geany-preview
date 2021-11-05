@@ -286,13 +286,11 @@ static void on_toggle_editor_preview() {
         gtk_widget_is_visible(GTK_WIDGET(gSideBarNotebook))) {
       gtk_notebook_set_current_page(gSideBarNotebook,
                                     gPreviewSideBarPageNumber);
-      GtkWidget *page = gtk_notebook_get_nth_page(gSideBarNotebook,
-                                                  gPreviewSideBarPageNumber);
-      gtk_widget_child_focus(page, GTK_DIR_TAB_FORWARD);
       g_signal_emit_by_name(G_OBJECT(gSideBarNotebook), "grab-focus", nullptr);
+      gtk_widget_grab_focus(GTK_WIDGET(gWebView));
     } else {
-      keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
       g_signal_emit_by_name(G_OBJECT(gSideBarNotebook), "grab-notify", nullptr);
+      keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
     }
   }
 }
@@ -582,8 +580,8 @@ static void wv_save_position() {
 static void wv_apply_settings() {
   webkit_user_content_manager_remove_all_style_sheets(gWebViewContentManager);
 
-  webkit_settings_set_default_font_family(gWebViewSettings,
-                                          gSettings.default_font_family.c_str());
+  webkit_settings_set_default_font_family(
+      gWebViewSettings, gSettings.default_font_family.c_str());
 
   // attach headers css
   std::string css_fn = find_copy_css("preview.css", PREVIEW_CSS_HEADERS);
@@ -671,8 +669,7 @@ static std::string &combine_head_body(std::string &strHead,
             "$1\n<pre class='geany_preview_headers'>" + strHead + "</pre>\n";
         strOutput = std::regex_replace(strOutput, re_body, strHead);
       } catch (std::regex_error &e) {
-        printf("regex error in combine_head_body\n");
-        print_regex_error(e);
+        print_regex_error(e, __FILE__, __LINE__);
       }
     } else {
       strOutput = "<pre class='geany_preview_headers'>" + strHead + "</pre>\n" +
@@ -689,8 +686,7 @@ static std::string &combine_head_body(std::string &strHead,
         strOutput =
             std::regex_replace(strOutput, re_head, "$1\n<style></style>");
       } catch (std::regex_error &e) {
-        printf("regex error in combine_head_body\n");
-        print_regex_error(e);
+        print_regex_error(e, __FILE__, __LINE__);
       }
     } else {
       size_t pos = strOutput.find(">");
@@ -781,8 +777,7 @@ static std::string update_preview(bool const bGetContents) {
       has_header = true;
     }
   } catch (std::regex_error &e) {
-    fprintf(stderr, "regex error in header check\n");
-    print_regex_error(e);
+    print_regex_error(e, __FILE__, __LINE__);
   }
 
   // get format and split head/body
@@ -821,8 +816,7 @@ static std::string update_preview(bool const bGetContents) {
         }
       }
     } catch (std::regex_error &e) {
-      printf("regex error in format header\n");
-      print_regex_error(e);
+      print_regex_error(e, __FILE__, __LINE__);
     }
   }
 
