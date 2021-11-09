@@ -1,4 +1,4 @@
-/* -*- C++ -*-
+/*
  * process.h
  *
  * Copyright 2013 Matthew <mbrush@codebrainz.ca>
@@ -17,15 +17,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef FMT_PROCESS_H
-#define FMT_PROCESS_H
+#pragma once
 
 #include <string>
 #include <vector>
 
-#include "plugin.h"
-
-G_BEGIN_DECLS
+#include "tkui_addons.h"
 
 typedef struct FmtProcess FmtProcess;
 
@@ -34,19 +31,3 @@ FmtProcess *fmt_process_open(std::string const &work_dir,
 int fmt_process_close(FmtProcess *proc);
 bool fmt_process_run(FmtProcess *proc, std::string const &str_in,
                      std::string &str_out);
-
-G_END_DECLS
-
-#define GFREE(_z_) \
-  do {             \
-    g_free(_z_);   \
-    _z_ = nullptr; \
-  } while (0)
-
-#define GERROR_FREE(_z_) \
-  do {                   \
-    g_error_free(_z_);   \
-    _z_ = nullptr;       \
-  } while (0)
-
-#endif  // FMT_PROCESS_H

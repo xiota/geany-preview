@@ -1,4 +1,4 @@
-/* -*- C++ -*-
+/*
  * Fountain Screenplay Processor - auxiliary functions
  * Copyright 2021 xiota
  *

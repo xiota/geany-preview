@@ -1,4 +1,4 @@
-/* -*- C++ -*-
+/*
  * Preview Geany Plugin
  * Copyright 2021 xiota
  *
@@ -16,16 +16,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PREVIEW_FORMATS_H
-#define PREVIEW_FORMATS_H
+#pragma once
 
 #include <cmark-gfm-core-extensions.h>
 #include <cmark-gfm.h>
 
 #include <string>
 
-#include "plugin.h"
 #include "process.h"
+#include "pv_settings.h"
+#include "tkui_addons.h"
 
 extern struct PreviewSettings gSettings;
 
@@ -50,5 +50,3 @@ std::string screenplain(std::string const &work_dir, std::string const &input,
 static void addMarkdownExtension(cmark_parser *parser,
                                  std::string const &extName);
 std::string cmark_gfm(std::string const &input);
-
-#endif  // PREVIEW_FORMATS_H

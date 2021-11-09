@@ -1,4 +1,4 @@
-/* -*- C++ -*-
+/*
  * Fountain Screenplay Processor
  * Copyright 2021 xiota
  *

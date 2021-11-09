@@ -38,15 +38,17 @@ preview_la_CXXFLAGS = $(GEANY_CFLAGS) $(WEBKIT_CFLAGS) $(CMARK_CFLAGS) $(PODOFO_
 	-DPREVIEW_CSS_EXTRA_DARK=\""$(cf_datadir)/extra-dark.css"\" \
 	-DPREVIEW_CSS_EXTRA_INVERT=\""$(cf_datadir)/extra-invert.css"\" \
 	-DPREVIEW_CSS_EXTRA_MEDIA=\""$(cf_datadir)/extra-media.css"\"
+
 preview_la_LIBADD = $(GEANY_LIBS) $(WEBKIT_LIBS) $(CMARK_LIBS) $(PODOFO_LIBS)
 preview_la_LDFLAGS = -module -avoid-version
+
 preview_la_SOURCES = \
-	src/plugin.cc \
-	src/plugin.h \
-	src/formats.cc \
-	src/formats.h \
-	src/prefs.cc \
-	src/prefs.h \
+	src/pv_main.cc \
+	src/pv_main.h \
+	src/pv_settings.cc \
+	src/pv_settings.h \
+	src/pv_formats.cc \
+	src/pv_formats.h \
 	src/process.cc \
 	src/process.h \
 	src/auxiliary.cc \

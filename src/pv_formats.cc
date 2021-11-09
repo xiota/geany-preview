@@ -1,4 +1,4 @@
-/* -*- C++ -*-
+/*
  * Preview Geany Plugin
  * Copyright 2021 xiota
  *
@@ -19,9 +19,8 @@
 #include <regex>
 
 #include "auxiliary.h"
-#include "formats.h"
-#include "prefs.h"
 #include "process.h"
+#include "pv_formats.h"
 
 std::string find_css(std::string const &css_fn) {
   std::string css_path =
