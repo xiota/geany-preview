@@ -124,6 +124,8 @@ void wv_apply_settings() {
 
   // attach extra_css
   css_fn = find_css(gSettings.extra_css);
+  msgwin_status_add("Preview - %s", gSettings.extra_css.c_str());
+  msgwin_status_add("Preview - %s", css_fn.c_str());
   if (css_fn.empty()) {
     if (gSettings.extra_css == "extra-media.css") {
       css_fn = find_copy_css(gSettings.extra_css, PREVIEW_CSS_EXTRA_MEDIA);
@@ -314,7 +316,8 @@ PreviewFileType get_filetype_from_string(std::string const &fn) {
       document_set_filetype(doc, filetypes[GEANY_FILETYPES_LATEX]);
     }
     return PREVIEW_FILETYPE_LATEX;
-  } else if (strFormat.find("rest") != std::string::npos ||
+  } else if (strFormat.find("rst") != std::string::npos ||
+             strFormat.find("rest") != std::string::npos ||
              strFormat.find("restructuredtext") != std::string::npos) {
     if (bSetDocFileType) {
       document_set_filetype(doc, filetypes[GEANY_FILETYPES_REST]);
@@ -729,7 +732,7 @@ void preview_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog) {
 }
 
 void preview_pref_edit_config(GtkWidget *self, GtkWidget *dialog) {
-  gSettings.open();
+  gSettings.load();
   static std::string conf_fn =
       cstr_assign(g_build_filename(geany_data->app->configdir, "plugins",
                                    "preview", "preview.conf", nullptr));
@@ -743,7 +746,7 @@ void preview_pref_edit_config(GtkWidget *self, GtkWidget *dialog) {
 }
 
 void preview_pref_reload_config(GtkWidget *self, GtkWidget *dialog) {
-  gSettings.open();
+  gSettings.load();
   wv_apply_settings();
 }
 
@@ -1006,6 +1009,7 @@ bool preview_plugin_init(GeanyPlugin *plugin, gpointer data) {
   gScrollY.resize(50, 0);
 
   gSettings.open();
+  gSettings.load();
 
   // set up menu
   GeanyKeyGroup *group;
@@ -1107,6 +1111,8 @@ bool preview_plugin_init(GeanyPlugin *plugin, gpointer data) {
 }
 
 void preview_plugin_cleanup(GeanyPlugin *plugin, gpointer data) {
+  gSettings.close();
+
   gtk_widget_destroy(gScrolledWindow);
   gtk_widget_destroy(gPreviewMenu);
 
