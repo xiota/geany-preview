@@ -124,8 +124,6 @@ void wv_apply_settings() {
 
   // attach extra_css
   css_fn = find_css(gSettings.extra_css);
-  msgwin_status_add("Preview - %s", gSettings.extra_css.c_str());
-  msgwin_status_add("Preview - %s", css_fn.c_str());
   if (css_fn.empty()) {
     if (gSettings.extra_css == "extra-media.css") {
       css_fn = find_copy_css(gSettings.extra_css, PREVIEW_CSS_EXTRA_MEDIA);
@@ -284,9 +282,10 @@ PreviewFileType get_filetype_from_string(std::string const &fn) {
 
   if (strFormat.find("fountain") != std::string::npos ||
       strFormat.find("spmd") != std::string::npos) {
-    if (PreviewFileType(GEANY_FILETYPES_FOUNTAIN) != PREVIEW_FILETYPE_NOEXIST &&
-        bSetDocFileType) {
-      document_set_filetype(doc, filetypes[GEANY_FILETYPES_FOUNTAIN]);
+    if (bSetDocFileType) {
+      if (GeanyFiletype *nft = filetypes_lookup_by_name("Fountain")) {
+        document_set_filetype(doc, nft);
+      }
     }
     return PREVIEW_FILETYPE_FOUNTAIN;
   } else if (strFormat.find("html") != std::string::npos) {
@@ -387,19 +386,19 @@ PreviewFileType get_filetype(GeanyDocument *doc) {
     case GEANY_FILETYPES_TXT2TAGS:
       return PREVIEW_FILETYPE_TXT2TAGS;
       break;
-    case GEANY_FILETYPES_FOUNTAIN:
-      return PREVIEW_FILETYPE_FOUNTAIN;
-      break;
     case GEANY_FILETYPES_NONE:
     case GEANY_FILETYPES_XML:
       if (!gSettings.extended_types) {
         return PREVIEW_FILETYPE_NONE;
-        break;
       } else {
         return get_filetype_from_string(DOC_FILENAME(doc));
       }
       break;
     default:
+      if (strcmp(doc->file_type->name, "Fountain") == 0) {
+        return PREVIEW_FILETYPE_FOUNTAIN;
+      }
+
       return PREVIEW_FILETYPE_NONE;
       break;
   }
@@ -1008,7 +1007,7 @@ bool preview_plugin_init(GeanyPlugin *plugin, gpointer data) {
   geany_data = plugin->geany_data;
   gScrollY.resize(50, 0);
 
-  gSettings.open();
+  gSettings.initialize();
   gSettings.load();
 
   // set up menu
@@ -1111,7 +1110,7 @@ bool preview_plugin_init(GeanyPlugin *plugin, gpointer data) {
 }
 
 void preview_plugin_cleanup(GeanyPlugin *plugin, gpointer data) {
-  gSettings.close();
+  gSettings.kf_close();
 
   gtk_widget_destroy(gScrolledWindow);
   gtk_widget_destroy(gPreviewMenu);

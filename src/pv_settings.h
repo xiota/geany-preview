@@ -1,5 +1,5 @@
 /*
- * Preview Geany Plugin
+ * Settings - Preview Plugin for Geany
  * Copyright 2021 xiota
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,26 +18,45 @@
 
 #pragma once
 
-#include "tkui_addons.h"
+#include <vector>
+
+#include "pv_main.h"
 
 #define PREVIEW_KF_GROUP "preview"
 
+typedef void tkuiSetting;
+
+enum tkuiSettingType {
+  TKUI_PREF_TYPE_NONE,
+  TKUI_PREF_TYPE_BOOLEAN,
+  TKUI_PREF_TYPE_INTEGER,
+  TKUI_PREF_TYPE_DOUBLE,
+  TKUI_PREF_TYPE_STRING,
+};
+
+class tkuiSettingPref {
+ public:
+  tkuiSettingType type;
+  std::string name;
+  std::string comment;
+  bool session;
+  tkuiSetting *setting;
+};
+
 class PreviewSettings {
  public:
-  PreviewSettings() = default;
-  ~PreviewSettings();
+  void initialize();
 
-  void open();
-  void close();
   void load();
-  void save();
+  void save(bool bSession = false);
   void save_session();
   void reset();
-
-  std::string get_config_file() const { return config_file; }
-  std::string get_session_file() const { return session_file; }
+  void kf_open();
+  void kf_close();
 
  public:
+  std::string config_file;
+
   int update_interval_slow = 200;
   double size_factor_slow = 0.004;
   int update_interval_fast = 25;
@@ -65,23 +84,11 @@ class PreviewSettings {
  private:
   bool kf_has_key(std::string const &key);
 
-  void kf_set_boolean(std::string const &key, bool const &val);
-  bool kf_get_boolean(std::string const &key, bool const &def);
-
-  void kf_set_double(std::string const &key, double const &val);
-  double kf_get_double(std::string const &key, double const &def,
-                       double const &min);
-
-  void kf_set_integer(std::string const &key, int const &val);
-  int kf_get_integer(std::string const &key, int const &def, int const &min);
-
-  void kf_set_string(std::string const &key, std::string const &val);
-  std::string kf_get_string(std::string const &key, std::string const &def);
+  void add_setting(tkuiSetting *setting, tkuiSettingType const &type,
+                   std::string const &name, std::string const &comment,
+                   bool const &session);
 
  private:
-  bool bSaveInProgress = false;
   GKeyFile *keyfile = nullptr;
-  GKeyFile *session = nullptr;
-  std::string config_file;
-  std::string session_file;
+  std::vector<tkuiSettingPref> pref_entries;
 };
