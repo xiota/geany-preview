@@ -237,23 +237,31 @@ bool use_snippets(GeanyDocument *doc) {
         return false;
       }
       break;
-    case GEANY_FILETYPES_NONE: {
-      std::string strFormat =
-          to_lower(cstr_assign(g_path_get_basename(DOC_FILENAME(doc))));
-      if (!strFormat.empty()) {
-        if (strFormat.find("fountain") != std::string::npos ||
-            strFormat.find("spmd") != std::string::npos) {
-          if (!gSettings.snippet_screenplain) {
-            return false;
-          }
-        }
-      }
-    }  // no break; need to check pandoc setting
+    case GEANY_FILETYPES_NONE:
     case GEANY_FILETYPES_LATEX:
     case GEANY_FILETYPES_DOCBOOK:
     case GEANY_FILETYPES_REST:
     case GEANY_FILETYPES_TXT2TAGS:
     default:
+      // When Geany build supports Fountain
+      if (strcmp(doc->file_type->name, "Fountain") == 0) {
+        if (!gSettings.snippet_fountain) {
+          return false;
+        }
+      }
+      {  // When Geany build does not support Fountain
+        std::string strFormat =
+            to_lower(cstr_assign(g_path_get_basename(DOC_FILENAME(doc))));
+        if (!strFormat.empty()) {
+          if (strFormat.find("fountain") != std::string::npos ||
+              strFormat.find("spmd") != std::string::npos) {
+            if (!gSettings.snippet_fountain) {
+              return false;
+            }
+          }
+        }
+      }
+      // Otherwise Pandoc fallback
       if (!gSettings.snippet_pandoc) {
         return false;
       }
@@ -531,18 +539,18 @@ std::string update_preview(bool const bGetContents) {
 
   switch (gFileType) {
     case PREVIEW_FILETYPE_HTML:
-      if (gSettings.html_processor == "disable") {
+      if (gSettings.processor_html == "disable") {
         strPlain = _("Preview of HTML documents has been disabled.");
-      } else if (gSettings.html_processor.find("pandoc") != std::string::npos) {
+      } else if (gSettings.processor_html.find("pandoc") != std::string::npos) {
         strOutput = pandoc(work_dir, strBody, "html");
       } else {
         strOutput = strBody;
       }
       break;
     case PREVIEW_FILETYPE_MARKDOWN:
-      if (gSettings.markdown_processor == "disable") {
+      if (gSettings.processor_markdown == "disable") {
         strPlain = _("Preview of Markdown documents has been disabled.");
-      } else if (gSettings.markdown_processor.find("pandoc") !=
+      } else if (gSettings.processor_markdown.find("pandoc") !=
                  std::string::npos) {
         strOutput = pandoc(work_dir, strBody, gSettings.pandoc_markdown);
       } else {
@@ -550,7 +558,7 @@ std::string update_preview(bool const bGetContents) {
       }
       break;
     case PREVIEW_FILETYPE_ASCIIDOC:
-      if (gSettings.asciidoc_processor == "disable") {
+      if (gSettings.processor_asciidoc == "disable") {
         strPlain = _("Preview of AsciiDoc documents has been disabled.");
       } else {
         strOutput = asciidoctor(work_dir, strBody);
@@ -572,9 +580,9 @@ std::string update_preview(bool const bGetContents) {
       strOutput = pandoc(work_dir, strBody, "gfm");
       break;
     case PREVIEW_FILETYPE_FOUNTAIN:
-      if (gSettings.fountain_processor == "disable") {
+      if (gSettings.processor_fountain == "disable") {
         strPlain = _("Preview of Fountain screenplays has been disabled.");
-      } else if (gSettings.fountain_processor == "screenplain") {
+      } else if (gSettings.processor_fountain == "screenplain") {
         strOutput = screenplain(work_dir, strBody, "html");
       } else {
         std::string css_fn =
@@ -964,7 +972,7 @@ bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
     } else if ((doc->file_type->id != GEANY_FILETYPES_ASCIIDOC &&
                 doc->file_type->id != GEANY_FILETYPES_NONE) ||
                (gFileType == PREVIEW_FILETYPE_FOUNTAIN &&
-                gSettings.fountain_processor == "native")) {
+                gSettings.processor_fountain == "native")) {
       // delay for faster programs (native html/markdown/fountain and pandoc)
       double _tt = (double)length * gSettings.size_factor_fast;
       int timeout = (int)_tt > gSettings.update_interval_fast

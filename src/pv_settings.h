@@ -64,10 +64,10 @@ class PreviewSettings {
   int update_interval_fast = 25;
   double size_factor_fast = 0.001;
 
-  std::string html_processor{"native"};
-  std::string markdown_processor{"native"};
-  std::string asciidoc_processor{"asciidoctor"};
-  std::string fountain_processor{"native"};
+  std::string processor_html{"native"};
+  std::string processor_markdown{"native"};
+  std::string processor_asciidoc{"asciidoctor"};
+  std::string processor_fountain{"native"};
 
   std::string wiki_default{"mediawiki"};
 
@@ -86,7 +86,7 @@ class PreviewSettings {
   bool snippet_markdown = true;
   bool snippet_asciidoctor = true;
   bool snippet_pandoc = true;
-  bool snippet_screenplain = true;
+  bool snippet_fountain = true;
 
   std::string extra_css{"extra-media.css"};
 

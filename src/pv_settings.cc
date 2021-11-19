@@ -45,7 +45,7 @@ void PreviewSettings::initialize() {
               false);
 
   add_setting(
-      &html_processor, TKUI_PREF_TYPE_STRING, "html_processor",
+      &processor_html, TKUI_PREF_TYPE_STRING, "processor_html",
       _("The following option controls how HTML documents are processed.\n"
         "  - native* - Send the document directly to the webview.\n"
         "  - pandoc  - Use Pandoc to clean up the document and apply a "
@@ -53,18 +53,18 @@ void PreviewSettings::initialize() {
         "  - disable - Turn off HTML previews."),
       false);
   add_setting(
-      &markdown_processor, TKUI_PREF_TYPE_STRING, "markdown_processor",
+      &processor_markdown, TKUI_PREF_TYPE_STRING, "processor_markdown",
       _("The following option selects the Markdown processor.\n"
         "  - native* - Use libcmark-gfm (faster)\n"
         "  - pandoc  - Use Pandoc GFM   (applies additional pandoc options)\n"
         "  - disable - Turn off Markdown previews."),
       false);
-  add_setting(&asciidoc_processor, TKUI_PREF_TYPE_STRING, "asciidoc_processor",
+  add_setting(&processor_asciidoc, TKUI_PREF_TYPE_STRING, "processor_asciidoc",
               _("The following option enables or disables AsciiDoc previews.\n"
                 "  - asciidoctor* - Use asciidoctor.\n"
                 "  - disable      - Turn off AsciiDoc previews."),
               false);
-  add_setting(&fountain_processor, TKUI_PREF_TYPE_STRING, "fountain_processor",
+  add_setting(&processor_fountain, TKUI_PREF_TYPE_STRING, "processor_fountain",
               _("The following option selects the Fountain processor.\n"
                 "  - native*      - Use the built-in fountain processor\n"
                 "  - screenplain  - Use screenplain (slower)\n"
@@ -95,7 +95,7 @@ void PreviewSettings::initialize() {
   add_setting(
       &pandoc_markdown, TKUI_PREF_TYPE_STRING, "pandoc_markdown",
       _("The following option determines how Pandoc interprets Markdown.  It "
-        "has *no* effect unless Pandoc is set as the markdown_processor.  "
+        "has *no* effect unless Pandoc is set as the processor_markdown.  "
         "Options may be any format from `pandoc --list-input-formats`: "
         "commonmark, *markdown*, markdown_github, markdown_mmd, "
         "markdown_phpextra, markdown_strict"),
@@ -135,8 +135,8 @@ void PreviewSettings::initialize() {
               "snippet_asciidoctor", {}, false);
   add_setting(&snippet_pandoc, TKUI_PREF_TYPE_BOOLEAN, "snippet_pandoc", {},
               false);
-  add_setting(&snippet_screenplain, TKUI_PREF_TYPE_BOOLEAN,
-              "snippet_screenplain", {}, false);
+  add_setting(&snippet_fountain, TKUI_PREF_TYPE_BOOLEAN,
+              "snippet_fountain", {}, false);
 
   add_setting(
       &extra_css, TKUI_PREF_TYPE_STRING, "extra_css",
