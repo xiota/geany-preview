@@ -1103,7 +1103,8 @@ bool preview_plugin_init(GeanyPlugin *plugin, gpointer data) {
 
   // preview may need to be updated after a delay on first use
   if (gHandleTimeout == 0) {
-    gHandleTimeout = g_timeout_add(2000, update_timeout_callback, nullptr);
+    gHandleTimeout = g_timeout_add(gSettings.startup_timeout,
+                                   update_timeout_callback, nullptr);
   }
 
   return true;

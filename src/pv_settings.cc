@@ -22,6 +22,9 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 void PreviewSettings::initialize() {
+  add_setting(&startup_timeout, TKUI_PREF_TYPE_INTEGER,
+              "startup_timeout", _("Timeout before forcing webview update during startup."), false);
+
   add_setting(
       &update_interval_slow, TKUI_PREF_TYPE_INTEGER, "update_interval_slow",
       _("The following option is the minimum number of milliseconds between "
@@ -35,8 +38,8 @@ void PreviewSettings::initialize() {
               false);
   add_setting(&update_interval_fast, TKUI_PREF_TYPE_INTEGER,
               "update_interval_fast",
-              _("Even fast programs may need a delay to finish processing on "
-                "slow computers."),
+              _("Even fast programs may need a delay to finish processing "
+                "on slow computers."),
               false);
   add_setting(&size_factor_fast, TKUI_PREF_TYPE_DOUBLE, "size_factor_fast", {},
               false);
@@ -158,13 +161,11 @@ void PreviewSettings::initialize() {
         "                          For example, pandoc-markdown.css\n"
         "\n"
         " The following option enables an extra, user-specified css file.  "
-        "Included css files (dark.css, invert.css) will be created when first "
-        "used.\n"
-        "  - extra-dark.css    - Dark theme, in case rules in extra-media.css "
-        "don't work.\n"
+        "Included css files will be created when first used.\n"
+        "  - extra-dark.css    - Dark theme.\n"
         "  - extra-invert.css  - Inverts everything.\n"
-        "  - extra-media.css*  - @media rules to auto detect dark theme "
-        "preference.\n"
+        "  - extra-media.css*  - @media rules to detect whether desktop uses "
+        "dark theme.\n"
         "  - [filename]        - Create your own stylesheet\n"
         "  - disable           - Don't use any extra css files"),
       false);

@@ -57,21 +57,29 @@ class PreviewSettings {
  public:
   std::string config_file;
 
+  int startup_timeout = 350;
+
   int update_interval_slow = 200;
   double size_factor_slow = 0.004;
   int update_interval_fast = 25;
   double size_factor_fast = 0.001;
+
   std::string html_processor{"native"};
   std::string markdown_processor{"native"};
   std::string asciidoc_processor{"asciidoctor"};
-  std::string fountain_processor{"screenplain"};
+  std::string fountain_processor{"native"};
+
   std::string wiki_default{"mediawiki"};
+
   bool pandoc_disabled = false;
   bool pandoc_fragment = false;
   bool pandoc_toc = false;
   std::string pandoc_markdown{"markdown"};
+
   std::string default_font_family{"serif"};
+
   bool extended_types = true;
+
   int snippet_window = 5000;
   int snippet_trigger = 100000;
   bool snippet_html = false;
@@ -79,7 +87,8 @@ class PreviewSettings {
   bool snippet_asciidoctor = true;
   bool snippet_pandoc = true;
   bool snippet_screenplain = true;
-  std::string extra_css{"disabled"};
+
+  std::string extra_css{"extra-media.css"};
 
  private:
   bool kf_has_key(std::string const &key);
