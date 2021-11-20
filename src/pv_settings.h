@@ -24,9 +24,14 @@
 
 #define PREVIEW_KF_GROUP "preview"
 
-typedef void tkuiSetting;
+union TkuiSetting {
+  bool tkuiBoolean;
+  int tkuiInteger;
+  double tkuiDouble;
+  std::string tkuiString;
+};
 
-enum tkuiSettingType {
+enum TkuiSettingType {
   TKUI_PREF_TYPE_NONE,
   TKUI_PREF_TYPE_BOOLEAN,
   TKUI_PREF_TYPE_INTEGER,
@@ -34,13 +39,13 @@ enum tkuiSettingType {
   TKUI_PREF_TYPE_STRING,
 };
 
-class tkuiSettingPref {
+class TkuiSettingPref {
  public:
-  tkuiSettingType type;
+  TkuiSettingType type;
   std::string name;
   std::string comment;
   bool session;
-  tkuiSetting *setting;
+  TkuiSetting *setting;
 };
 
 class PreviewSettings {
@@ -93,11 +98,11 @@ class PreviewSettings {
  private:
   bool kf_has_key(std::string const &key);
 
-  void add_setting(tkuiSetting *setting, tkuiSettingType const &type,
+  void add_setting(TkuiSetting *setting, TkuiSettingType const &type,
                    std::string const &name, std::string const &comment,
                    bool const &session);
 
  private:
   GKeyFile *keyfile = nullptr;
-  std::vector<tkuiSettingPref> pref_entries;
+  std::vector<TkuiSettingPref> pref_entries;
 };
