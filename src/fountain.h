@@ -116,7 +116,10 @@ std::string ftn2textplay(std::string const &input,
 std::string ftn2fdx(std::string const &input);
 
 // native output; modern browsers can display with css
-std::string ftn2xml(std::string const &input, std::string const &css_fn = "");
+std::string ftn2xml(std::string const &input, std::string const &css_fn = "",
+                    bool const &embed_css = true);
+std::string ftn2html(std::string const &input, std::string const &css_fn = "",
+                     bool const &embed_css = true);
 
 bool ftn2pdf(std::string const &fn, std::string const &input,
              std::string const &css_fn = "");

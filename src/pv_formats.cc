@@ -150,22 +150,20 @@ std::string asciidoctor(std::string const &work_dir, std::string const &input) {
   // attach asciidoctor.css if it exists
   std::string css_fn =
       find_copy_css("asciidoctor.css", PREVIEW_CSS_ASCIIDOCTOR);
+
   if (!css_fn.empty()) {
+    std::string css_contents = file_get_contents(css_fn);
+
     size_t pos = strOutput.find("</head>");
     if (pos != std::string::npos) {
-      std::string rep_text{
-          "\n<link rel=\"stylesheet\" "
-          "type=\"text/css\" href=\"file://"};
-      rep_text += css_fn + std::string("\">\n</head>\n");
-
+      std::string rep_text = "\n<style type='text/css'>\n" + css_contents +
+                             "\n</style>\n</head>\n";
       strOutput.insert(pos, rep_text);
+    } else {
+      strOutput = "<!DOCTYPE html>\n<html>\n<head>\n<style type='text/css'>\n" +
+                  css_contents + "\n</style>\n</head>\n<body>\n" + strOutput +
+                  "</body></html>";
     }
-  } else {
-    strOutput =
-        std::string(
-            "<!DOCTYPE html>\n<html>\n<head>\n"
-            "<link rel=\"stylesheet\" type=\"text/css\" href=\"file://") +
-        css_fn + "\">\n</head>\n<body>\n" + strOutput + "</body></html>";
   }
   return strOutput;
 }
@@ -243,10 +241,9 @@ std::string cmark_gfm(std::string const &input) {
 
   std::string css_fn = find_copy_css("markdown.css", PREVIEW_CSS_MARKDOWN);
   if (!css_fn.empty()) {
-    output =
-        "<html><head><link rel='stylesheet' "
-        "type='text/css' href='file://" +
-        css_fn + "'></head><body>" + output + "</body></html>";
+    std::string css_contents = file_get_contents(css_fn);
+    output = "<html><head><style type='text/css'>\n" + css_contents +
+             "</style>\n</head><body>" + output + "</body></html>";
   }
 
   return output;

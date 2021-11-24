@@ -154,7 +154,9 @@ void wv_load_position() {
 
   static std::string script;
   if (gSnippetActive) {
-    script = "window.scrollTo(0, 0.2*document.documentElement.scrollHeight);";
+    script =
+        "if (document.documentElement.scrollHeight > window.innerHeight ) { "
+        "window.scrollTo(0, 0.2*document.documentElement.scrollHeight); }";
   } else if (gScrollY.size() <= idx) {
     gScrollY.resize(idx + 50, 0);
     return;
@@ -478,8 +480,17 @@ std::string update_preview(bool const bGetContents) {
         end = position + 2 * amount;
       }
 
-      strBody =
-          cstr_assign(sci_get_contents_range(doc->editor->sci, start, end));
+      int start_line = scintilla_send_message(
+          doc->editor->sci, SCI_LINEFROMPOSITION, start, start);
+      start = scintilla_send_message(doc->editor->sci, SCI_POSITIONFROMLINE,
+                                     start_line, start_line);
+
+      int end_line = scintilla_send_message(doc->editor->sci,
+                                            SCI_LINEFROMPOSITION, end, end);
+      end = scintilla_send_message(doc->editor->sci, SCI_GETLINEENDPOSITION,
+                                   end_line, end_line);
+
+      strBody = std::move(std::string(text + start, end - start));
     } else {
       strBody = text;
     }
