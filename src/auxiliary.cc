@@ -105,9 +105,71 @@ std::string &to_lower_inplace(std::string &s) {
 std::string to_upper(std::string s) { return to_upper_inplace(s); }
 std::string to_lower(std::string s) { return to_lower_inplace(s); }
 
+struct PreviewEntities {
+  std::string entity;
+  std::string value;
+};
+
 bool is_upper(std::string const &s) {
   return std::all_of(s.begin(), s.end(),
                      [](unsigned char c) { return !std::islower(c); });
+}
+
+std::string &encode_entities_inplace(std::string &input) {
+  for (size_t pos = 0; pos < input.length();) {
+    switch (input[pos]) {
+      case '&':
+        input.replace(pos, 1, "&#38;");
+        pos += 5;
+        break;
+      case '<':
+        input.replace(pos, 1, "&#60;");
+        pos += 5;
+        break;
+      default:
+        ++pos;
+        break;
+    }
+  }
+  return input;
+}
+std::string encode_entities(std::string input) {
+  return encode_entities_inplace(input);
+}
+
+std::string &decode_entities_inplace(std::string &input) {
+  static PreviewEntities entities[] = {
+      {"&#38;", "&"}, {"&#42;", "*"}, {"&#95;", "_"},  {"&#58;", ":"},
+      {"&#91;", "["}, {"&#93;", "]"}, {"&#92;", "\\"}, {"&#60;", "<"},
+      {"&#62;", ">"}, {"&#46;", "."}};
+
+  for (size_t pos = 0; pos < input.length();) {
+    switch (input[pos]) {
+      case '&': {
+        size_t end;
+        if ((end = input.find(';', pos)) != std::string::npos) {
+          std::string substr = input.substr(pos, end - pos + 1);
+          for (auto e : entities) {
+            if (substr == e.entity) {
+              input.replace(pos, substr.length(), e.value);
+              pos += e.value.length() - 1;
+              break;
+            }
+          }
+        }
+        ++pos;
+      } break;
+      default:
+        ++pos;
+        break;
+    }
+  }
+
+  return input;
+}
+
+std::string decode_entities(std::string input) {
+  return decode_entities_inplace(input);
 }
 
 std::string cstr_assign(char *input) {
@@ -159,17 +221,16 @@ void print_regex_error(std::regex_error &e, char const *file, int const line) {
               file, line, e.code());
       break;
     case std::regex_constants::error_escape:
-      fprintf(
-          stderr,
-          "%s:%d / %d: The expression contained an invalid escaped character, "
-          "or a trailing escape.\n",
-          file, line, e.code());
+      fprintf(stderr,
+              "%s:%d / %d: The expression contained an invalid escaped "
+              "character, or a trailing escape.\n",
+              file, line, e.code());
       break;
     case std::regex_constants::error_backref:
-      fprintf(
-          stderr,
-          "%s:%d / %d: The expression contained an invalid back reference.\n",
-          file, line, e.code());
+      fprintf(stderr,
+              "%s:%d / %d: The expression contained an invalid back "
+              "reference.\n",
+              file, line, e.code());
       break;
     case std::regex_constants::error_brack:
       fprintf(stderr,
@@ -184,42 +245,41 @@ void print_regex_error(std::regex_error &e, char const *file, int const line) {
               file, line, e.code());
       break;
     case std::regex_constants::error_brace:
-      fprintf(
-          stderr,
-          "%s:%d / %d: The expression contained mismatched braces ({ and }).\n",
-          file, line, e.code());
+      fprintf(stderr,
+              "%s:%d / %d: The expression contained mismatched braces "
+              "({ and }).\n",
+              file, line, e.code());
       break;
     case std::regex_constants::error_badbrace:
       fprintf(stderr,
-              "%s:%d / %d: The expression contained an invalid range between "
-              "braces ({ and }).\n",
+              "%s:%d / %d: The expression contained an invalid range "
+              "between braces ({ and }).\n",
               file, line, e.code());
       break;
     case std::regex_constants::error_range:
-      fprintf(
-          stderr,
-          "%s:%d / %d: The expression contained an invalid character range.\n",
-          file, line, e.code());
+      fprintf(stderr,
+              "%s:%d / %d: The expression contained an invalid character "
+              "range.\n",
+              file, line, e.code());
       break;
     case std::regex_constants::error_space:
-      fprintf(
-          stderr,
-          "%s:%d / %d: There was insufficient memory to convert the expression "
-          "into a finite state machine.\n",
-          file, line, e.code());
+      fprintf(stderr,
+              "%s:%d / %d: There was insufficient memory to convert the "
+              "expression into a finite state machine.\n",
+              file, line, e.code());
       break;
     case std::regex_constants::error_badrepeat:
       fprintf(stderr,
-              "%s:%d / %d: The expression contained a repeat specifier (one of "
-              "*?+{) that was not preceded by a valid regular expression.\n",
+              "%s:%d / %d: The expression contained a repeat specifier "
+              "(one of *?+{) that was not preceded by a valid regular "
+              "expression.\n",
               file, line, e.code());
       break;
     case std::regex_constants::error_complexity:
-      fprintf(
-          stderr,
-          "%s:%d / %d: The complexity of an attempted match against a regular "
-          "expression exceeded a pre-set level.\n",
-          file, line, e.code());
+      fprintf(stderr,
+              "%s:%d / %d: The complexity of an attempted match against "
+              "a regular expression exceeded a pre-set level.\n",
+              file, line, e.code());
       break;
     case std::regex_constants::error_stack:
       fprintf(stderr,

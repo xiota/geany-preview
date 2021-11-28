@@ -1,4 +1,4 @@
-/* -*- C++ -*-
+/*
  * Fountain Screenplay Processor - auxiliary functions
  * Copyright 2021 xiota
  *
@@ -53,6 +53,12 @@ std::string to_upper(std::string s);
 std::string to_lower(std::string s);
 
 bool is_upper(std::string const &s);
+
+std::string &encode_entities_inplace(std::string &input);
+std::string encode_entities(std::string input);
+
+std::string &decode_entities_inplace(std::string &input);
+std::string decode_entities(std::string input);
 
 std::string cstr_assign(char *input);
 std::string file_get_contents(std::string const &filename);

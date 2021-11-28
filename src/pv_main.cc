@@ -630,7 +630,8 @@ std::string update_preview(bool const bGetContents) {
       break;
     case PREVIEW_FILETYPE_PLAIN:
     case PREVIEW_FILETYPE_EMAIL: {
-      strBody = "<pre>" + strBody + "</pre>";
+      strBody = "<pre style='white-space: pre-wrap;'>" +
+                encode_entities_inplace(strBody) + "</pre>";
       strOutput = strBody;
     } break;
     case PREVIEW_FILETYPE_NONE:
@@ -962,6 +963,7 @@ bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
 
   int length = sci_get_length(doc->editor->sci);
 
+  // determine whether is update needed
   bool need_update = false;
   if (gSnippetActive && notif->nmhdr.code == SCN_UPDATEUI &&
       (notif->updated & (SC_UPDATE_CONTENT | SC_UPDATE_SELECTION))) {
@@ -974,33 +976,90 @@ bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
     }
   }
 
-  if (need_update) {
-    if (gFileType == PREVIEW_FILETYPE_NONE) {
-      // slow update when unhandled filetype;
-      // needed to catch filetype change
-      gHandleTimeout = g_timeout_add(5 * gSettings.update_interval_slow,
-                                     update_timeout_callback, nullptr);
-    } else if ((doc->file_type->id != GEANY_FILETYPES_ASCIIDOC &&
-                doc->file_type->id != GEANY_FILETYPES_NONE) ||
-               (gFileType == PREVIEW_FILETYPE_FOUNTAIN &&
-                gSettings.processor_fountain == "native")) {
+  if (!need_update) {
+    return false;
+  }
+
+  // determine update speed
+  enum PreviewUpdateSpeed {
+    FAST,
+    SLOW,
+    SUPER_SLOW,
+  } update_speed = SLOW;
+
+  switch (gFileType) {
+    case PREVIEW_FILETYPE_NONE:
+      update_speed = SUPER_SLOW;
+      break;
+    case PREVIEW_FILETYPE_FOUNTAIN: {
+      if (gSettings.processor_fountain == "disable") {
+        update_speed = SUPER_SLOW;
+      } else if (gSettings.processor_fountain == "screenplain") {
+        update_speed = SLOW;
+      } else {
+        update_speed = FAST;
+      }
+    } break;
+    case PREVIEW_FILETYPE_ASCIIDOC:
+      update_speed = SLOW;
+      break;
+
+    case PREVIEW_FILETYPE_PLAIN:
+    case PREVIEW_FILETYPE_EMAIL:
+      update_speed = FAST;
+      break;
+
+    case PREVIEW_FILETYPE_GFM:
+    case PREVIEW_FILETYPE_HTML: {
+      if (gSettings.processor_html == "disable") {
+        update_speed = SUPER_SLOW;
+      } else {
+        update_speed = FAST;
+      }
+    } break;
+    case PREVIEW_FILETYPE_MARKDOWN: {
+      if (gSettings.processor_markdown == "disable") {
+        update_speed = SUPER_SLOW;
+      } else {
+        // pandoc or native
+        update_speed = FAST;
+      }
+    } break;
+
+    default:
+      if (gSettings.pandoc_disabled) {
+        update_speed = SUPER_SLOW;
+      } else {
+        update_speed = FAST;
+      }
+      break;
+  }
+
+  switch (update_speed) {
+    case FAST: {
       // delay for faster programs (native html/markdown/fountain and pandoc)
       double _tt = (double)length * gSettings.size_factor_fast;
       int timeout = (int)_tt > gSettings.update_interval_fast
                         ? (int)_tt
                         : gSettings.update_interval_fast;
       gHandleTimeout = g_timeout_add(timeout, update_timeout_callback, nullptr);
-    } else {
+    } break;
+    case SLOW: {
       // delay for slower programs (asciidoctor and screenplain)
       double _tt = (double)length * gSettings.size_factor_slow;
       int timeout = (int)_tt > gSettings.update_interval_slow
                         ? (int)_tt
                         : gSettings.update_interval_slow;
       gHandleTimeout = g_timeout_add(timeout, update_timeout_callback, nullptr);
-    }
+    } break;
+    case SUPER_SLOW: {
+      // slow update when unhandled filetype;
+      // needed to catch filetype change
+      gHandleTimeout = g_timeout_add(5 * gSettings.update_interval_slow,
+                                     update_timeout_callback, nullptr);
+    } break;
   }
-
-  return false;
+  return true;
 }
 
 void preview_document_signal(GObject *obj, GeanyDocument *doc,

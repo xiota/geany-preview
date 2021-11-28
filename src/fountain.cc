@@ -1403,34 +1403,10 @@ auto split_formatting(std::string const &input) {
                          strUnderline);
 }
 
-std::string &decode_entities_inplace(std::string &input) {
-  try {
-    if (input.find('&') != std::string::npos) {
-      replace_all_inplace(input, "&#38;", "&");
-      replace_all_inplace(input, "&#42;", "*");
-      replace_all_inplace(input, "&#95;", "_");
-      replace_all_inplace(input, "&#58;", ":");
-      replace_all_inplace(input, "&#91;", "[");
-      replace_all_inplace(input, "&#93;", "]");
-      replace_all_inplace(input, "&#92;", "\\");
-      replace_all_inplace(input, "&#60;", "<");
-      replace_all_inplace(input, "&#62;", ">");
-      replace_all_inplace(input, "&#46;", ".");
-    }
-  } catch (std::regex_error &e) {
-    print_regex_error(e, __FILE__, __LINE__);
-  }
-  return input;
-}
-
 std::string &center_text_inplace(std::string &text,
                                  int const line_length = 60) {
   text = std::string(int((line_length - text.length() + 1) / 2.), ' ') + text;
   return text;
-}
-
-std::string decode_entities(std::string input) {
-  return decode_entities_inplace(input);
 }
 
 int pdfTextLines(PoDoFo::PdfPainter &painter, std::string const &text,
