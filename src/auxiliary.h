@@ -54,8 +54,10 @@ std::string to_lower(std::string s);
 
 bool is_upper(std::string const &s);
 
-std::string &encode_entities_inplace(std::string &input);
-std::string encode_entities(std::string input);
+std::string &encode_entities_inplace(std::string &input,
+                                     bool const bProcessAllEntities = false);
+std::string encode_entities(std::string input,
+                            bool const bProcessAllEntities = false);
 
 std::string &decode_entities_inplace(std::string &input);
 std::string decode_entities(std::string input);

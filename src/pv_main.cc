@@ -1035,14 +1035,14 @@ bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
       break;
   }
 
+  int timeout = 5 * gSettings.update_interval_slow;
   switch (update_speed) {
     case FAST: {
       // delay for faster programs (native html/markdown/fountain and pandoc)
       double _tt = (double)length * gSettings.size_factor_fast;
-      int timeout = (int)_tt > gSettings.update_interval_fast
-                        ? (int)_tt
-                        : gSettings.update_interval_fast;
-      gHandleTimeout = g_timeout_add(timeout, update_timeout_callback, nullptr);
+      timeout = (int)_tt > gSettings.update_interval_fast
+                    ? (int)_tt
+                    : gSettings.update_interval_fast;
     } break;
     case SLOW: {
       // delay for slower programs (asciidoctor and screenplain)
@@ -1050,15 +1050,14 @@ bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
       int timeout = (int)_tt > gSettings.update_interval_slow
                         ? (int)_tt
                         : gSettings.update_interval_slow;
-      gHandleTimeout = g_timeout_add(timeout, update_timeout_callback, nullptr);
     } break;
-    case SUPER_SLOW: {
-      // slow update when unhandled filetype;
+    case SUPER_SLOW:
+      // slow update when unhandled filetype, set before switch;
       // needed to catch filetype change
-      gHandleTimeout = g_timeout_add(5 * gSettings.update_interval_slow,
-                                     update_timeout_callback, nullptr);
-    } break;
+      break;
   }
+
+  gHandleTimeout = g_timeout_add(timeout, update_timeout_callback, nullptr);
   return true;
 }
 

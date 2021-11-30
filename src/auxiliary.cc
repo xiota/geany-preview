@@ -105,17 +105,23 @@ std::string &to_lower_inplace(std::string &s) {
 std::string to_upper(std::string s) { return to_upper_inplace(s); }
 std::string to_lower(std::string s) { return to_lower_inplace(s); }
 
-struct PreviewEntities {
+struct HtmlEntities {
   std::string entity;
   std::string value;
 };
+
+static PreviewEntities entities[] = {
+    {"&#38;", "&"}, {"&#42;", "*"}, {"&#95;", "_"},  {"&#58;", ":"},
+    {"&#91;", "["}, {"&#93;", "]"}, {"&#92;", "\\"}, {"&#60;", "<"},
+    {"&#62;", ">"}, {"&#46;", "."}};
 
 bool is_upper(std::string const &s) {
   return std::all_of(s.begin(), s.end(),
                      [](unsigned char c) { return !std::islower(c); });
 }
 
-std::string &encode_entities_inplace(std::string &input) {
+std::string &encode_entities_inplace(std::string &input,
+                                     bool const bProcessAllEntities) {
   for (size_t pos = 0; pos < input.length();) {
     switch (input[pos]) {
       case '&':
@@ -127,22 +133,27 @@ std::string &encode_entities_inplace(std::string &input) {
         pos += 5;
         break;
       default:
+        if (bProcessAllEntities) {
+          for (auto e : entities) {
+            if (e.value == input.substr(pos, 1)) {
+              input.replace(pos, e.value.length(), e.entity);
+              pos += e.entity.length() - 1;
+              break;
+            }
+          }
+        }
         ++pos;
         break;
     }
   }
   return input;
 }
-std::string encode_entities(std::string input) {
-  return encode_entities_inplace(input);
+
+std::string encode_entities(std::string input, bool const bProcessAllEntities) {
+  return encode_entities_inplace(input, bProcessAllEntities);
 }
 
 std::string &decode_entities_inplace(std::string &input) {
-  static PreviewEntities entities[] = {
-      {"&#38;", "&"}, {"&#42;", "*"}, {"&#95;", "_"},  {"&#58;", ":"},
-      {"&#91;", "["}, {"&#93;", "]"}, {"&#92;", "\\"}, {"&#60;", "<"},
-      {"&#62;", ">"}, {"&#46;", "."}};
-
   for (size_t pos = 0; pos < input.length();) {
     switch (input[pos]) {
       case '&': {
