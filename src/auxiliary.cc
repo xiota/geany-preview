@@ -110,7 +110,7 @@ struct HtmlEntities {
   std::string value;
 };
 
-static PreviewEntities entities[] = {
+static HtmlEntities entities[] = {
     {"&#38;", "&"}, {"&#42;", "*"}, {"&#95;", "_"},  {"&#58;", ":"},
     {"&#91;", "["}, {"&#93;", "]"}, {"&#92;", "\\"}, {"&#60;", "<"},
     {"&#62;", ">"}, {"&#46;", "."}};
@@ -190,6 +190,39 @@ std::string cstr_assign(char *input) {
     return output;
   }
   return {};
+}
+
+std::vector<std::string> cstrv_assign(char **input) {
+  std::vector<std::string> output = cstrv_copy(input);
+
+  if (input) {
+    for (int i = 0; input[i] != nullptr; ++i) {
+      free(input[i]);
+    }
+    free(input);
+  }
+  return output;
+}
+
+std::vector<std::string> cstrv_copy(char const *const *input) {
+  std::vector<std::string> output;
+
+  if (input) {
+    for (int i = 0; input[i] != nullptr; ++i) {
+      output.push_back(std::string{input[i]});
+    }
+  }
+  return output;
+}
+
+// usage: (char **)cstrv_get().data()
+std::vector<char *> cstrv_get(std::vector<std::string> const input) {
+  std::vector<char *> output;
+  for (size_t i = 0; i < input.size(); ++i) {
+    output.push_back(const_cast<char *>(input[i].c_str()));
+  }
+  output.push_back(nullptr);
+  return output;
 }
 
 std::string file_get_contents(std::string const &filename) {

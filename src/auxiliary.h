@@ -63,6 +63,11 @@ std::string &decode_entities_inplace(std::string &input);
 std::string decode_entities(std::string input);
 
 std::string cstr_assign(char *input);
+
+std::vector<std::string> cstrv_assign(char **input);
+std::vector<std::string> cstrv_copy(char const *const *input);
+std::vector<char *> cstrv_get(std::vector<std::string> const input);
+
 std::string file_get_contents(std::string const &filename);
 
 bool file_set_contents(std::string const &filename,
