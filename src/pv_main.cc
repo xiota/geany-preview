@@ -630,16 +630,20 @@ std::string update_preview(bool const bGetContents) {
       break;
     case PREVIEW_FILETYPE_PLAIN:
     case PREVIEW_FILETYPE_EMAIL: {
-      strBody = "<pre style='white-space: pre-wrap;'>" +
-                encode_entities_inplace(strBody) + "</pre>";
-      strOutput = strBody;
+      if (!strHead.empty()) {
+        strBody = "<pre style='white-space: pre-wrap;'>" +
+                  encode_entities_inplace(strBody) + "</pre>";
+        strOutput = strBody;
+      }
     } break;
     case PREVIEW_FILETYPE_NONE:
     default:
-      strPlain =
-          "Unable to process type: " + std::string{doc->file_type->name} +
-          ", " + std::string{doc->encoding} + ".";
       break;
+  }
+
+  if (strOutput.empty() && strPlain.empty()) {
+    strPlain = std::string{doc->file_type->name} + ", " +
+               std::string{doc->encoding} + ".";
   }
 
   std::string contents;
