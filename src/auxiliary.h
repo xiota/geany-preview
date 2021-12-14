@@ -42,7 +42,7 @@ std::string replace_all(std::string subject, const std::string &search,
 bool begins_with(std::string const &input, std::string const &match);
 
 std::vector<std::string> split_string(std::string const &str,
-                                      std::string const &delimiter);
+                                      std::string const &delimiter = " ");
 
 std::vector<std::string> split_lines(std::string const &s);
 
