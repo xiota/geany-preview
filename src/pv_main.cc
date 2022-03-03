@@ -1284,16 +1284,16 @@ void plugin_init(GeanyData *data) {
 
   keybindings_set_item(group, PREVIEW_KEY_TOGGLE_EDITOR, nullptr, 0,
                        GdkModifierType(0), "preview_toggle_editor",
-                       _("Toggle focus between the editor and preview pane."),
+                       _("Toggle focus between editor and preview"),
                        nullptr);
 
   keybindings_set_item(group, PREVIEW_KEY_EXPORT_HTML, nullptr, 0,
                        GdkModifierType(0), "preview_export_html",
-                       _("Export document to HTML."), nullptr);
+                       _("Export document to HTML"), nullptr);
 
   keybindings_set_item(group, PREVIEW_KEY_EXPORT_PDF, nullptr, 0,
                        GdkModifierType(0), "preview_export_pdf",
-                       _("Export Fountain screenplay to PDF."), nullptr);
+                       _("Export Fountain screenplay to PDF"), nullptr);
 
   preview_plugin_init(geany_plugin, geany_data);
 }
