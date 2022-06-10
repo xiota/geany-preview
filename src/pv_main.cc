@@ -500,7 +500,7 @@ std::string update_preview(bool const bGetContents) {
   bool has_header = false;
   try {
     // check if first line matches header format
-    static const std::regex re_has_header(R"(^[^\s:]+:\s)");
+    static const std::regex re_has_header(R"(^[^\s:]+:[ \t]+\S)");
     if (std::regex_search(strBody, re_has_header)) {
       has_header = true;
     }
