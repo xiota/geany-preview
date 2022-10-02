@@ -571,6 +571,8 @@ std::string update_preview(bool const bGetContents) {
     case PREVIEW_FILETYPE_ASCIIDOC:
       if (gSettings.processor_asciidoc == "disable") {
         strPlain = _("Preview of AsciiDoc documents has been disabled.");
+      } else if (gSettings.processor_asciidoc == "asciidoc") {
+        strOutput = asciidoc(work_dir, strBody);
       } else {
         strOutput = asciidoctor(work_dir, strBody);
       }

@@ -68,6 +68,7 @@ void PreviewSettings::initialize() {
               "processor_asciidoc",
               _("The following option enables or disables AsciiDoc previews.\n"
                 "  - asciidoctor* - Use asciidoctor.\n"
+                "  - asciidoc     - Use asciidoc.\n"
                 "  - disable      - Turn off AsciiDoc previews."),
               false);
   add_setting((TkuiSetting *)&processor_fountain, TKUI_PREF_TYPE_STRING,

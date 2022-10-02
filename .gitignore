@@ -4,28 +4,30 @@
 
 # Common compiler artifacts
 *.[ao]
-*.so
-*.lo
-*.la
 *.dll
-*.lib
 *.dylib
+*.la
+*.lib
+*.lo
+*.so
 
 # Geany project file
 *.geany
 
 # Other commonly unwanted files
+*~
 .deps/
+.dirstamp
 .libs/
-Makefile.in
-Makefile
-/autom4te.cache/
 /aclocal.m4
+/autom4te.cache/
 /build-aux/
+/compile_commands.json
 /config.*
 /configure
 /libtool
 /m4/
-/stamp-h1
-/compile_commands.json
 /misc/
+/stamp-h1
+Makefile
+Makefile.in

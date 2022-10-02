@@ -168,6 +168,53 @@ std::string asciidoctor(std::string const &work_dir, std::string const &input) {
   return strOutput;
 }
 
+std::string asciidoc(std::string const &work_dir, std::string const &input) {
+  if (input.empty()) {
+    return {};
+  }
+
+  std::vector<std::string> args_str;
+  args_str.push_back("asciidoc");
+
+  args_str.push_back("--out-file=-");
+  args_str.push_back("-");
+
+  // run program
+  FmtProcess *proc = fmt_process_open(work_dir, args_str);
+
+  if (!proc) {
+    // command not found
+    return {};
+  }
+
+  std::string strOutput;
+  if (!fmt_process_run(proc, input, strOutput)) {
+    g_warning(_("Failed to format document range"));
+    fmt_process_close(proc);
+    return {};
+  }
+
+  // attach asciidoctor.css if it exists
+  std::string css_fn =
+      find_copy_css("asciidoctor.css", PREVIEW_CSS_ASCIIDOCTOR);
+
+  if (!css_fn.empty()) {
+    std::string css_contents = file_get_contents(css_fn);
+
+    size_t pos = strOutput.find("</head>");
+    if (pos != std::string::npos) {
+      std::string rep_text = "\n<style type='text/css'>\n" + css_contents +
+                             "\n</style>\n</head>\n";
+      strOutput.insert(pos, rep_text);
+    } else {
+      strOutput = "<!DOCTYPE html>\n<html>\n<head>\n<style type='text/css'>\n" +
+                  css_contents + "\n</style>\n</head>\n<body>\n" + strOutput +
+                  "</body></html>";
+    }
+  }
+  return strOutput;
+}
+
 std::string screenplain(std::string const &work_dir, std::string const &input,
                         std::string const &to_format) {
   if (input.empty()) {
