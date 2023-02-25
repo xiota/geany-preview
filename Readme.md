@@ -17,22 +17,36 @@ Supported document types include AsciiDoc, DocBook, Fountain, HTML, LaTeX, Markd
 
 ## Usage
 
-The preview is active by default for documents with supported file types.  To display formats other than HTML, Markdown, or Fountain, auxiliary programs are needed.  If they are unavailable, no preview will be displayed for their respective formats.
+After installation, enabled the plugin using the Plugin Manager (*Tools/Plugin Manager*).  Since this plugin adds a pane to the sidebar, the sidebar must also be shown (*View/Show Sidebar*).
+
+The preview will be active by default for documents with supported file types.  To display formats other than HTML, Markdown, or Fountain, auxiliary programs are needed.  If they are unavailable, no preview will be displayed for their respective formats.
 
 More about usage and configuration is available at [Certain Queries Answered](docs/CQA.md).
 
 ## Installation
 
-The Preview plugin for Geany can be installed on Ubuntu from PPA.  The files *may* work with other Debian-based distributions.
+### Build from Source
+
+Those interested may try [Building on Linux](docs/Building_on_Linux.md).  Unfortunately, this plugin does not work on Windows because WebKit2GTK is not available.  The plugin has not been tested on Mac.
+
+### Arch (and derivatives)
+
+An AUR package is available at [aur/geany-plugin-preview-git](https://aur.archlinux.org/packages/geany-plugin-preview-git).  Clone the package repository and run `makepkg`.  Then install the package with `pacman -U`.
+```
+git clone https://aur.archlinux.org/geany-plugin-preview.git
+cd geany-plugin-preview
+makepkg
+sudo pacman -U geany-plugin-preview-git-*.pkg.tar.zst
+```
+
+### Ubuntu
+
+This plugin can be installed on Ubuntu from PPA.  The files have not been tested with other Debian-based distributions, but *may* work.
 ```
 sudo add-apt-repository ppa:xiota/geany-plugins
 sudo apt-get update
 sudo apt-get install geany-plugin-preview
 ```
-
-The plugin can then be enabled in the Plugin Manager (*Tools/Plugin Manager*).  Since this plugin adds a pane to the sidebar, the sidebar must also be shown (*View/Show Sidebar*).
-
-Those interested may try [Building on Linux](docs/Building_on_Linux.md).  Unfortunately, this plugin does not currently work on Windows because WebKit2GTK is not available.  Also, the plugin has not been tested on Mac.
 
 ## Requirements
 

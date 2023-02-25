@@ -18,15 +18,19 @@ Then to build, run the following in a terminal from the source directory:
 
 ```
   ./autogen.sh
+
   cd build-aux
+  ../configure
   make
 ```
 
+To change the install path, add `--prefix=/install/path` to `configure`.  The default location is `/usr/local`.
+
 ## Installing
 
-To install, run `make install`.  To uninstall, run `make uninstall`.
+To install, run `make install`.  To install to a different location, such as when building packages, use `make install DESTDIR="$pkgdir"`.  Files will be copied to `$pkgdir/install/path`.
 
-The files will be installed to `/usr/local`.  If you are *not* also building Geany from source, you will need to make a symlink to the plugin for Geany to find.
+If you are *not* also building Geany from source, you will need to make a symlink to the plugin for Geany to find.
 
 ```
   ln -s /usr/local/lib/geany/preview.so /usr/lib/x86_64-linux-gnu/geany/preview.so
@@ -40,3 +44,7 @@ To find the correct folder to make the link, locate an existing plugin.
 ```
 
 Sometimes running `sudo ldconfig` can help resolve issues with shared object file locations.
+
+## Uninstalling
+
+To uninstall, run `make uninstall`.
