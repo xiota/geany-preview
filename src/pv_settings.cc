@@ -16,121 +16,130 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "auxiliary.h"
 #include "pv_settings.h"
+
+#include "auxiliary.h"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 void PreviewSettings::initialize() {
   add_setting((TkuiSetting *)&startup_timeout, TKUI_PREF_TYPE_INTEGER,
               "startup_timeout",
-              _("Timeout before forcing webview update during startup."),
+              _("Set the duration (ms) to wait after startup before forcing "
+                "webview update."),
               false);
 
-  add_setting(
-      (TkuiSetting *)&update_interval_slow, TKUI_PREF_TYPE_INTEGER,
-      "update_interval_slow",
-      _("The following option is the minimum number of milliseconds between "
-        "calls for slow external programs.  This gives them time to finish "
-        "processing.  Use a larger number for slower machines."),
-      false);
-  add_setting((TkuiSetting *)&size_factor_slow, TKUI_PREF_TYPE_DOUBLE,
-              "size_factor_slow",
-              _("For large files, a longer delay is needed.  The delay in "
-                "milliseconds is the filesize in bytes multiplied by "
-                "size_factor_slow."),
+  add_setting((TkuiSetting *)&update_interval_slow, TKUI_PREF_TYPE_INTEGER,
+              "update_interval_slow",
+              _("Set the minimum number of milliseconds between calls for slow "
+                "external programs.  This gives them time to finish "
+                "processing.  Use a larger number for slower machines."),
               false);
+  add_setting(
+      (TkuiSetting *)&size_factor_slow, TKUI_PREF_TYPE_DOUBLE,
+      "size_factor_slow",
+      _("For large files, a longer delay is needed.  The delay in milliseconds "
+        "is the filesize in bytes multiplied by size_factor_slow."),
+      false);
   add_setting((TkuiSetting *)&update_interval_fast, TKUI_PREF_TYPE_INTEGER,
               "update_interval_fast",
-              _("Even fast programs may need a delay to finish processing "
-                "on slow computers."),
+              _("Even fast programs may need a delay to finish processing on "
+                "slow computers."),
               false);
   add_setting((TkuiSetting *)&size_factor_fast, TKUI_PREF_TYPE_DOUBLE,
               "size_factor_fast", {}, false);
 
-  add_setting(
-      (TkuiSetting *)&processor_html, TKUI_PREF_TYPE_STRING, "processor_html",
-      _("The following option controls how HTML documents are processed.\n"
-        "  - native* - Send the document directly to the webview.\n"
-        "  - pandoc  - Use Pandoc to clean up the document and apply a "
-        "stylesheet.\n"
-        "  - disable - Turn off HTML previews."),
-      false);
+  add_setting((TkuiSetting *)&default_type, TKUI_PREF_TYPE_STRING,
+              "default_type",
+              _("The default type for new documents.  Use the format name or "
+                "extension.\n"
+                "  - none*\n"
+                "  - markdown\n"
+                "  - latex\n"
+                "  - rst\n"
+                "  - t2t\n"
+                "  - ... etc"),
+              false);
+
+  add_setting((TkuiSetting *)&processor_html, TKUI_PREF_TYPE_STRING,
+              "processor_html",
+              _("Control how HTML documents are processed.\n"
+                "  - native* - Send the document directly to the webview.\n"
+                "  - pandoc  - Use Pandoc to clean up the document and apply a "
+                "stylesheet.\n"
+                "  - disable - Turn off HTML previews."),
+              false);
   add_setting(
       (TkuiSetting *)&processor_markdown, TKUI_PREF_TYPE_STRING,
       "processor_markdown",
-      _("The following option selects the Markdown processor.\n"
+      _("Set the Markdown processor.\n"
         "  - native* - Use libcmark-gfm (faster)\n"
         "  - pandoc  - Use Pandoc GFM   (applies additional pandoc options)\n"
         "  - disable - Turn off Markdown previews."),
       false);
   add_setting((TkuiSetting *)&processor_asciidoc, TKUI_PREF_TYPE_STRING,
               "processor_asciidoc",
-              _("The following option enables or disables AsciiDoc previews.\n"
+              _("Enables or disable AsciiDoc previews.\n"
                 "  - asciidoctor* - Use asciidoctor.\n"
                 "  - asciidoc     - Use asciidoc.\n"
                 "  - disable      - Turn off AsciiDoc previews."),
               false);
   add_setting((TkuiSetting *)&processor_fountain, TKUI_PREF_TYPE_STRING,
               "processor_fountain",
-              _("The following option selects the Fountain processor.\n"
+              _("Set the Fountain processor.\n"
                 "  - native*      - Use the built-in fountain processor\n"
                 "  - screenplain  - Use screenplain (slower)\n"
                 "  - disable      - Turn off Fountain screenplay previews"),
               false);
-  add_setting(
-      (TkuiSetting *)&wiki_default, TKUI_PREF_TYPE_STRING, "wiki_default",
-      _("The following option selects the format that Pandoc uses to "
-        "interpret files with the .wiki extension.  It can also turn off wiki "
-        "previews.  Options may be any format from `pandoc "
-        "--list-input-formats`: disable, dokuwiki, *mediawiki*, tikiwiki, "
-        "twiki, vimwiki"),
-      false);
+  add_setting((TkuiSetting *)&wiki_default, TKUI_PREF_TYPE_STRING,
+              "wiki_default",
+              _("Set the format that Pandoc uses to interpret files with the "
+                ".wiki extension.  It can also turn off wiki previews.  "
+                "Options may be any format from `pandoc --list-input-formats`: "
+                "disable, dokuwiki, *mediawiki*, tikiwiki, twiki, vimwiki"),
+              false);
 
   add_setting((TkuiSetting *)&pandoc_disabled, TKUI_PREF_TYPE_BOOLEAN,
-              "pandoc_disabled",
-              _("The following option disables Pandoc processing."), false);
-  add_setting(
-      (TkuiSetting *)&pandoc_fragment, TKUI_PREF_TYPE_BOOLEAN,
-      "pandoc_fragment",
-      _("The following option controls whether Pandoc produces standalone HTML "
-        "files.  If set to true, stylesheets are effectively disabled."),
-      false);
+              "pandoc_disabled", _("Disable Pandoc processing."), false);
+  add_setting((TkuiSetting *)&pandoc_fragment, TKUI_PREF_TYPE_BOOLEAN,
+              "pandoc_fragment",
+              _("Control whether Pandoc produces standalone HTML files.  If "
+                "set to true, stylesheets are effectively disabled."),
+              false);
   add_setting((TkuiSetting *)&pandoc_toc, TKUI_PREF_TYPE_BOOLEAN, "pandoc_toc",
-              _("The following option controls whether Pandoc inserts an "
-                "auto-generated table of contents at the beginning of HTML "
-                "files.  This might help with navigating long documents."),
+              _("Control whether Pandoc inserts an auto-generated table of "
+                "contents at the beginning of HTML files.  This might help "
+                "with navigating long documents."),
               false);
 
   add_setting(
       (TkuiSetting *)&pandoc_markdown, TKUI_PREF_TYPE_STRING, "pandoc_markdown",
-      _("The following option determines how Pandoc interprets Markdown.  It "
-        "has *no* effect unless Pandoc is set as the processor_markdown.  "
-        "Options may be any format from `pandoc --list-input-formats`: "
-        "commonmark, *markdown*, markdown_github, markdown_mmd, "
-        "markdown_phpextra, markdown_strict"),
+      _("How Pandoc interprets Markdown.  It has *no* effect unless Pandoc is "
+        "set as the processor_markdown.  Options may be any format from "
+        "`pandoc --list-input-formats`: commonmark, *markdown*, "
+        "markdown_github, markdown_mmd, markdown_phpextra, markdown_strict"),
       false);
   add_setting((TkuiSetting *)&default_font_family, TKUI_PREF_TYPE_STRING,
               "default_font_family",
-              _("The following option determines what font family the webview "
-                "uses when another font is not specified by a stylesheet."),
+              _("Set the font family used by the webview when another font is "
+                "not specified by a stylesheet."),
               false);
 
-  add_setting(
-      (TkuiSetting *)&extended_types, TKUI_PREF_TYPE_BOOLEAN, "extended_types",
-      _("The following option controls whether the file extension is used to "
-        "detect file types that are unknown to Geany.  This feature is needed "
-        "to preview fountain, textile, wiki, muse, and org documents."),
-      false);
+  add_setting((TkuiSetting *)&extended_types, TKUI_PREF_TYPE_BOOLEAN,
+              "extended_types",
+              _("Control whether the file extension is used to detect file "
+                "types that are unknown to Geany.  This feature is needed to "
+                "preview fountain, textile, wiki, muse, and org documents."),
+              false);
 
-  add_setting(
-      (TkuiSetting *)&snippet_window, TKUI_PREF_TYPE_INTEGER, "snippet_window",
-      _("Large documents are both slow to process and difficult to navigate.  "
-        "The snippet settings allow a small region of interest to be "
-        "previewed.  The trigger is the file size (bytes) that activates "
-        "snippets.  The window is the size (bytes) around the caret that is "
-        "processed."),
-      false);
+  add_setting((TkuiSetting *)&snippet_window, TKUI_PREF_TYPE_INTEGER,
+              "snippet_window",
+              _("Large documents are both slow to process and difficult to "
+                "navigate.  The snippet settings allow a small region of "
+                "interest to be previewed.  The trigger is the file size "
+                "(bytes) that activates snippets.  The window is the size "
+                "(bytes) around the caret that is processed."),
+              false);
   add_setting((TkuiSetting *)&snippet_trigger, TKUI_PREF_TYPE_INTEGER,
               "snippet_trigger", {}, false);
 

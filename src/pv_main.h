@@ -21,10 +21,10 @@
 
 #pragma once
 
-#include <geanyplugin.h>
-#include <webkit2/webkit2.h>
+#include <locale>
 
-#include <string>
+#include "geanyplugin.h"
+#include "webkit2/webkit2.h"
 
 extern GeanyPlugin *geany_plugin;
 extern GeanyData *geany_data;

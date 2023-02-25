@@ -39,7 +39,7 @@ PreviewSettings gSettings;
 
 namespace {  // globals
 
-GtkWidget *gPreviewMenu;
+GtkWidget *gPreviewMenu = nullptr;
 GtkWidget *gScrolledWindow = nullptr;
 
 GtkWidget *gWebView = nullptr;
@@ -254,12 +254,11 @@ bool use_snippets(GeanyDocument *doc) {
       {  // When Geany build does not support Fountain
         std::string strFormat =
             to_lower(cstr_assign(g_path_get_basename(DOC_FILENAME(doc))));
-        if (!strFormat.empty()) {
-          if (strFormat.find("fountain") != std::string::npos ||
-              strFormat.find("spmd") != std::string::npos) {
-            if (!gSettings.snippet_fountain) {
-              return false;
-            }
+
+        if (strFormat.find("fountain") != std::string::npos ||
+            strFormat.find("spmd") != std::string::npos) {
+          if (!gSettings.snippet_fountain) {
+            return false;
           }
         }
       }
@@ -273,8 +272,8 @@ bool use_snippets(GeanyDocument *doc) {
 }
 
 PreviewFileType get_filetype_from_string(std::string const &fn) {
-  if (fn.empty()) {
-    return PREVIEW_FILETYPE_NONE;
+  if (fn.empty() || fn == GEANY_STRING_UNTITLED) {
+    return get_filetype_from_string(gSettings.default_type);
   }
 
   std::string strFormat =
@@ -539,7 +538,7 @@ std::string update_preview(bool const bGetContents) {
         if (std::regex_search(strHead, format_match, re_format)) {
           if (format_match.size() > 2) {
             std::string strFormat = format_match[2];
-            gFileType = get_filetype_from_string(strFormat.c_str());
+            gFileType = get_filetype_from_string(strFormat);
           }
         }
       }
@@ -789,6 +788,10 @@ void preview_menu_preferences(GtkWidget *self, GtkWidget *dialog) {
 
 // from markdown plugin
 std::string replace_extension(std::string const &fn, std::string const &ext) {
+  if (fn.empty()) {
+    return ext;
+  }
+
   char *fn_noext =
       g_filename_from_utf8(fn.c_str(), -1, nullptr, nullptr, nullptr);
   char *dot = strrchr(fn_noext, '.');
@@ -847,7 +850,7 @@ void preview_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
     std::string html = update_preview(true);
     fn = cstr_assign(
         gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(save_dialog)));
-    if (!file_set_contents(fn.c_str(), html)) {
+    if (!file_set_contents(fn, html)) {
       dialogs_show_msgbox(GTK_MESSAGE_ERROR,
                           _("Failed to export HTML to file."));
     } else {
@@ -1287,8 +1290,7 @@ void plugin_init(GeanyData *data) {
 
   keybindings_set_item(group, PREVIEW_KEY_TOGGLE_EDITOR, nullptr, 0,
                        GdkModifierType(0), "preview_toggle_editor",
-                       _("Toggle focus between editor and preview"),
-                       nullptr);
+                       _("Toggle focus between editor and preview"), nullptr);
 
   keybindings_set_item(group, PREVIEW_KEY_EXPORT_HTML, nullptr, 0,
                        GdkModifierType(0), "preview_export_html",

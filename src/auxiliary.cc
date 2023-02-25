@@ -16,11 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "auxiliary.h"
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>
-
-#include "auxiliary.h"
 
 std::string &ltrim_inplace(std::string &s, char const *t) {
   s.erase(0, s.find_first_not_of(t));

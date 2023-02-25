@@ -16,11 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "fountain.h"
+
 #include <podofo/podofo.h>
 #include <string.h>
 
 #include "auxiliary.h"
-#include "fountain.h"
 
 namespace Fountain {
 

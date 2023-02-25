@@ -16,11 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "pv_formats.h"
+
 #include <regex>
 
 #include "auxiliary.h"
 #include "process.h"
-#include "pv_formats.h"
 
 std::string find_css(std::string const &css_fn) {
   std::string css_path =

@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include "pv_main.h"
@@ -68,6 +69,8 @@ class PreviewSettings {
   double size_factor_slow = 0.004;
   int update_interval_fast = 25;
   double size_factor_fast = 0.001;
+
+  std::string default_type{"none"};
 
   std::string processor_html{"native"};
   std::string processor_markdown{"native"};

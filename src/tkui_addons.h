@@ -18,7 +18,9 @@
 
 #pragma once
 
-#include <geanyplugin.h>
+#include <locale>
+
+#include "geanyplugin.h"
 
 extern GeanyPlugin *geany_plugin;
 extern GeanyData *geany_data;

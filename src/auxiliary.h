@@ -18,11 +18,11 @@
 
 #pragma once
 
+#include <cstring>
+#include <iterator>
 #include <regex>
 #include <string>
 #include <vector>
-#include <cstring>
-#include <iterator>
 
 #define FOUNTAIN_WHITESPACE " \t\n\r\f\v"
 
