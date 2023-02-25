@@ -12,9 +12,9 @@
 if [ -d .git ] ; then
 	version=$(git describe --long --tags --always | sed -E 's/^v//;s/-([0-9]+)-/-r\1-/')
 	set -- $version
-	echo "$1"
+	echo -n "$1"
 else
-	version='0.0.0'
+	version='0.0.2'
 	set -- $version
-	echo "$1"
+	echo -n "$1"
 fi
