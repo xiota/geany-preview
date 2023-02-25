@@ -1,4 +1,6 @@
-AC_INIT([preview], [0.01.1], [xiota])
+#AC_INIT (package, version, [bug-report], [tarname], [url])
+AC_INIT([preview], m4_esyscmd([./version.sh]), [], [], [https://github.com/xiota/geany-preview])
+
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/pv_main.cc])

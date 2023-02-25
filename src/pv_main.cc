@@ -969,7 +969,7 @@ bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
 
   int length = sci_get_length(doc->editor->sci);
 
-  // determine whether is update needed
+  // determine whether update is needed
   bool need_update = false;
   if (gSnippetActive && notif->nmhdr.code == SCN_UPDATEUI &&
       (notif->updated & (SC_UPDATE_CONTENT | SC_UPDATE_SELECTION))) {
@@ -1058,7 +1058,8 @@ bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
                         : gSettings.update_interval_slow;
     } break;
     case SUPER_SLOW:
-      // slow update when unhandled filetype, set before switch;
+      // slow update when unhandled filetype;
+      // timeout is set before switch;
       // needed to catch filetype change
       break;
   }
@@ -1268,7 +1269,7 @@ PLUGIN_VERSION_CHECK(225)
 PLUGIN_SET_INFO("Preview",
                 _("Preview pane for HTML, Markdown, and other lightweight "
                   "markup formats."),
-                "0.01.1", "xiota")
+                PACKAGE_VERSION, "xiota")
 
 void plugin_init(GeanyData *data) {
   GEANY_PSC("geany-startup-complete", preview_document_signal);
