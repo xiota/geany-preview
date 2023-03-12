@@ -15,7 +15,6 @@ cf_data_DATA = \
 	data/fountain.css \
 	data/markdown.css \
 	data/pandoc.css \
-	data/screenplain.css \
 	data/extra-dark.css \
 	data/extra-invert.css \
 	data/extra-media.css
@@ -32,7 +31,6 @@ preview_la_CXXFLAGS = $(GEANY_CFLAGS) $(WEBKIT_CFLAGS) $(CMARK_CFLAGS) $(PODOFO_
 	-DPREVIEW_CSS_ASCIIDOCTOR=\""$(cf_datadir)/asciidoctor.css"\" \
 	-DPREVIEW_CSS_FOUNTAIN=\""$(cf_datadir)/fountain.css"\" \
 	-DPREVIEW_CSS_MARKDOWN=\""$(cf_datadir)/markdown.css"\" \
-	-DPREVIEW_CSS_SCREENPLAIN=\""$(cf_datadir)/screenplain.css"\" \
 	-DPREVIEW_CSS_EXTRA_DARK=\""$(cf_datadir)/extra-dark.css"\" \
 	-DPREVIEW_CSS_EXTRA_INVERT=\""$(cf_datadir)/extra-invert.css"\" \
 	-DPREVIEW_CSS_EXTRA_MEDIA=\""$(cf_datadir)/extra-media.css"\"

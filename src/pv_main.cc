@@ -594,8 +594,6 @@ std::string update_preview(bool const bGetContents) {
     case PREVIEW_FILETYPE_FOUNTAIN:
       if (gSettings.processor_fountain == "disable") {
         strPlain = _("Preview of Fountain screenplays has been disabled.");
-      } else if (gSettings.processor_fountain == "screenplain") {
-        strOutput = screenplain(work_dir, strBody, "html");
       } else {
         std::string css_fn =
             find_copy_css("fountain.css", PREVIEW_CSS_FOUNTAIN);
@@ -1003,8 +1001,6 @@ bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
     case PREVIEW_FILETYPE_FOUNTAIN: {
       if (gSettings.processor_fountain == "disable") {
         update_speed = SUPER_SLOW;
-      } else if (gSettings.processor_fountain == "screenplain") {
-        update_speed = SLOW;
       } else {
         update_speed = FAST;
       }
@@ -1054,7 +1050,7 @@ bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
                     : gSettings.update_interval_fast;
     } break;
     case SLOW: {
-      // delay for slower programs (asciidoctor and screenplain)
+      // delay for slower programs (asciidoctor)
       double _tt = (double)length * gSettings.size_factor_slow;
       int timeout = (int)_tt > gSettings.update_interval_slow
                         ? (int)_tt

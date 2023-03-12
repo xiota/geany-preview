@@ -16,7 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tkui_markword.h"
+
+// Note: This file is currently unused; part of planned plugin reorganization
+
+#include "pv_webview.h"
 
 void PreviewWebView::initialize() {
   GEANY_PSC_AFTER("geany-startup-complete", document_signal);

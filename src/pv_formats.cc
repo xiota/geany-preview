@@ -18,8 +18,6 @@
 
 #include "pv_formats.h"
 
-#include <regex>
-
 #include "auxiliary.h"
 #include "process.h"
 
@@ -213,47 +211,6 @@ std::string asciidoc(std::string const &work_dir, std::string const &input) {
                   "</body></html>";
     }
   }
-  return strOutput;
-}
-
-std::string screenplain(std::string const &work_dir, std::string const &input,
-                        std::string const &to_format) {
-  if (input.empty()) {
-    return {};
-  }
-
-  std::vector<std::string> args_str;
-  args_str.push_back("screenplain");
-
-  if (!to_format.empty()) {
-    args_str.push_back("--format=" + to_format);
-  } else {
-    args_str.push_back("--format=html");
-  }
-
-  // use screenplain.css file from user config dir
-  // if it does not exist, copy it from the system config dir
-  std::string css = cstr_assign(g_strdup("screenplain.css"));
-  std::string css_fn = find_copy_css(css, PREVIEW_CSS_SCREENPLAIN);
-  if (!css_fn.empty()) {
-    args_str.push_back("--css=" + css_fn);
-  }
-
-  // run program
-  FmtProcess *proc = fmt_process_open(work_dir, args_str);
-
-  if (!proc) {
-    // command not found, FmtProcess will print warning
-    return {};
-  }
-
-  std::string strOutput;
-  if (!fmt_process_run(proc, input, strOutput)) {
-    g_warning(_("Failed to format document range"));
-    fmt_process_close(proc);
-    return nullptr;
-  }
-
   return strOutput;
 }
 
