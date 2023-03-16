@@ -1,5 +1,5 @@
 #AC_INIT (package, version, [bug-report], [tarname], [url])
-AC_INIT([preview], m4_esyscmd([./version.sh]), [], [], [https://github.com/xiota/geany-preview])
+AC_INIT([preview],[m4_esyscmd(./version.sh)],[],[],[https://github.com/xiota/geany-preview])
 
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
@@ -13,11 +13,10 @@ LT_INIT([disable-static pic-only])
 #: ${CXX="clang-13"}
 #: ${CXXFLAGS="--std=gnu++17"}
 AC_PROG_CXX
-#AC_PROG_CC_C99
 
 PKG_CHECK_MODULES([GEANY], [geany >= 1.23])
 PKG_CHECK_MODULES([WEBKIT], [webkit2gtk-4.0])
 PKG_CHECK_MODULES([CMARK], [libcmark-gfm])
 PKG_CHECK_MODULES([PODOFO], [libpodofo])
-AC_CONFIG_FILES([Makefile compile_commands.json])
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

@@ -23,6 +23,8 @@
 #include "config.h"
 #endif
 
+#include <string>
+
 #include "auxiliary.h"
 #include "fountain.h"
 #include "process.h"
