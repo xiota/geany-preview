@@ -75,19 +75,17 @@ void wv_save_position_callback(GObject *object, GAsyncResult *result,
 
   int idx = document_get_notebook_page(doc);
 
-  WebKitJavascriptResult *js_result;
   JSCValue *value;
   GError *error = nullptr;
 
-  js_result = webkit_web_view_run_javascript_finish(WEBKIT_WEB_VIEW(object),
-                                                    result, &error);
-  if (!js_result) {
+  value = webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(object),
+                                                     result, &error);
+  if (!value) {
     g_warning(_("Error running javascript: %s"), error->message);
     GERROR_FREE(error);
     return;
   }
 
-  value = webkit_javascript_result_get_js_value(js_result);
   int temp = jsc_value_to_int32(value);
   if (gScrollY.size() <= idx) {
     gScrollY.resize(idx + 50, 0);
@@ -95,13 +93,12 @@ void wv_save_position_callback(GObject *object, GAsyncResult *result,
   if (temp > 0) {
     gScrollY[idx] = temp;
   }
-
-  webkit_javascript_result_unref(js_result);
 }
 
 void wv_save_position() {
-  webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(gWebView), "window.scrollY",
-                                 nullptr, wv_save_position_callback, nullptr);
+  webkit_web_view_evaluate_javascript(
+      WEBKIT_WEB_VIEW(gWebView), "window.scrollY", -1, nullptr, nullptr,
+      nullptr, wv_save_position_callback, nullptr);
 }
 
 void wv_apply_settings() {
@@ -165,8 +162,9 @@ void wv_load_position() {
   } else {
     script = "window.scrollTo(0, " + std::to_string(gScrollY[idx]) + ");";
   }
-  webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(gWebView), script.c_str(),
-                                 nullptr, nullptr, nullptr);
+  webkit_web_view_evaluate_javascript(WEBKIT_WEB_VIEW(gWebView), script.c_str(),
+                                      -1, nullptr, nullptr, nullptr, nullptr,
+                                      nullptr);
 }
 
 void wv_loading_callback(WebKitWebView *web_view, WebKitLoadEvent load_event,
