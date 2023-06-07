@@ -861,6 +861,8 @@ void preview_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
   gtk_widget_destroy(save_dialog);
 }
 
+#ifdef ENABLE_EXPORT_PDF
+
 void preview_menu_export_pdf(GtkWidget *self, GtkWidget *dialog) {
   GeanyDocument *doc = document_get_current();
   g_return_if_fail(DOC_VALID(doc));
@@ -928,6 +930,8 @@ void preview_menu_export_pdf(GtkWidget *self, GtkWidget *dialog) {
   gtk_widget_destroy(save_dialog);
 }
 
+#endif  // ENABLE_EXPORT_PDF
+
 bool preview_key_binding(int key_id) {
   switch (key_id) {
     case PREVIEW_KEY_TOGGLE_EDITOR:
@@ -936,9 +940,13 @@ bool preview_key_binding(int key_id) {
     case PREVIEW_KEY_EXPORT_HTML:
       preview_menu_export_html(nullptr, nullptr);
       break;
+
+#ifdef ENABLE_EXPORT_PDF
     case PREVIEW_KEY_EXPORT_PDF:
       preview_menu_export_pdf(nullptr, nullptr);
       break;
+#endif  // ENABLE_EXPORT_PDF
+
     default:
       return false;
   }
@@ -1110,10 +1118,12 @@ bool preview_plugin_init(GeanyPlugin *plugin, gpointer data) {
                    nullptr);
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
+#ifdef ENABLE_EXPORT_PDF
   item = gtk_menu_item_new_with_label(_("Export to PDF..."));
   g_signal_connect(item, "activate", G_CALLBACK(preview_menu_export_pdf),
                    nullptr);
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
+#endif  // ENABLE_EXPORT_PDF
 
   item = gtk_separator_menu_item_new();
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
@@ -1294,9 +1304,11 @@ void plugin_init(GeanyData *data) {
                        GdkModifierType(0), "preview_export_html",
                        _("Export document to HTML"), nullptr);
 
+#ifdef ENABLE_EXPORT_PDF
   keybindings_set_item(group, PREVIEW_KEY_EXPORT_PDF, nullptr, 0,
                        GdkModifierType(0), "preview_export_pdf",
                        _("Export Fountain screenplay to PDF"), nullptr);
+#endif  // ENABLE_EXPORT_PDF
 
   preview_plugin_init(geany_plugin, geany_data);
 }

@@ -16,7 +16,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-
 // Note: This file is currently unused; part of planned plugin reorganization
 
 #include "pv_webview.h"

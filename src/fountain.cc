@@ -1245,6 +1245,10 @@ std::string ftn2html(std::string const &input, std::string const &css_fn,
   return output;
 }
 
+#if PODOFO_VERSION_MAJOR == 0 && PODOFO_VERSION_MINOR == 9
+
+#define ENABLE_EXPORT_PDF 1
+
 namespace {  // PDF export
 
 void add_char(std::string const &strAdd, std::string &strNormal,
@@ -1942,5 +1946,7 @@ bool ftn2pdf(std::string const &fn, std::string const &input,
   document.Close();
   return true;
 }
+
+#endif  // PoDoFo 0.9.x
 
 }  // namespace Fountain

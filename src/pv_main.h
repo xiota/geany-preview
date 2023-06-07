@@ -58,7 +58,10 @@ enum PreviewFileType {
 enum PreviewShortcuts {
   PREVIEW_KEY_TOGGLE_EDITOR,
   PREVIEW_KEY_EXPORT_HTML,
+
+#ifdef ENABLE_EXPORT_PDF
   PREVIEW_KEY_EXPORT_PDF,
+#endif  // ENABLE_EXPORT_PDF
 
   PREVIEW_KEY_COUNT,
 };
