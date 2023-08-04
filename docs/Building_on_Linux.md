@@ -11,7 +11,8 @@ On Debian/Ubuntu, the following command will install the build dependencies:
 
 ```
   sudo apt-get install build-essential autoconf geany libgtk-3-dev \
-    libwebkit2gtk-4.0-dev libcmark-gfm-dev libcmark-gfm-extensions-dev
+    libwebkit2gtk-4.0-dev libcmark-gfm-dev libcmark-gfm-extensions-dev \
+    libpodofo-dev
 ```
 
 Then to build, run the following in a terminal from the source directory:

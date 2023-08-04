@@ -55,6 +55,7 @@ This plugin depends on the following libraries and programs:
 * [Geany](https://geany.org/)
 * [GTK/Glib](http://www.gtk.org)
 * [libcmark-gfm](https://github.com/github/cmark-gfm)
+* [libpodofo](https://github.com/podofo/podofo) (0.9.x)
 * [WebKit2GTK](http://webkitgtk.org)
 
 Optional auxiliary programs may also be used to process additional formats:
