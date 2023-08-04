@@ -1,4 +1,4 @@
-/*
+JSCValue/*
  * Preview Geany Plugin
  * Copyright 2021 xiota
  *
@@ -75,7 +75,7 @@ void wv_save_position_callback(GObject *object, GAsyncResult *result,
 
   int idx = document_get_notebook_page(doc);
 
-  JSCValue *value;
+  JSCValue *value = nullptr;
   GError *error = nullptr;
 
   value = webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(object),
@@ -93,6 +93,8 @@ void wv_save_position_callback(GObject *object, GAsyncResult *result,
   if (temp > 0) {
     gScrollY[idx] = temp;
   }
+
+  GFREE(value);
 }
 
 void wv_save_position() {
