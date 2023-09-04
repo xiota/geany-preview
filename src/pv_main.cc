@@ -1,4 +1,4 @@
-JSCValue/*
+/*
  * Preview Geany Plugin
  * Copyright 2021 xiota
  *
