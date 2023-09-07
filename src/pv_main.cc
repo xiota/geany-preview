@@ -94,7 +94,7 @@ void wv_save_position_callback(GObject *object, GAsyncResult *result,
     gScrollY[idx] = temp;
   }
 
-  GFREE(value);
+  //GFREE(value);
 }
 
 void wv_save_position() {
