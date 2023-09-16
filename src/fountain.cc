@@ -151,7 +151,7 @@ bool isSceneHeader(std::string const &input) {
 }
 
 // returns <scene description, scene number>
-// Note: in should already by length checked by isSceneHeader()
+// Note: input should already be length checked by isSceneHeader()
 auto parseSceneHeader(std::string const &input) {
   std::string first;
   std::string second;
@@ -1236,6 +1236,17 @@ std::string ftn2html(std::string const &input, std::string const &css_fn,
     replace_all_inplace(output, "<BlankLine>", "");
     replace_all_inplace(output, "</BlankLine>", "");
 
+    for (int i = 1; i <= 6; i++) {
+      std::string lvl = std::to_string(i);
+      replace_all_inplace(output, "<SectionH" + lvl + ">",
+                          R"(<div class="SectionH)" + lvl + R"(">)");
+      replace_all_inplace(output, "</SectionH" + lvl + ">", "</div>");
+
+      replace_all_inplace(output, "<SynopsisH" + lvl + ">",
+                          R"(<div class="SynopsisH)" + lvl + R"(">)");
+      replace_all_inplace(output, "</SynopsisH" + lvl + ">", "</div>");
+    }
+
     static const std::regex re_newlines(R"(\n+)");
     output = std::regex_replace(output, re_newlines, "\n");
   } catch (std::regex_error &e) {
@@ -1244,10 +1255,6 @@ std::string ftn2html(std::string const &input, std::string const &css_fn,
 
   return output;
 }
-
-#if PODOFO_VERSION_MAJOR == 0 && PODOFO_VERSION_MINOR == 9
-
-#define ENABLE_EXPORT_PDF 1
 
 namespace {  // PDF export
 
@@ -1946,7 +1953,5 @@ bool ftn2pdf(std::string const &fn, std::string const &input,
   document.Close();
   return true;
 }
-
-#endif  // PoDoFo 0.9.x
 
 }  // namespace Fountain
