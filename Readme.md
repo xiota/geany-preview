@@ -55,7 +55,7 @@ This plugin depends on the following libraries and programs:
 * [Geany](https://geany.org/)
 * [GTK/Glib](http://www.gtk.org)
 * [libcmark-gfm](https://github.com/github/cmark-gfm)
-* [libpodofo](https://github.com/podofo/podofo) (0.9.x)
+* [libpodofo](https://github.com/podofo/podofo) (0.10.x)
 * [WebKit2GTK](http://webkitgtk.org)
 
 Optional auxiliary programs may also be used to process additional formats:
@@ -65,6 +65,6 @@ Optional auxiliary programs may also be used to process additional formats:
 
 ## License
 
-The Preview plugin for Geany is licensed under the [GPLv3](License.md) or later.
+The Preview plugin for Geany is licensed under GPL-3.0-or-later.
 
-Some code is taken from the [Code Format](https://github.com/codebrainz/code-format/) and [Markdown](https://plugins.geany.org/markdown.html) plugins, which are written by [Michael Brush](https://github.com/codebrainz) and licensed under the GPLv2+.
+Some code originated from the [Code Format](https://github.com/codebrainz/code-format/) and [Markdown](https://plugins.geany.org/markdown.html) plugins, which are written by [Michael Brush](https://github.com/codebrainz) and licensed under GPL-2.0-or-later.
