@@ -8,7 +8,7 @@ While the Preview plugin can also show HTML, it does not have features that web 
 
 > Will Preview become part of geany-plugins?
 
-I may consider submitting it in the future.  The main concern I have is that doing so would limit my ability to add features and fix bugs.
+Unlikely.  Doing so would limit my ability to add features and fix bugs.
 
 ## Usage
 
@@ -37,7 +37,7 @@ Altering the sidebar's general behavior is outside the scope of this plugin.  Ho
 
 > Is it possible to change the appearance of the sidebar tabs so that it is visibly recognizable when they have focus?
 
-Altering the sidebar's general behavior is outside the scope of this plugin.  However, I have added this capability to another plugin: xi-tweaks.  It may be installed from the PPA.
+Altering the sidebar's general behavior is outside the scope of this plugin.  However, I have added this capability to another plugin: xi-tweaks.  It is currently available from the PPA.
 
 ## Configuration
 
