@@ -153,7 +153,7 @@ std::string asciidoctor(std::string const &work_dir, std::string const &input) {
   if (!css_fn.empty()) {
     std::string css_contents = file_get_contents(css_fn);
 
-    size_t pos = strOutput.find("</head>");
+    int pos = strOutput.find("</head>");
     if (pos != std::string::npos) {
       std::string rep_text = "\n<style type='text/css'>\n" + css_contents +
                              "\n</style>\n</head>\n";
@@ -200,7 +200,7 @@ std::string asciidoc(std::string const &work_dir, std::string const &input) {
   if (!css_fn.empty()) {
     std::string css_contents = file_get_contents(css_fn);
 
-    size_t pos = strOutput.find("</head>");
+    int pos = strOutput.find("</head>");
     if (pos != std::string::npos) {
       std::string rep_text = "\n<style type='text/css'>\n" + css_contents +
                              "\n</style>\n</head>\n";

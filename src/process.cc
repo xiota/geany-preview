@@ -17,10 +17,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include "process.h"
 
 #define IO_BUF_SIZE 4096
@@ -121,14 +117,14 @@ bool fmt_process_run(FmtProcess *proc, std::string const &str_in,
   GIOStatus status;
   GError *error = nullptr;
   bool read_complete = false;
-  size_t in_off = 0;
+  int in_off = 0;
 
   if (!str_in.empty()) {
     do {
       // until all text is pushed into process's stdin
-      size_t bytes_written = 0;
-      size_t write_size_remaining = str_in.size() - in_off;
-      size_t size_to_write = MIN(write_size_remaining, IO_BUF_SIZE);
+      gsize bytes_written = 0;
+      int write_size_remaining = str_in.size() - in_off;
+      int size_to_write = MIN(write_size_remaining, IO_BUF_SIZE);
 
       // Write some data to process's stdin
       error = nullptr;
@@ -156,7 +152,7 @@ bool fmt_process_run(FmtProcess *proc, std::string const &str_in,
   // rest of the process's stdout.
   while (!read_complete) {
     char *tail_string = nullptr;
-    size_t tail_len = 0;
+    gsize tail_len = 0;
 
     error = nullptr;
     status =

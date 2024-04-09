@@ -37,9 +37,9 @@ std::string &trim_inplace(std::string &s, char const *t) {
 }
 
 std::string &replace_all_inplace(std::string &subject,
-                                 const std::string &search,
-                                 const std::string &replace) {
-  size_t pos = 0;
+                                 const std::string_view &search,
+                                 const std::string_view &replace) {
+  std::size_t pos = 0;
   while ((pos = subject.find(search, pos)) != std::string::npos) {
     subject.replace(pos, search.length(), replace);
     pos += replace.length();
@@ -59,8 +59,8 @@ std::string ws_trim(std::string s) {
   return trim_inplace(s, FOUNTAIN_WHITESPACE);
 }
 
-std::string replace_all(std::string subject, const std::string &search,
-                        const std::string &replace) {
+std::string replace_all(std::string subject, const std::string_view &search,
+                        const std::string_view &replace) {
   return replace_all_inplace(subject, search, replace);
 }
 
@@ -68,25 +68,25 @@ bool begins_with(std::string const &input, std::string const &match) {
   return !strncmp(input.c_str(), match.c_str(), match.length());
 }
 
-std::vector<std::string> split_string(std::string const &str,
-                                      std::string const &delimiter) {
-  std::vector<std::string> strings;
+std::vector<std::string> split_string(std::string_view const &str,
+                                      std::string_view const &delimiter) {
+  std::vector<std::string> result;
 
   std::string::size_type pos = 0;
   std::string::size_type prev = 0;
   while ((pos = str.find(delimiter, prev)) != std::string::npos) {
-    strings.push_back(str.substr(prev, pos - prev));
+    result.emplace_back(str.substr(prev, pos - prev));
     prev = pos + delimiter.length();
   }
 
   // to get the last substring
   // (or entire string if delimiter is not found)
-  strings.push_back(str.substr(prev));
+  result.emplace_back(str.substr(prev));
 
-  return strings;
+  return result;
 }
 
-std::vector<std::string> split_lines(std::string const &s) {
+std::vector<std::string> split_lines(std::string_view const &s) {
   return split_string(s, "\n");
 }
 
@@ -115,14 +115,14 @@ static HtmlEntities entities[] = {
     {"&#91;", "["}, {"&#93;", "]"}, {"&#92;", "\\"}, {"&#60;", "<"},
     {"&#62;", ">"}, {"&#46;", "."}};
 
-bool is_upper(std::string const &s) {
+bool is_upper(std::string_view const &s) {
   return std::all_of(s.begin(), s.end(),
                      [](unsigned char c) { return !std::islower(c); });
 }
 
 std::string &encode_entities_inplace(std::string &input,
                                      bool const bProcessAllEntities) {
-  for (size_t pos = 0; pos < input.length();) {
+  for (std::size_t pos = 0; pos < input.length();) {
     switch (input[pos]) {
       case '&':
         input.replace(pos, 1, "&#38;");
@@ -154,10 +154,10 @@ std::string encode_entities(std::string input, bool const bProcessAllEntities) {
 }
 
 std::string &decode_entities_inplace(std::string &input) {
-  for (size_t pos = 0; pos < input.length();) {
+  for (std::size_t pos = 0; pos < input.length();) {
     switch (input[pos]) {
       case '&': {
-        size_t end;
+        std::size_t end;
         if ((end = input.find(';', pos)) != std::string::npos) {
           std::string substr = input.substr(pos, end - pos + 1);
           for (auto e : entities) {
@@ -196,7 +196,7 @@ std::vector<std::string> cstrv_assign(char **input) {
   std::vector<std::string> output = cstrv_copy(input);
 
   if (input) {
-    for (int i = 0; input[i] != nullptr; ++i) {
+    for (std::size_t i = 0; input[i] != nullptr; ++i) {
       free(input[i]);
     }
     free(input);
@@ -208,7 +208,7 @@ std::vector<std::string> cstrv_copy(char const *const *input) {
   std::vector<std::string> output;
 
   if (input) {
-    for (int i = 0; input[i] != nullptr; ++i) {
+    for (std::size_t i = 0; input[i] != nullptr; ++i) {
       output.push_back(std::string{input[i]});
     }
   }
@@ -218,7 +218,7 @@ std::vector<std::string> cstrv_copy(char const *const *input) {
 // usage: (char **)cstrv_get().data()
 std::vector<char *> cstrv_get(std::vector<std::string> const input) {
   std::vector<char *> output;
-  for (size_t i = 0; i < input.size(); ++i) {
+  for (std::size_t i = 0; i < input.size(); ++i) {
     output.push_back(const_cast<char *>(input[i].c_str()));
   }
   output.push_back(nullptr);
