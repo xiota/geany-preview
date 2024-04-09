@@ -22,9 +22,11 @@
 #include <string>
 #include <vector>
 
+#include "cmake.h"
+
 namespace Fountain {
 
-enum ScriptNodeType : size_t {
+enum ScriptNodeType : int {
   ftnNone = 0,
   ftnUnknown = 1ull,
   ftnKeyValue = 1ull << 1,
@@ -49,7 +51,7 @@ enum ScriptNodeType : size_t {
 
 class ScriptNode {
  public:
-  std::string to_string(size_t const &flags = ScriptNodeType::ftnNone) const;
+  std::string to_string(int const &flags = ScriptNodeType::ftnNone) const;
 
   void clear() {
     type = ScriptNodeType::ftnUnknown;
@@ -74,7 +76,7 @@ class Script {
   }
 
   void parseFountain(std::string const &text);
-  std::string to_string(size_t const &flags = ScriptNodeType::ftnNone) const;
+  std::string to_string(int const &flags = ScriptNodeType::ftnNone) const;
 
  public:
   std::vector<ScriptNode> nodes;
@@ -107,22 +109,27 @@ class Script {
 
 // html output compatible with screenplain css files
 std::string ftn2screenplain(std::string const &input,
-                            std::string const &css_fn = "");
+                            std::string const &css_fn = "screenplain.css",
+                            bool const &embed_css = false);
 
 // html output compatible with textplay css files
 std::string ftn2textplay(std::string const &input,
-                         std::string const &css_fn = "");
+                         std::string const &css_fn = "textplay.css",
+                         bool const &embed_css = false);
 
 // possibly compatible with finaldraft fdx files
 std::string ftn2fdx(std::string const &input);
 
 // native output; modern browsers can display with css
-std::string ftn2xml(std::string const &input, std::string const &css_fn = "",
-                    bool const &embed_css = true);
-std::string ftn2html(std::string const &input, std::string const &css_fn = "",
-                     bool const &embed_css = true);
+std::string ftn2xml(std::string const &input,
+                    std::string const &css_fn = "fountain-xml.css",
+                    bool const &embed_css = false);
+std::string ftn2html(std::string const &input,
+                     std::string const &css_fn = "fountain-html.css",
+                     bool const &embed_css = false);
 
-bool ftn2pdf(std::string const &fn, std::string const &input,
-             std::string const &css_fn = "");
+#if ENABLE_EXPORT_PDF
+bool ftn2pdf(std::string const &fn, std::string const &input);
+#endif  // ENABLE_EXPORT_PDF
 
 }  // namespace Fountain

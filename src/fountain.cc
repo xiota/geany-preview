@@ -18,13 +18,13 @@
 
 #include "fountain.h"
 
+#if ENABLE_EXPORT_PDF
 #include <podofo/podofo.h>
+#endif  // ENABLE_EXPORT_PDF
 
 #include <cstring>
 
 #include "auxiliary.h"
-
-#define DEBUG printf("%s:%d\n", __FILE__, __LINE__);
 
 namespace Fountain {
 
@@ -60,7 +60,7 @@ bool isTransition(std::string const &input) {
   // Note: input should already be left-trimmed,
   // otherwise indent would be removed here
 
-  const size_t len = input.length();
+  const int len = input.length();
 
   // forced transition; make sure intent is not to center
   if (input[0] == '>' && input[input.length() - 1] != '<') {
@@ -164,7 +164,7 @@ auto parseSceneHeader(std::string const &input) {
     forced_scene = true;
   }
 
-  const size_t pos = input.find("#");
+  const int pos = input.find("#");
   if (pos < input.length() - 1 && input.back() == '#') {
     if (forced_scene) {
       first = ws_trim(input.substr(1, pos - 1));
@@ -210,12 +210,12 @@ bool isNotation(std::string const &input) {
   static const std::string strWhiteSpace{FOUNTAIN_WHITESPACE};
   if (strWhiteSpace.find(input.back()) != std::string::npos) {
     std::string s = ws_rtrim(input);
-    const size_t len = s.length();
+    const int len = s.length();
     if (s[len - 1] == ']' && s[len - 2] == ']') {
       return true;
     }
   } else {
-    const size_t len = input.length();
+    const int len = input.length();
     if (input[len - 1] == ']' && input[len - 2] == ']') {
       return true;
     }
@@ -242,7 +242,7 @@ bool isCharacter(std::string const &input) {
   }
 
   // check for same-line parenthetical
-  size_t pos = input.find("(");
+  int pos = input.find("(");
   if (pos != std::string::npos && input.find(")") != std::string::npos) {
     if (is_upper(input.substr(0, pos))) {
       return true;
@@ -297,12 +297,12 @@ bool isParenthetical(std::string const &input) {
   static std::string strWhiteSpace{FOUNTAIN_WHITESPACE};
   if (strWhiteSpace.find(input.back()) != std::string::npos) {
     std::string s = ws_rtrim(input);
-    const size_t len = s.length();
+    const int len = s.length();
     if (s[len - 1] == ')') {
       return true;
     }
   } else {
-    const size_t len = input.length();
+    const int len = input.length();
     if (input[len - 1] == ')') {
       return true;
     }
@@ -325,7 +325,7 @@ auto parseKeyValue(std::string const &input) {
   std::string key;
   std::string value;
 
-  size_t pos = input.find(':');
+  int pos = input.find(':');
 
   if (pos != std::string::npos) {
     key = to_lower(ws_trim(input.substr(0, pos)));
@@ -337,7 +337,7 @@ auto parseKeyValue(std::string const &input) {
 
 // replace escape sequences with entities in a single pass
 std::string &parseEscapeSequences_inplace(std::string &input) {
-  for (size_t pos = 0; pos < input.length();) {
+  for (int pos = 0; pos < input.length();) {
     switch (input[pos]) {
       case '\t':
         input.replace(pos, 1, "    ");
@@ -404,8 +404,8 @@ std::string &parseEscapeSequences_inplace(std::string &input) {
 
 }  // namespace
 
-std::string ScriptNode::to_string(size_t const &flags) const {
-  static uint8_t dialog_state = 0;
+std::string ScriptNode::to_string(int const &flags) const {
+  static int dialog_state = 0;
   std::string output;
 
   switch (type) {
@@ -549,7 +549,7 @@ std::string ScriptNode::to_string(size_t const &flags) const {
   return output;
 }
 
-std::string Script::to_string(size_t const &flags) const {
+std::string Script::to_string(int const &flags) const {
   std::string output{"<Fountain>\n"};
 
   for (auto node : nodes) {
@@ -768,7 +768,7 @@ void Script::parseFountain(std::string const &text) {
       if (isDualDialog(s)) {
         // modify previous dialog node
         bool prev_dialog_modded = false;
-        for (int64_t pos = nodes.size() - 1; pos >= 0; pos--) {
+        for (int pos = nodes.size() - 1; pos >= 0; pos--) {
           if (nodes[pos].type == ScriptNodeType::ftnDialog) {
             nodes[pos].type = ScriptNodeType::ftnDialogLeft;
             prev_dialog_modded = true;
@@ -803,7 +803,7 @@ void Script::parseFountain(std::string const &text) {
 
     // Section, can only be forced
     if (s.length() > 0 && s[0] == '#') {
-      for (uint8_t i = 1; i < 6; ++i) {
+      for (int i = 1; i < 6; ++i) {
         if (s.length() > i && s[i] == '#') {
           if (i == 5) {
             new_node(ScriptNodeType::ftnSection, std::to_string(i + 1));
@@ -864,14 +864,22 @@ void Script::parseFountain(std::string const &text) {
 }
 
 // html similar to screenplain html output (can use the same css files)
-std::string ftn2screenplain(std::string const &input,
-                            std::string const &css_fn) {
+std::string ftn2screenplain(std::string const &input, std::string const &css_fn,
+                            bool const &embed_css) {
   std::string output{"<!DOCTYPE html>\n<html>\n<head>\n"};
 
   if (!css_fn.empty()) {
-    output += R"(<link rel="stylesheet" type="text/css" href="file://)";
-    output += css_fn;
-    output += "\">\n";
+    if (embed_css) {
+      std::string css_contents = file_get_contents(css_fn);
+
+      output += "<style type='text/css'>\n";
+      output += css_contents;
+      output += "\n</style>\n";
+    } else {
+      output += R"(<link rel="stylesheet" type="text/css" href=")";
+      output += ((css_fn[0] == '/') ? "file://" : "") + css_fn;
+      output += "'>\n";
+    }
   }
 
   output +=
@@ -944,13 +952,22 @@ std::string ftn2screenplain(std::string const &input,
 }
 
 // html similar to textplay html output (can use the same css files)
-std::string ftn2textplay(std::string const &input, std::string const &css_fn) {
+std::string ftn2textplay(std::string const &input, std::string const &css_fn,
+                         bool const &embed_css) {
   std::string output{"<!DOCTYPE html>\n<html>\n<head>\n"};
 
   if (!css_fn.empty()) {
-    output += "<link rel=\"stylesheet\" type=\"text/css\" href=\"file://";
-    output += css_fn;
-    output += "\">\n";
+    if (embed_css) {
+      std::string css_contents = file_get_contents(css_fn);
+
+      output += "<style type='text/css'>\n";
+      output += css_contents;
+      output += "\n</style>\n";
+    } else {
+      output += R"(<link rel="stylesheet" type="text/css" href=")";
+      output += ((css_fn[0] == '/') ? "file://" : "") + css_fn;
+      output += "'>\n";
+    }
   }
 
   output +=
@@ -1129,8 +1146,8 @@ std::string ftn2xml(std::string const &input, std::string const &css_fn,
       output += css_contents;
       output += "\n</style>\n";
     } else {
-      output += "<link rel='stylesheet' type='text/css' href='file://";
-      output += css_fn;
+      output += R"(<link rel="stylesheet" type="text/css" href=")";
+      output += ((css_fn[0] == '/') ? "file://" : "") + css_fn;
       output += "'>\n";
     }
   }
@@ -1159,7 +1176,6 @@ std::string ftn2xml(std::string const &input, std::string const &css_fn,
 std::string ftn2html(std::string const &input, std::string const &css_fn,
                      bool const &embed_css) {
   std::string output{"<!DOCTYPE html>\n<html>\n<head>\n"};
-
   if (!css_fn.empty()) {
     if (embed_css) {
       std::string css_contents = file_get_contents(css_fn);
@@ -1168,8 +1184,8 @@ std::string ftn2html(std::string const &input, std::string const &css_fn,
       output += css_contents;
       output += "\n</style>\n";
     } else {
-      output += "<link rel='stylesheet' type='text/css' href='file://";
-      output += css_fn;
+      output += R"(<link rel="stylesheet" type="text/css" href=")";
+      output += ((css_fn[0] == '/') ? "file://" : "") + css_fn;
       output += "'>\n";
     }
   }
@@ -1259,6 +1275,7 @@ std::string ftn2html(std::string const &input, std::string const &css_fn,
   return output;
 }
 
+#if ENABLE_EXPORT_PDF
 namespace {  // PDF export
 
 #define PODOFO_RAISE_ERROR(code) \
@@ -1316,7 +1333,7 @@ auto split_formatting(std::string const &input) {
                            strUnderline);
   }
 
-  for (size_t pos = 0; pos < input.length(); ++pos) {
+  for (int pos = 0; pos < input.length(); ++pos) {
     switch (input[pos]) {
       case '<':
         if (pos + 2 < input.length()) {
@@ -1566,8 +1583,7 @@ void pdfTextAdd(PoDoFo::PdfDocument &document, PoDoFo::PdfPainter &painter,
 
 }  // namespace
 
-bool ftn2pdf(std::string const &fn, std::string const &input,
-             std::string const &css_fn) {
+bool ftn2pdf(std::string const &fn, std::string const &input) {
   const int lines_per_page = 54;
   const int line_char_length = 60;
   const int width_print = 432;
@@ -1605,9 +1621,9 @@ bool ftn2pdf(std::string const &fn, std::string const &input,
   // process script
   Fountain::Script script(input);
 
-  size_t const flags = Fountain::ScriptNodeType::ftnContinuation |
-                       Fountain::ScriptNodeType::ftnKeyValue |
-                       Fountain::ScriptNodeType::ftnUnknown;
+  int const flags = Fountain::ScriptNodeType::ftnContinuation |
+                    Fountain::ScriptNodeType::ftnKeyValue |
+                    Fountain::ScriptNodeType::ftnUnknown;
 
   // Title page
   if (script.metadata.find("title") != script.metadata.end()) {
@@ -1685,7 +1701,7 @@ bool ftn2pdf(std::string const &fn, std::string const &input,
     pdf_painter.SetCanvas(*pdf_page);
   }
 
-  static uint8_t dialog_state = 0;
+  static int dialog_state = 0;
   std::string output;
   std::string outputDialog;
   std::string outputDialogLeft;
@@ -1996,8 +2012,8 @@ bool ftn2pdf(std::string const &fn, std::string const &input,
   }
 
   pdf_document.Save(fn);
-  // pdf_document.Close();
   return true;
 }
+#endif  // ENABLE_EXPORT_PDF
 
 }  // namespace Fountain

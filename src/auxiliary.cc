@@ -39,7 +39,7 @@ std::string &trim_inplace(std::string &s, char const *t) {
 std::string &replace_all_inplace(std::string &subject,
                                  const std::string_view &search,
                                  const std::string_view &replace) {
-  size_t pos = 0;
+  int pos = 0;
   while ((pos = subject.find(search, pos)) != std::string::npos) {
     subject.replace(pos, search.length(), replace);
     pos += replace.length();
@@ -122,7 +122,7 @@ bool is_upper(std::string_view const &s) {
 
 std::string &encode_entities_inplace(std::string &input,
                                      bool const bProcessAllEntities) {
-  for (size_t pos = 0; pos < input.length();) {
+  for (int pos = 0; pos < input.length();) {
     switch (input[pos]) {
       case '&':
         input.replace(pos, 1, "&#38;");
@@ -154,10 +154,10 @@ std::string encode_entities(std::string input, bool const bProcessAllEntities) {
 }
 
 std::string &decode_entities_inplace(std::string &input) {
-  for (size_t pos = 0; pos < input.length();) {
+  for (int pos = 0; pos < input.length();) {
     switch (input[pos]) {
       case '&': {
-        size_t end;
+        int end;
         if ((end = input.find(';', pos)) != std::string::npos) {
           std::string substr = input.substr(pos, end - pos + 1);
           for (auto e : entities) {
@@ -218,7 +218,7 @@ std::vector<std::string> cstrv_copy(char const *const *input) {
 // usage: (char **)cstrv_get().data()
 std::vector<char *> cstrv_get(std::vector<std::string> const input) {
   std::vector<char *> output;
-  for (size_t i = 0; i < input.size(); ++i) {
+  for (int i = 0; i < input.size(); ++i) {
     output.push_back(const_cast<char *>(input[i].c_str()));
   }
   output.push_back(nullptr);

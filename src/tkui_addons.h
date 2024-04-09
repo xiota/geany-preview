@@ -25,6 +25,8 @@
 extern GeanyPlugin *geany_plugin;
 extern GeanyData *geany_data;
 
+#define DEBUG printf("%s\n\t%d\n\t%s\n\n", __FILE__, __LINE__, __FUNCTION__);
+
 #define GFREE(_z_) \
   do {             \
     g_free(_z_);   \

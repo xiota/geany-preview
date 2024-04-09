@@ -24,6 +24,8 @@
 #include <string>
 #include <vector>
 
+#define DEBUG printf("%s\n\t%d\n\t%s\n\n", __FILE__, __LINE__, __FUNCTION__);
+
 #define FOUNTAIN_WHITESPACE " \t\n\r\f\v"
 
 std::string &ltrim_inplace(std::string &s, char const *t = FOUNTAIN_WHITESPACE);

@@ -19,9 +19,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "pv_main.h"
 
 #include <string>
 
@@ -29,7 +27,6 @@
 #include "fountain.h"
 #include "process.h"
 #include "pv_formats.h"
-#include "pv_main.h"
 
 #define WEBVIEW_WARN(msg) \
   webkit_web_view_load_plain_text(WEBKIT_WEB_VIEW(gWebView), (msg))
@@ -208,7 +205,7 @@ std::string combine_head_body(std::string &strHead, std::string &strOutput) {
         print_regex_error(e, __FILE__, __LINE__);
       }
     } else {
-      size_t pos = strOutput.find(">");
+      int pos = strOutput.find(">");
       strOutput.insert(pos, "<head><style></style></head>");
     }
   }
@@ -255,8 +252,7 @@ bool use_snippets(GeanyDocument *doc) {
         std::string strFormat =
             to_lower(cstr_assign(g_path_get_basename(DOC_FILENAME(doc))));
 
-        if (strFormat.find("fountain") != std::string::npos ||
-            strFormat.find("spmd") != std::string::npos) {
+        if (strFormat.find("fountain") != std::string::npos) {
           if (!gSettings.snippet_fountain) {
             return false;
           }
@@ -597,7 +593,7 @@ std::string update_preview(bool const bGetContents) {
       } else {
         std::string css_fn =
             find_copy_css("fountain.css", PREVIEW_CSS_FOUNTAIN);
-        strOutput = Fountain::ftn2xml(strBody, css_fn);
+        strOutput = Fountain::ftn2xml(strBody, css_fn, true);
       }
       break;
     case PREVIEW_FILETYPE_TEXTILE:
@@ -859,7 +855,7 @@ void preview_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
   gtk_widget_destroy(save_dialog);
 }
 
-#ifdef ENABLE_EXPORT_PDF
+#if ENABLE_EXPORT_PDF
 
 void preview_menu_export_pdf(GtkWidget *self, GtkWidget *dialog) {
   GeanyDocument *doc = document_get_current();
@@ -939,7 +935,7 @@ bool preview_key_binding(int key_id) {
       preview_menu_export_html(nullptr, nullptr);
       break;
 
-#ifdef ENABLE_EXPORT_PDF
+#if ENABLE_EXPORT_PDF
     case PREVIEW_KEY_EXPORT_PDF:
       preview_menu_export_pdf(nullptr, nullptr);
       break;
@@ -952,8 +948,6 @@ bool preview_key_binding(int key_id) {
 }
 
 }  // namespace
-
-namespace {  // Plugin Functions and Setup
 
 bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
                            SCNotification *notif, gpointer user_data) {
@@ -1093,16 +1087,44 @@ void preview_document_signal(GObject *obj, GeanyDocument *doc,
   }
 }
 
-bool preview_plugin_init(GeanyPlugin *plugin, gpointer data) {
+static gboolean preview_init(GeanyPlugin *plugin, gpointer pdata) {
   geany_plugin = plugin;
   geany_data = plugin->geany_data;
+
   gScrollY.resize(50, 0);
 
   gSettings.initialize();
   gSettings.load();
 
+  // Callbacks
+  GEANY_PSC("geany-startup-complete", preview_document_signal);
+  GEANY_PSC("editor-notify", preview_editor_notify);
+  GEANY_PSC("document-activate", preview_document_signal);
+  GEANY_PSC("document-filetype-set", preview_document_signal);
+  GEANY_PSC("document-new", preview_document_signal);
+  GEANY_PSC("document-open", preview_document_signal);
+  GEANY_PSC("document-reload", preview_document_signal);
+
+  // Set keyboard shortcuts
+  GeanyKeyGroup *group =
+      plugin_set_key_group(geany_plugin, "Preview", PREVIEW_KEY_COUNT,
+                           (GeanyKeyGroupCallback)preview_key_binding);
+
+  keybindings_set_item(group, PREVIEW_KEY_TOGGLE_EDITOR, nullptr, 0,
+                       GdkModifierType(0), "preview_toggle_editor",
+                       _("Toggle focus between editor and preview"), nullptr);
+
+  keybindings_set_item(group, PREVIEW_KEY_EXPORT_HTML, nullptr, 0,
+                       GdkModifierType(0), "preview_export_html",
+                       _("Export document to HTML"), nullptr);
+#if ENABLE_EXPORT_PDF
+  keybindings_set_item(group, PREVIEW_KEY_EXPORT_PDF, nullptr, 0,
+                       GdkModifierType(0), "preview_export_pdf",
+                       _("Export Fountain screenplay to PDF"), nullptr);
+#endif  // ENABLE_EXPORT_PDF
+
   // set up menu
-  GeanyKeyGroup *group;
+  // GeanyKeyGroup *group;
   GtkWidget *item;
 
   gPreviewMenu = gtk_menu_item_new_with_label(_("Preview"));
@@ -1116,7 +1138,7 @@ bool preview_plugin_init(GeanyPlugin *plugin, gpointer data) {
                    nullptr);
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
-#ifdef ENABLE_EXPORT_PDF
+#if ENABLE_EXPORT_PDF
   item = gtk_menu_item_new_with_label(_("Export to PDF..."));
   g_signal_connect(item, "activate", G_CALLBACK(preview_menu_export_pdf),
                    nullptr);
@@ -1203,19 +1225,8 @@ bool preview_plugin_init(GeanyPlugin *plugin, gpointer data) {
   return true;
 }
 
-void preview_plugin_cleanup(GeanyPlugin *plugin, gpointer data) {
-  gSettings.kf_close();
-
-  gtk_widget_destroy(gScrolledWindow);
-  gtk_widget_destroy(gPreviewMenu);
-
-  g_clear_signal_handler(&gHandleSidebarSwitchPage,
-                         GTK_WIDGET(gSideBarNotebook));
-  g_clear_signal_handler(&gHandleSidebarShow, GTK_WIDGET(gSideBarNotebook));
-}
-
-GtkWidget *preview_plugin_configure(GeanyPlugin *plugin, GtkDialog *dialog,
-                                    gpointer pdata) {
+static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
+                                    gpointer data) {
   GtkWidget *box, *btn;
   char *tooltip;
 
@@ -1271,48 +1282,30 @@ GtkWidget *preview_plugin_configure(GeanyPlugin *plugin, GtkDialog *dialog,
   return box;
 }
 
-}  // namespace
+static void preview_cleanup(GeanyPlugin *plugin, gpointer pdata) {
+  gSettings.kf_close();
 
-PLUGIN_VERSION_CHECK(225)
+  gtk_widget_destroy(gScrolledWindow);
+  gtk_widget_destroy(gPreviewMenu);
 
-PLUGIN_SET_INFO("Preview",
-                _("Preview pane for HTML, Markdown, and other lightweight "
-                  "markup formats."),
-                PACKAGE_VERSION, "xiota")
-
-void plugin_init(GeanyData *data) {
-  GEANY_PSC("geany-startup-complete", preview_document_signal);
-  GEANY_PSC("editor-notify", preview_editor_notify);
-  GEANY_PSC("document-activate", preview_document_signal);
-  GEANY_PSC("document-filetype-set", preview_document_signal);
-  GEANY_PSC("document-new", preview_document_signal);
-  GEANY_PSC("document-open", preview_document_signal);
-  GEANY_PSC("document-reload", preview_document_signal);
-
-  // Set keyboard shortcuts
-  GeanyKeyGroup *group =
-      plugin_set_key_group(geany_plugin, "Preview", PREVIEW_KEY_COUNT,
-                           (GeanyKeyGroupCallback)preview_key_binding);
-
-  keybindings_set_item(group, PREVIEW_KEY_TOGGLE_EDITOR, nullptr, 0,
-                       GdkModifierType(0), "preview_toggle_editor",
-                       _("Toggle focus between editor and preview"), nullptr);
-
-  keybindings_set_item(group, PREVIEW_KEY_EXPORT_HTML, nullptr, 0,
-                       GdkModifierType(0), "preview_export_html",
-                       _("Export document to HTML"), nullptr);
-
-#ifdef ENABLE_EXPORT_PDF
-  keybindings_set_item(group, PREVIEW_KEY_EXPORT_PDF, nullptr, 0,
-                       GdkModifierType(0), "preview_export_pdf",
-                       _("Export Fountain screenplay to PDF"), nullptr);
-#endif  // ENABLE_EXPORT_PDF
-
-  preview_plugin_init(geany_plugin, geany_data);
+  g_clear_signal_handler(&gHandleSidebarSwitchPage,
+                         GTK_WIDGET(gSideBarNotebook));
+  g_clear_signal_handler(&gHandleSidebarShow, GTK_WIDGET(gSideBarNotebook));
 }
 
-void plugin_cleanup(void) { preview_plugin_cleanup(geany_plugin, geany_data); }
+// G_MODULE_EXPORT
+void geany_load_module(GeanyPlugin *plugin) {
+  plugin->info->name = "Preview";
+  plugin->info->description = _(
+      "Preview pane for HTML, Markdown, and other lightweight markup formats.");
+  plugin->info->version = VERSION;
+  plugin->info->author = "xiota";
 
-GtkWidget *plugin_configure(GtkDialog *dlg) {
-  return preview_plugin_configure(geany_plugin, dlg, geany_data);
+  plugin->funcs->init = preview_init;
+  plugin->funcs->configure = preview_configure;
+  // plugin->funcs->help = nullptr;
+  plugin->funcs->cleanup = preview_cleanup;
+  // plugin->funcs->callbacks = preview_callbacks;
+
+  GEANY_PLUGIN_REGISTER(plugin, 225);
 }
