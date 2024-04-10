@@ -18,4 +18,4 @@ target_include_directories(
 )
 
 ## Install
-install(TARGETS preview DESTINATION "${GEANY_PLUGIN_INSTALL}")
+install(TARGETS preview DESTINATION "${GEANY_INSTALL_PLUGIN}")

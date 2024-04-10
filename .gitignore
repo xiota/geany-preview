@@ -2,6 +2,10 @@
 /build
 /build*
 
+# cmake
+CMakeFiles
+CMakeCache.txt
+
 # Common compiler artifacts
 *.[ao]
 *.dll

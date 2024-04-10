@@ -1,0 +1,14 @@
+include(GNUInstallDirs)
+
+# /usr
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "..." FORCE)
+endif()
+
+# /usr/lib/geany
+set(GEANY_INSTALL_PLUGIN "${CMAKE_INSTALL_LIBDIR}/geany")
+set(GEANY_INSTALL_FULL_PLUGIN "${CMAKE_INSTALL_FULL_LIBDIR}/geany")
+
+# /usr/share/geany-plugins
+set(GEANY_INSTALL_PLUGIN_DATA "${CMAKE_INSTALL_LIBDIR}/geany-plugins")
+set(GEANY_INSTALL_FULL_PLUGIN_DATA "${CMAKE_INSTALL_FULL_LIBDIR}/geany-plugins")

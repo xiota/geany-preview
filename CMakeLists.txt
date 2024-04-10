@@ -8,30 +8,31 @@ project(preview
 
 add_library(preview SHARED)
 
-set_target_properties(preview PROPERTIES 
-  PREFIX ""
-  OUTPUT_NAME "preview"
-  SUFFIX ".so"
-  ENABLE_EXPORTS ON
+set_target_properties(preview
+  PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "preview"
+    SUFFIX ".so"
+    ENABLE_EXPORTS ON
 )
 
-## Options
-option(PREVIEW_PDF_EXPORT "Export Fountain documents to PDF" ON)
+## Modules
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-## Build options (respecting user settings)
-if(NOT DEFINED ENV{CFLAGS} AND NOT CMAKE_C_FLAGS)
-  set(CMAKE_C_FLAGS "-march=native -O3")
-endif()
+include(build-flags)
+include(default-paths)
 
-if(NOT DEFINED ENV{CXXFLAGS}  AND NOT CMAKE_CXX_FLAGS)
-  set(CMAKE_CXX_FLAGS "-march=native -O3")
-else()
-endif()
+include(tristate-option)
 
-## Depends
 find_package(PkgConfig REQUIRED)
 
-# Required
+
+## Options
+tristate_option(ENABLE_PDF_EXPORT "AUTO" "Feature: Export Fountain screenplays to PDF")
+
+
+## Depends
+# required
 pkg_check_modules(PC_DEPS REQUIRED IMPORTED_TARGET
   geany
   libcmark-gfm
@@ -39,53 +40,18 @@ pkg_check_modules(PC_DEPS REQUIRED IMPORTED_TARGET
 )
 target_link_libraries(preview PUBLIC PkgConfig::PC_DEPS)
 
-# Optional
-pkg_check_modules(podofo IMPORTED_TARGET libpodofo>=0.10.0)
-
-if (PREVIEW_PDF_EXPORT)
-  if (NOT podofo_FOUND)
-    message(SEND_ERROR "  PoDoFo not found.  Cannot export PDF.")
-  elseif(podofo_VERSION VERSION_LESS 0.10.0)
-    message(SEND_ERROR "  Unsupported PoDoFo version ${podofo_VERSION}")
-  elseif(podofo_VERSION VERSION_GREATER_EQUAL 0.11.0)
-    message(STATUS "  Unsupported PoDoFo version ${podofo_VERSION}")
-  else()
-    target_link_libraries(preview PUBLIC PkgConfig::podofo)
-  endif()
-else()
-    message(STATUS "  - PREVIEW_PDF_EXPORT=OFF.  PDF export disabled.")
+# podofo
+pkg_check_modules(podofo ${ENABLE_PDF_EXPORT_REQUIRED} IMPORTED_TARGET libpodofo>=0.10.0)
+if(podofo_FOUND AND NOT ENABLE_PDF_EXPORT_OFF)
+  target_link_libraries(preview PUBLIC PkgConfig::podofo)
+  add_definitions(-DENABLE_PDF_EXPORT=1)
+endif()
+if(ENABLE_PDF_EXPORT_OFF)
+  set(podofo_INCLUDE_DIRS "")
+  set(podofo_LIBRARIES "")
+  message(STATUS "  PDF export is disabled.")
 endif()
 
-## Install paths
-include(GNUInstallDirs)
-
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "..." FORCE)
-endif()
-
-if(CMAKE_INSTALL_LIBDIR_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_LIBDIR "lib" CACHE PATH "..." FORCE)
-endif()
-
-# /usr/lib/geany
-if (NOT DEFINED GEANY_PLUGIN_INSTALL)
-  set(GEANY_PLUGIN_INSTALL "${CMAKE_INSTALL_LIBDIR}/geany")
-endif()
-
-# /usr/share/geany-plugins
-if (NOT DEFINED GEANY_PLUGIN_DATA)
-  set(GEANY_PLUGIN_DATA "${CMAKE_INSTALL_DATADIR}/geany-plugins")
-endif()
-
-# /usr/share/geany-plugins/preview
-if (NOT DEFINED PREVIEW_INSTALL_DATA)
-  set(PREVIEW_INSTALL_DATA "${CMAKE_INSTALL_PREFIX}/${GEANY_PLUGIN_DATA}/${PROJECT_NAME}")
-endif()
-
-# /usr/share/doc/preview
-if (NOT DEFINED PREVIEW_INSTALL_DOCDIR)
-  set(PREVIEW_INSTALL_DOCDIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DOCDIR}")
-endif()
 
 ## Sources
 add_subdirectory(data)
