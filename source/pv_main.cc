@@ -70,7 +70,7 @@ void wv_save_position_callback(GObject *object, GAsyncResult *result,
   GeanyDocument *doc = document_get_current();
   g_return_if_fail(DOC_VALID(doc));
 
-  int idx = document_get_notebook_page(doc);
+  std::size_t idx = document_get_notebook_page(doc);
 
   JSCValue *value = nullptr;
   GError *error = nullptr;
@@ -146,7 +146,7 @@ void wv_load_position() {
   GeanyDocument *doc = document_get_current();
   g_return_if_fail(DOC_VALID(doc));
 
-  int idx = document_get_notebook_page(doc);
+  std::size_t idx = document_get_notebook_page(doc);
 
   static std::string script;
   if (gSnippetActive) {
@@ -676,8 +676,8 @@ gboolean update_timeout_callback(gpointer user_data) {
 }  // namespace
 
 namespace {  // Sidebar Functions and Callbacks
-void preview_sidebar_switch_page(GtkNotebook *nb, GtkWidget *page,
-                                 uint page_num, gpointer user_data) {
+void preview_sidebar_switch_page(GtkNotebook *nb, GtkWidget *page, int page_num,
+                                 gpointer user_data) {
   if (gPreviewSideBarPageNumber == page_num) {
     gCurrentDocument = nullptr;
     update_preview(false);
@@ -1054,7 +1054,7 @@ bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
     case SLOW: {
       // delay for slower programs (asciidoctor)
       double _tt = (double)length * gSettings.size_factor_slow;
-      int timeout = (int)_tt > gSettings.update_interval_slow
+      timeout = (int)_tt > gSettings.update_interval_slow
                         ? (int)_tt
                         : gSettings.update_interval_slow;
     } break;

@@ -45,6 +45,5 @@ std::string pandoc(std::string const &work_dir, std::string const &input,
 std::string asciidoctor(std::string const &work_dir, std::string const &input);
 std::string asciidoc(std::string const &work_dir, std::string const &input);
 
-static void addMarkdownExtension(cmark_parser *parser,
-                                 std::string const &extName);
+void addMarkdownExtension(cmark_parser *parser, std::string const &extName);
 std::string cmark_gfm(std::string const &input);

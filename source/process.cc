@@ -62,7 +62,7 @@ FmtProcess *fmt_process_open(std::string const &work_dir,
   proc = g_new0(FmtProcess, 1);
 
   std::vector<char *> argv;
-  for (int i = 0; i < argv_str.size(); ++i) {
+  for (std::size_t i = 0; i < argv_str.size(); ++i) {
     argv.push_back(const_cast<char *>(argv_str[i].c_str()));
   }
   argv.push_back(nullptr);
@@ -117,7 +117,7 @@ bool fmt_process_run(FmtProcess *proc, std::string const &str_in,
   GIOStatus status;
   GError *error = nullptr;
   bool read_complete = false;
-  int in_off = 0;
+  std::size_t in_off = 0;
 
   if (!str_in.empty()) {
     do {
