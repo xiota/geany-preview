@@ -153,7 +153,7 @@ std::string asciidoctor(std::string const &work_dir, std::string const &input) {
   if (!css_fn.empty()) {
     std::string css_contents = file_get_contents(css_fn);
 
-    int pos = strOutput.find("</head>");
+    std::size_t pos = strOutput.find("</head>");
     if (pos != std::string::npos) {
       std::string rep_text = "\n<style type='text/css'>\n" + css_contents +
                              "\n</style>\n</head>\n";
@@ -200,7 +200,7 @@ std::string asciidoc(std::string const &work_dir, std::string const &input) {
   if (!css_fn.empty()) {
     std::string css_contents = file_get_contents(css_fn);
 
-    int pos = strOutput.find("</head>");
+    std::size_t pos = strOutput.find("</head>");
     if (pos != std::string::npos) {
       std::string rep_text = "\n<style type='text/css'>\n" + css_contents +
                              "\n</style>\n</head>\n";
@@ -215,8 +215,7 @@ std::string asciidoc(std::string const &work_dir, std::string const &input) {
 }
 
 // This function makes enabling cmark-gfm extensions easier
-static void addMarkdownExtension(cmark_parser *parser,
-                                 std::string const &extName) {
+void addMarkdownExtension(cmark_parser *parser, std::string const &extName) {
   cmark_syntax_extension *ext = cmark_find_syntax_extension(extName.c_str());
   if (ext) {
     cmark_parser_attach_syntax_extension(parser, ext);

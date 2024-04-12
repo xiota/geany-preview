@@ -60,7 +60,7 @@ bool isTransition(std::string const &input) {
   // Note: input should already be left-trimmed,
   // otherwise indent would be removed here
 
-  const int len = input.length();
+  const std::size_t len = input.length();
 
   // forced transition; make sure intent is not to center
   if (input[0] == '>' && input[input.length() - 1] != '<') {
@@ -164,7 +164,7 @@ auto parseSceneHeader(std::string const &input) {
     forced_scene = true;
   }
 
-  const int pos = input.find("#");
+  const std::size_t pos = input.find("#");
   if (pos < input.length() - 1 && input.back() == '#') {
     if (forced_scene) {
       first = ws_trim(input.substr(1, pos - 1));
@@ -210,12 +210,12 @@ bool isNotation(std::string const &input) {
   static const std::string strWhiteSpace{FOUNTAIN_WHITESPACE};
   if (strWhiteSpace.find(input.back()) != std::string::npos) {
     std::string s = ws_rtrim(input);
-    const int len = s.length();
+    const std::size_t len = s.length();
     if (s[len - 1] == ']' && s[len - 2] == ']') {
       return true;
     }
   } else {
-    const int len = input.length();
+    const std::size_t len = input.length();
     if (input[len - 1] == ']' && input[len - 2] == ']') {
       return true;
     }
@@ -242,7 +242,7 @@ bool isCharacter(std::string const &input) {
   }
 
   // check for same-line parenthetical
-  int pos = input.find("(");
+  std::size_t pos = input.find("(");
   if (pos != std::string::npos && input.find(")") != std::string::npos) {
     if (is_upper(input.substr(0, pos))) {
       return true;
@@ -297,12 +297,12 @@ bool isParenthetical(std::string const &input) {
   static std::string strWhiteSpace{FOUNTAIN_WHITESPACE};
   if (strWhiteSpace.find(input.back()) != std::string::npos) {
     std::string s = ws_rtrim(input);
-    const int len = s.length();
+    const std::size_t len = s.length();
     if (s[len - 1] == ')') {
       return true;
     }
   } else {
-    const int len = input.length();
+    const std::size_t len = input.length();
     if (input[len - 1] == ')') {
       return true;
     }
@@ -325,7 +325,7 @@ auto parseKeyValue(std::string const &input) {
   std::string key;
   std::string value;
 
-  int pos = input.find(':');
+  std::size_t pos = input.find(':');
 
   if (pos != std::string::npos) {
     key = to_lower(ws_trim(input.substr(0, pos)));
@@ -337,7 +337,7 @@ auto parseKeyValue(std::string const &input) {
 
 // replace escape sequences with entities in a single pass
 std::string &parseEscapeSequences_inplace(std::string &input) {
-  for (int pos = 0; pos < input.length();) {
+  for (std::size_t pos = 0; pos < input.length();) {
     switch (input[pos]) {
       case '\t':
         input.replace(pos, 1, "    ");
@@ -768,7 +768,7 @@ void Script::parseFountain(std::string const &text) {
       if (isDualDialog(s)) {
         // modify previous dialog node
         bool prev_dialog_modded = false;
-        for (int pos = nodes.size() - 1; pos >= 0; pos--) {
+        for (std::size_t pos = nodes.size() - 1; pos >= 0; pos--) {
           if (nodes[pos].type == ScriptNodeType::ftnDialog) {
             nodes[pos].type = ScriptNodeType::ftnDialogLeft;
             prev_dialog_modded = true;
@@ -803,7 +803,7 @@ void Script::parseFountain(std::string const &text) {
 
     // Section, can only be forced
     if (s.length() > 0 && s[0] == '#') {
-      for (int i = 1; i < 6; ++i) {
+      for (std::size_t i = 1; i < 6; ++i) {
         if (s.length() > i && s[i] == '#') {
           if (i == 5) {
             new_node(ScriptNodeType::ftnSection, std::to_string(i + 1));
@@ -1255,7 +1255,7 @@ std::string ftn2html(std::string const &input, std::string const &css_fn,
     replace_all_inplace(output, "<BlankLine>", "");
     replace_all_inplace(output, "</BlankLine>", "");
 
-    for (int i = 1; i <= 6; i++) {
+    for (std::size_t i = 1; i <= 6; i++) {
       std::string lvl = std::to_string(i);
       replace_all_inplace(output, "<SectionH" + lvl + ">",
                           R"(<div class="SectionH)" + lvl + R"(">)");
@@ -1333,7 +1333,7 @@ auto split_formatting(std::string const &input) {
                            strUnderline);
   }
 
-  for (int pos = 0; pos < input.length(); ++pos) {
+  for (std::size_t pos = 0; pos < input.length(); ++pos) {
     switch (input[pos]) {
       case '<':
         if (pos + 2 < input.length()) {
@@ -1447,11 +1447,11 @@ std::string &center_text_inplace(std::string &text,
 std::vector<std::string> wrap_text(std::string const &text, int const width) {
   std::vector<std::string> words = split_string(ws_rtrim(text), " ");
   std::vector<std::string> lines;
-  const int cwidth = (width * 10) / 72;
+  const std::size_t cwidth = (width * 10) / 72;
 
   std::string ln;
   ln.reserve(cwidth + 100);
-  int len = 0;
+  std::size_t len = 0;
 
   for (auto &w : words) {
     if (len + w.size() > cwidth) {
