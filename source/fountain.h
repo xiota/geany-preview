@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#include "cmake.h"
+#include "config.h"
 
 namespace Fountain {
 
