@@ -1,0 +1,10 @@
+option('pdf_export', type: 'feature', value: 'auto', description: 'Enable PDF Export')
+
+option('css_asciidoctor', type: 'string', value: 'asciidoctor.css', description: 'CSS filename for asciidoctor')
+option('css_extra-dark', type: 'string', value: 'extra-dark.css', description: 'CSS filename for extra-dark')
+option('css_extra-invert', type: 'string', value: 'extra-invert.css', description: 'CSS filename for extra-invert')
+option('css_extra-media', type: 'string', value: 'extra-media.css', description: 'CSS filename for extra-media')
+option('css_fountain', type: 'string', value: 'fountain.css', description: 'CSS filename for fountain')
+option('css_headers', type: 'string', value: 'headers.css', description: 'CSS filename for email-style headers')
+option('css_markdown', type: 'string', value: 'markdown.css', description: 'CSS filename for markdown')
+option('css_pandoc', type: 'string', value: 'pandoc.css', description: 'CSS filename for pandoc')

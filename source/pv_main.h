@@ -23,7 +23,7 @@
 
 #include <locale>
 
-#include "cmake.h"  // generated header
+#include "config.h"
 #include "geanyplugin.h"
 #include "webkit2/webkit2.h"
 

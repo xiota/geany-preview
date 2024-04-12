@@ -1,0 +1,17 @@
+#pragma once
+
+#define VERSION "@version@"
+
+#define PREVIEW_CSS_ASCIIDOCTOR  "@prefix@/@project_datadir@/@css_asciidoctor@"
+#define PREVIEW_CSS_EXTRA_DARK   "@prefix@/@project_datadir@/@css_extra-dark@"
+#define PREVIEW_CSS_EXTRA_INVERT "@prefix@/@project_datadir@/@css_extra-invert@"
+#define PREVIEW_CSS_EXTRA_MEDIA  "@prefix@/@project_datadir@/@css_extra-media@"
+#define PREVIEW_CSS_FOUNTAIN     "@prefix@/@project_datadir@/@css_fountain@"
+#define PREVIEW_CSS_HEADERS      "@prefix@/@project_datadir@/@css_headers@"
+#define PREVIEW_CSS_MARKDOWN     "@prefix@/@project_datadir@/@css_markdown@"
+#define PREVIEW_CSS_PANDOC       "@prefix@/@project_datadir@/@css_pandoc@"
+
+#define PREVIEW_FAQ    "@prefix@/@project_datadir@/@doc_faq@"
+#define PREVIEW_README "@prefix@/@project_datadir@/@doc_readme@"
+
+#define ENABLE_EXPORT_PDF @pdf_export@
