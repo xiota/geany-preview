@@ -27,7 +27,7 @@
 #include "pv_settings.h"
 #include "tkui_addons.h"
 
-extern struct PreviewSettings gSettings;
+extern class PreviewSettings gSettings;
 
 enum PandocOptions {
   PANDOC_NONE = 0,
