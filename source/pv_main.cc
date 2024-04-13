@@ -1285,12 +1285,15 @@ static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
 static void preview_cleanup(GeanyPlugin *plugin, gpointer pdata) {
   gSettings.kf_close();
 
-  gtk_widget_destroy(gScrolledWindow);
-  gtk_widget_destroy(gPreviewMenu);
+  if (gHandleSidebarSwitchPage) {
+    g_clear_signal_handler(&gHandleSidebarSwitchPage, GTK_WIDGET(gSideBarNotebook));
+  }
+  if (gHandleSidebarShow) {
+    g_clear_signal_handler(&gHandleSidebarShow, GTK_WIDGET(gSideBarNotebook));
+  }
 
-  g_clear_signal_handler(&gHandleSidebarSwitchPage,
-                         GTK_WIDGET(gSideBarNotebook));
-  g_clear_signal_handler(&gHandleSidebarShow, GTK_WIDGET(gSideBarNotebook));
+  gtk_widget_destroy(gPreviewMenu);
+  gtk_widget_destroy(gSideBarPreviewPage);
 }
 
 // G_MODULE_EXPORT
