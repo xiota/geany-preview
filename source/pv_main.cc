@@ -485,7 +485,7 @@ std::string update_preview(bool const bGetContents) {
       end = scintilla_send_message(doc->editor->sci, SCI_GETLINEENDPOSITION,
                                    end_line, end_line);
 
-      strBody = std::move(std::string(text + start, end - start));
+      strBody = std::string(text + start, end - start);
     } else {
       strBody = text;
     }
@@ -689,32 +689,6 @@ void preview_sidebar_show(GtkNotebook *nb, gpointer user_data) {
     gCurrentDocument = nullptr;
     update_preview(false);
   }
-}
-
-// from geany keybindings.c
-GtkWidget *find_focus_widget(GtkWidget *widget) {
-  GtkWidget *focus = nullptr;
-
-  // optimized simple case
-  if (GTK_IS_BIN(widget)) {
-    focus = find_focus_widget(gtk_bin_get_child(GTK_BIN(widget)));
-  } else if (GTK_IS_CONTAINER(widget)) {
-    GList *children = gtk_container_get_children(GTK_CONTAINER(widget));
-    GList *node;
-
-    for (node = children; node && !focus; node = node->next) {
-      focus = find_focus_widget(GTK_WIDGET(node->data));
-    }
-    g_list_free(children);
-  }
-
-  // Some containers handled above might not have children and be what
-  // we want to focus (e.g. GtkTreeView), so focus that if possible and
-  // we don't have anything better
-  if (!focus && gtk_widget_get_can_focus(widget)) {
-    focus = widget;
-  }
-  return focus;
 }
 }  // namespace
 
