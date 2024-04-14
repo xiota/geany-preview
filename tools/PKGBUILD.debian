@@ -1,0 +1,75 @@
+# Maintainer: xiota
+
+## options
+: ${_branch:=main}
+
+## basic info
+_pkgname='geany-plugin-preview'
+pkgname="$_pkgname-git"
+pkgdesc="Geany plugin to preview lightweight markup languages"
+url="https://github.com/xiota/geany-preview"
+pkgver=0.0.0
+pkgrel=1
+license=('GPL-3.0-or-later')
+arch=('amd64')
+
+depends=(
+  geany
+  libcmark-gfm-extensions0.29.0.gfm.3
+  libcmark-gfm0.29.0.gfm.3
+  libpodofo0.9.7
+  libwebkit2gtk-4.1-0
+)
+makedepends=(
+  git
+  meson
+  libcmark-gfm-dev
+  libcmark-gfm-extensions-dev
+  libglib2.0-dev
+  libgtk-3-dev
+  libpodofo-dev
+  libwebkit2gtk-4.1-dev
+)
+optdepends=(
+  'asciidoc: Preview AsciiDoc'
+  'asciidoctor: Preview AsciiDoc'
+  'pandoc: Preview many other file formats'
+
+  # AUR
+  'fonts-courier-prime: Export Fountain screenplays to PDF'
+)
+
+provides+=("$_pkgname")
+conflicts+=("$_pkgname")
+
+_pkgsrc="geany-preview"
+source=("$_pkgsrc"::"git+$url.git#branch=$_branch")
+sha256sums=('SKIP')
+
+prepare() {
+  cd "$_pkgsrc"
+  ln -s meson.options meson_options.txt
+}
+
+build() {
+  cd "$_pkgsrc"
+  meson rewrite kwargs set project / version "$pkgver"
+
+  local _meson_args=(
+    --buildtype=plain
+    --prefix=/usr
+    --libexecdir=lib
+    --sbindir=bin
+    --auto-features=enabled
+    --wrap-mode=nodownload
+    -Dwarning_level=everything
+  )
+
+  meson "${_meson_args}" ../build
+  meson compile --verbose -C ../build
+}
+
+package() {
+  meson install -C build --destdir "$pkgdir"
+  chmod -R u+rwX,go+rX,go-w "$pkgdir/"
+}
