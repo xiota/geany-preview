@@ -1,4 +1,4 @@
-/* -*- C++ -*-
+/*
  * Preview Geany Plugin
  * Copyright 2021 xiota
  *
@@ -21,10 +21,14 @@
 
 #pragma once
 
+#include <filesystem>
+#include <iostream>
 #include <locale>
 
+#include "Scintilla.h"
 #include "config.h"
 #include "geanyplugin.h"
+#include "pv_settings.h"
 #include "webkit2/webkit2.h"
 
 extern GeanyPlugin *geany_plugin;

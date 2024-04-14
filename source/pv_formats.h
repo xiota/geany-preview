@@ -27,8 +27,6 @@
 #include "pv_settings.h"
 #include "tkui_addons.h"
 
-extern class PreviewSettings gSettings;
-
 enum PandocOptions {
   PANDOC_NONE = 0,
   PANDOC_FRAGMENT = 1,  // turn off --standalone

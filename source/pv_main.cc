@@ -21,20 +21,18 @@
 
 #include "pv_main.h"
 
-#include <string>
-
 #include "auxiliary.h"
 #include "fountain.h"
-#include "process.h"
 #include "pv_formats.h"
+#include "pv_settings.h"
 
 #define WEBVIEW_WARN(msg) \
   webkit_web_view_load_plain_text(WEBKIT_WEB_VIEW(gWebView), (msg))
 
-GeanyPlugin *geany_plugin;
-GeanyData *geany_data;
+GeanyPlugin *geany_plugin = nullptr;
+GeanyData *geany_data = nullptr;
 
-PreviewSettings gSettings;
+PreviewSettings *gSettings = nullptr;
 
 namespace {  // globals
 
@@ -102,7 +100,7 @@ void wv_apply_settings() {
   webkit_user_content_manager_remove_all_style_sheets(gWebViewContentManager);
 
   webkit_settings_set_default_font_family(
-      gWebViewSettings, gSettings.default_font_family.c_str());
+      gWebViewSettings, gSettings->default_font_family.c_str());
 
   // attach headers css
   std::string css_fn = find_copy_css("preview.css", PREVIEW_CSS_HEADERS);
@@ -119,14 +117,14 @@ void wv_apply_settings() {
   }
 
   // attach extra_css
-  css_fn = find_css(gSettings.extra_css);
+  css_fn = find_css(gSettings->extra_css);
   if (css_fn.empty()) {
-    if (gSettings.extra_css == "extra-media.css") {
-      css_fn = find_copy_css(gSettings.extra_css, PREVIEW_CSS_EXTRA_MEDIA);
-    } else if (gSettings.extra_css == "extra-dark.css") {
-      css_fn = find_copy_css(gSettings.extra_css, PREVIEW_CSS_EXTRA_DARK);
-    } else if (gSettings.extra_css == "extra-invert.css") {
-      css_fn = find_copy_css(gSettings.extra_css, PREVIEW_CSS_EXTRA_INVERT);
+    if (gSettings->extra_css == "extra-media.css") {
+      css_fn = find_copy_css(gSettings->extra_css, PREVIEW_CSS_EXTRA_MEDIA);
+    } else if (gSettings->extra_css == "extra-dark.css") {
+      css_fn = find_copy_css(gSettings->extra_css, PREVIEW_CSS_EXTRA_DARK);
+    } else if (gSettings->extra_css == "extra-invert.css") {
+      css_fn = find_copy_css(gSettings->extra_css, PREVIEW_CSS_EXTRA_INVERT);
     }
   }
 
@@ -216,23 +214,23 @@ bool use_snippets(GeanyDocument *doc) {
   g_return_val_if_fail(DOC_VALID(doc), false);
 
   const int length = sci_get_length(doc->editor->sci);
-  if (length <= gSettings.snippet_trigger) {
+  if (length <= gSettings->snippet_trigger) {
     return false;
   }
 
   switch (doc->file_type->id) {
     case GEANY_FILETYPES_ASCIIDOC:
-      if (!gSettings.snippet_asciidoctor) {
+      if (!gSettings->snippet_asciidoctor) {
         return false;
       }
       break;
     case GEANY_FILETYPES_HTML:
-      if (!gSettings.snippet_html) {
+      if (!gSettings->snippet_html) {
         return false;
       }
       break;
     case GEANY_FILETYPES_MARKDOWN:
-      if (!gSettings.snippet_markdown) {
+      if (!gSettings->snippet_markdown) {
         return false;
       }
       break;
@@ -244,7 +242,7 @@ bool use_snippets(GeanyDocument *doc) {
     default:
       // When Geany build supports Fountain
       if (strcmp(doc->file_type->name, "Fountain") == 0) {
-        if (!gSettings.snippet_fountain) {
+        if (!gSettings->snippet_fountain) {
           return false;
         }
       }
@@ -253,13 +251,13 @@ bool use_snippets(GeanyDocument *doc) {
             to_lower(cstr_assign(g_path_get_basename(DOC_FILENAME(doc))));
 
         if (strFormat.find("fountain") != std::string::npos) {
-          if (!gSettings.snippet_fountain) {
+          if (!gSettings->snippet_fountain) {
             return false;
           }
         }
       }
       // Otherwise Pandoc fallback
-      if (!gSettings.snippet_pandoc) {
+      if (!gSettings->snippet_pandoc) {
         return false;
       }
       break;
@@ -269,7 +267,7 @@ bool use_snippets(GeanyDocument *doc) {
 
 PreviewFileType get_filetype_from_string(std::string const &fn) {
   if (fn.empty() || fn == GEANY_STRING_UNTITLED) {
-    return get_filetype_from_string(gSettings.default_type);
+    return get_filetype_from_string(gSettings->default_type);
   }
 
   std::string strFormat =
@@ -341,7 +339,7 @@ PreviewFileType get_filetype_from_string(std::string const &fn) {
     }
     return PREVIEW_FILETYPE_DOCBOOK;
   } else if (strFormat.find("wiki") != std::string::npos) {
-    if (gSettings.wiki_default == "disable") {
+    if (gSettings->wiki_default == "disable") {
       return PREVIEW_FILETYPE_NONE;
     } else if (strFormat.find("dokuwiki") != std::string::npos) {
       return PREVIEW_FILETYPE_DOKUWIKI;
@@ -393,7 +391,7 @@ PreviewFileType get_filetype(GeanyDocument *doc) {
       break;
     case GEANY_FILETYPES_NONE:
     case GEANY_FILETYPES_XML:
-      if (!gSettings.extended_types) {
+      if (!gSettings->extended_types) {
         return PREVIEW_FILETYPE_NONE;
       } else {
         return get_filetype_from_string(DOC_FILENAME(doc));
@@ -462,7 +460,7 @@ std::string update_preview(bool const bGetContents) {
       }
       int start = 0;
       int end = 0;
-      int amount = gSettings.snippet_window / 3;
+      int amount = gSettings->snippet_window / 3;
       // get beginning and end positions for snippet
       if (position > amount) {
         start = position - amount;
@@ -545,28 +543,29 @@ std::string update_preview(bool const bGetContents) {
 
   switch (gFileType) {
     case PREVIEW_FILETYPE_HTML:
-      if (gSettings.processor_html == "disable") {
+      if (gSettings->processor_html == "disable") {
         strPlain = _("Preview of HTML documents has been disabled.");
-      } else if (gSettings.processor_html.find("pandoc") != std::string::npos) {
+      } else if (gSettings->processor_html.find("pandoc") !=
+                 std::string::npos) {
         strOutput = pandoc(work_dir, strBody, "html");
       } else {
         strOutput = strBody;
       }
       break;
     case PREVIEW_FILETYPE_MARKDOWN:
-      if (gSettings.processor_markdown == "disable") {
+      if (gSettings->processor_markdown == "disable") {
         strPlain = _("Preview of Markdown documents has been disabled.");
-      } else if (gSettings.processor_markdown.find("pandoc") !=
+      } else if (gSettings->processor_markdown.find("pandoc") !=
                  std::string::npos) {
-        strOutput = pandoc(work_dir, strBody, gSettings.pandoc_markdown);
+        strOutput = pandoc(work_dir, strBody, gSettings->pandoc_markdown);
       } else {
         strOutput = cmark_gfm(strBody);
       }
       break;
     case PREVIEW_FILETYPE_ASCIIDOC:
-      if (gSettings.processor_asciidoc == "disable") {
+      if (gSettings->processor_asciidoc == "disable") {
         strPlain = _("Preview of AsciiDoc documents has been disabled.");
-      } else if (gSettings.processor_asciidoc == "asciidoc") {
+      } else if (gSettings->processor_asciidoc == "asciidoc") {
         strOutput = asciidoc(work_dir, strBody);
       } else {
         strOutput = asciidoctor(work_dir, strBody);
@@ -588,7 +587,7 @@ std::string update_preview(bool const bGetContents) {
       strOutput = pandoc(work_dir, strBody, "gfm");
       break;
     case PREVIEW_FILETYPE_FOUNTAIN:
-      if (gSettings.processor_fountain == "disable") {
+      if (gSettings->processor_fountain == "disable") {
         strPlain = _("Preview of Fountain screenplays has been disabled.");
       } else {
         std::string css_fn =
@@ -615,7 +614,7 @@ std::string update_preview(bool const bGetContents) {
       strOutput = pandoc(work_dir, strBody, "mediawiki");
       break;
     case PREVIEW_FILETYPE_WIKI:
-      strOutput = pandoc(work_dir, strBody, gSettings.wiki_default);
+      strOutput = pandoc(work_dir, strBody, gSettings->wiki_default);
       break;
     case PREVIEW_FILETYPE_MUSE:
       strOutput = pandoc(work_dir, strBody, "muse");
@@ -709,45 +708,6 @@ void preview_toggle_editor_preview() {
       keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
     }
   }
-}
-
-void preview_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog) {
-  std::string command =
-      R"(xdg-open ")" +
-      cstr_assign(g_build_filename(geany_data->app->configdir, "plugins",
-                                   "preview", nullptr)) +
-      R"(")";
-
-  if (system(command.c_str())) {
-    // ignore return value
-  }
-}
-
-void preview_pref_edit_config(GtkWidget *self, GtkWidget *dialog) {
-  gSettings.load();
-  static std::string conf_fn =
-      cstr_assign(g_build_filename(geany_data->app->configdir, "plugins",
-                                   "preview", "preview.conf", nullptr));
-  GeanyDocument *doc =
-      document_open_file(conf_fn.c_str(), false, nullptr, nullptr);
-  document_reload_force(doc, nullptr);
-
-  if (dialog != nullptr) {
-    gtk_widget_destroy(GTK_WIDGET(dialog));
-  }
-}
-
-void preview_pref_reload_config(GtkWidget *self, GtkWidget *dialog) {
-  gSettings.load();
-  wv_apply_settings();
-}
-
-void preview_pref_save_config(GtkWidget *self, GtkWidget *dialog) {
-  gSettings.save();
-}
-
-void preview_pref_reset_config(GtkWidget *self, GtkWidget *dialog) {
-  gSettings.reset();
 }
 
 void preview_menu_preferences(GtkWidget *self, GtkWidget *dialog) {
@@ -975,7 +935,7 @@ bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
       update_speed = SUPER_SLOW;
       break;
     case PREVIEW_FILETYPE_FOUNTAIN: {
-      if (gSettings.processor_fountain == "disable") {
+      if (gSettings->processor_fountain == "disable") {
         update_speed = SUPER_SLOW;
       } else {
         update_speed = FAST;
@@ -992,14 +952,14 @@ bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
 
     case PREVIEW_FILETYPE_GFM:
     case PREVIEW_FILETYPE_HTML: {
-      if (gSettings.processor_html == "disable") {
+      if (gSettings->processor_html == "disable") {
         update_speed = SUPER_SLOW;
       } else {
         update_speed = FAST;
       }
     } break;
     case PREVIEW_FILETYPE_MARKDOWN: {
-      if (gSettings.processor_markdown == "disable") {
+      if (gSettings->processor_markdown == "disable") {
         update_speed = SUPER_SLOW;
       } else {
         // pandoc or native
@@ -1008,7 +968,7 @@ bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
     } break;
 
     default:
-      if (gSettings.pandoc_disabled) {
+      if (gSettings->pandoc_disabled) {
         update_speed = SUPER_SLOW;
       } else {
         update_speed = FAST;
@@ -1016,21 +976,21 @@ bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
       break;
   }
 
-  int timeout = 5 * gSettings.update_interval_slow;
+  int timeout = 5 * gSettings->update_interval_slow;
   switch (update_speed) {
     case FAST: {
       // delay for faster programs (native html/markdown/fountain and pandoc)
-      double _tt = (double)length * gSettings.size_factor_fast;
-      timeout = (int)_tt > gSettings.update_interval_fast
+      double _tt = (double)length * gSettings->size_factor_fast;
+      timeout = (int)_tt > gSettings->update_interval_fast
                     ? (int)_tt
-                    : gSettings.update_interval_fast;
+                    : gSettings->update_interval_fast;
     } break;
     case SLOW: {
       // delay for slower programs (asciidoctor)
-      double _tt = (double)length * gSettings.size_factor_slow;
-      timeout = (int)_tt > gSettings.update_interval_slow
-                        ? (int)_tt
-                        : gSettings.update_interval_slow;
+      double _tt = (double)length * gSettings->size_factor_slow;
+      timeout = (int)_tt > gSettings->update_interval_slow
+                    ? (int)_tt
+                    : gSettings->update_interval_slow;
     } break;
     case SUPER_SLOW:
       // slow update when unhandled filetype;
@@ -1056,19 +1016,135 @@ void preview_document_signal(GObject *obj, GeanyDocument *doc,
 
   // update only when update not already pending
   if (!gHandleTimeout) {
-    gHandleTimeout = g_timeout_add(gSettings.update_interval_fast,
+    gHandleTimeout = g_timeout_add(gSettings->update_interval_fast,
                                    update_timeout_callback, nullptr);
   }
 }
 
-static gboolean preview_init(GeanyPlugin *plugin, gpointer pdata) {
+void preview_pref_save_config(GtkWidget *self, GtkWidget *dialog) {
+  gSettings->save();
+}
+
+void preview_pref_reload_config(GtkWidget *self, GtkWidget *dialog) {
+  gSettings->load();
+  // wv_apply_settings();
+}
+
+void preview_pref_reset_config(GtkWidget *self, GtkWidget *dialog) {
+  gSettings->reset();
+}
+
+void preview_pref_edit_config(GtkWidget *self, GtkWidget *dialog) {
+  namespace fs = std::filesystem;
+
+  gSettings->load();
+
+  static fs::path conf_fn = fs::path{geany_data->app->configdir} / "plugins" /
+                            "preview" / "preview.conf";
+
+  GeanyDocument *doc =
+      document_open_file(conf_fn.c_str(), false, nullptr, nullptr);
+  document_reload_force(doc, nullptr);
+
+  if (dialog != nullptr) {
+    gtk_widget_destroy(GTK_WIDGET(dialog));
+  }
+}
+
+void preview_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog) {
+  namespace fs = std::filesystem;
+
+  fs::path conf_dir =
+      fs::path{geany_data->app->configdir} / "plugins" / "preview";
+  std::string command = R"(xdg-open ")" + conf_dir.string() + R"(")";
+
+  if (std::system(command.c_str())) {
+    // ignore return value
+  }
+}
+
+GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
+                             gpointer data) {
+  GtkWidget *box, *btn;
+  char *tooltip;
+
+  box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+
+  tooltip = g_strdup(_("Save the active settings to the config file."));
+  btn = gtk_button_new_with_label(_("Save Config"));
+  g_signal_connect(btn, "clicked", G_CALLBACK(preview_pref_save_config),
+                   dialog);
+  gtk_box_pack_start(GTK_BOX(box), btn, false, false, 3);
+  gtk_widget_set_tooltip_text(btn, tooltip);
+  g_free(tooltip);
+
+  tooltip = g_strdup(
+      _("Reload settings from the config file.  May be used "
+        "to apply preferences after editing without restarting Geany."));
+  btn = gtk_button_new_with_label(_("Reload Config"));
+  g_signal_connect(btn, "clicked", G_CALLBACK(preview_pref_reload_config),
+                   dialog);
+  gtk_box_pack_start(GTK_BOX(box), btn, false, false, 3);
+  gtk_widget_set_tooltip_text(btn, tooltip);
+  g_free(tooltip);
+
+  tooltip =
+      g_strdup(_("Delete the current config file and restore the default "
+                 "file with explanatory comments."));
+  btn = gtk_button_new_with_label(_("Reset Config"));
+  g_signal_connect(btn, "clicked", G_CALLBACK(preview_pref_reset_config),
+                   dialog);
+  gtk_box_pack_start(GTK_BOX(box), btn, false, false, 3);
+  gtk_widget_set_tooltip_text(btn, tooltip);
+  g_free(tooltip);
+
+  tooltip = g_strdup(_("Open the config file in Geany for editing."));
+  btn = gtk_button_new_with_label(_("Edit Config"));
+  g_signal_connect(btn, "clicked", G_CALLBACK(preview_pref_edit_config),
+                   dialog);
+  gtk_box_pack_start(GTK_BOX(box), btn, false, false, 3);
+  gtk_widget_set_tooltip_text(btn, tooltip);
+  g_free(tooltip);
+
+  tooltip =
+      g_strdup(_("Open the config folder in the default file manager.  The "
+                 "config folder "
+                 "contains the stylesheets, which may be edited."));
+  btn = gtk_button_new_with_label(_("Open Config Folder"));
+  g_signal_connect(btn, "clicked", G_CALLBACK(preview_pref_open_config_folder),
+                   dialog);
+  gtk_box_pack_start(GTK_BOX(box), btn, false, false, 3);
+  gtk_widget_set_tooltip_text(btn, tooltip);
+  g_free(tooltip);
+
+  return box;
+}
+
+void preview_cleanup(GeanyPlugin *plugin, gpointer pdata) {
+  gSettings->kf_close();
+  delete gSettings;
+
+  if (gHandleSidebarSwitchPage) {
+    g_clear_signal_handler(&gHandleSidebarSwitchPage,
+                           GTK_WIDGET(gSideBarNotebook));
+  }
+  if (gHandleSidebarShow) {
+    g_clear_signal_handler(&gHandleSidebarShow, GTK_WIDGET(gSideBarNotebook));
+  }
+
+  gtk_widget_destroy(gPreviewMenu);
+  gtk_widget_destroy(gSideBarPreviewPage);
+}
+
+gboolean preview_init(GeanyPlugin *plugin, gpointer pdata) {
   geany_plugin = plugin;
   geany_data = plugin->geany_data;
 
   gScrollY.resize(50, 0);
 
-  gSettings.initialize();
-  gSettings.load();
+  gSettings = new PreviewSettings();
+  gSettings->initialize();
+  gSettings->load();
 
   // Callbacks
   GEANY_PSC("geany-startup-complete", preview_document_signal);
@@ -1192,97 +1268,24 @@ static gboolean preview_init(GeanyPlugin *plugin, gpointer pdata) {
 
   // preview may need to be updated after a delay on first use
   if (gHandleTimeout == 0) {
-    gHandleTimeout = g_timeout_add(gSettings.startup_timeout,
+    gHandleTimeout = g_timeout_add(gSettings->startup_timeout,
                                    update_timeout_callback, nullptr);
   }
 
   return true;
 }
 
-static GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
-                                    gpointer data) {
-  GtkWidget *box, *btn;
-  char *tooltip;
-
-  box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
-
-  tooltip = g_strdup(_("Save the active settings to the config file."));
-  btn = gtk_button_new_with_label(_("Save Config"));
-  g_signal_connect(btn, "clicked", G_CALLBACK(preview_pref_save_config),
-                   dialog);
-  gtk_box_pack_start(GTK_BOX(box), btn, false, false, 3);
-  gtk_widget_set_tooltip_text(btn, tooltip);
-  GFREE(tooltip);
-
-  tooltip = g_strdup(
-      _("Reload settings from the config file.  May be used "
-        "to apply preferences after editing without restarting Geany."));
-  btn = gtk_button_new_with_label(_("Reload Config"));
-  g_signal_connect(btn, "clicked", G_CALLBACK(preview_pref_reload_config),
-                   dialog);
-  gtk_box_pack_start(GTK_BOX(box), btn, false, false, 3);
-  gtk_widget_set_tooltip_text(btn, tooltip);
-  GFREE(tooltip);
-
-  tooltip =
-      g_strdup(_("Delete the current config file and restore the default "
-                 "file with explanatory comments."));
-  btn = gtk_button_new_with_label(_("Reset Config"));
-  g_signal_connect(btn, "clicked", G_CALLBACK(preview_pref_reset_config),
-                   dialog);
-  gtk_box_pack_start(GTK_BOX(box), btn, false, false, 3);
-  gtk_widget_set_tooltip_text(btn, tooltip);
-  GFREE(tooltip);
-
-  tooltip = g_strdup(_("Open the config file in Geany for editing."));
-  btn = gtk_button_new_with_label(_("Edit Config"));
-  g_signal_connect(btn, "clicked", G_CALLBACK(preview_pref_edit_config),
-                   dialog);
-  gtk_box_pack_start(GTK_BOX(box), btn, false, false, 3);
-  gtk_widget_set_tooltip_text(btn, tooltip);
-  GFREE(tooltip);
-
-  tooltip =
-      g_strdup(_("Open the config folder in the default file manager.  The "
-                 "config folder "
-                 "contains the stylesheets, which may be edited."));
-  btn = gtk_button_new_with_label(_("Open Config Folder"));
-  g_signal_connect(btn, "clicked", G_CALLBACK(preview_pref_open_config_folder),
-                   dialog);
-  gtk_box_pack_start(GTK_BOX(box), btn, false, false, 3);
-  gtk_widget_set_tooltip_text(btn, tooltip);
-  GFREE(tooltip);
-
-  return box;
-}
-
-static void preview_cleanup(GeanyPlugin *plugin, gpointer pdata) {
-  gSettings.kf_close();
-
-  if (gHandleSidebarSwitchPage) {
-    g_clear_signal_handler(&gHandleSidebarSwitchPage, GTK_WIDGET(gSideBarNotebook));
-  }
-  if (gHandleSidebarShow) {
-    g_clear_signal_handler(&gHandleSidebarShow, GTK_WIDGET(gSideBarNotebook));
-  }
-
-  gtk_widget_destroy(gPreviewMenu);
-  gtk_widget_destroy(gSideBarPreviewPage);
-}
-
-// G_MODULE_EXPORT
 void geany_load_module(GeanyPlugin *plugin) {
   plugin->info->name = "Preview";
   plugin->info->description = _(
       "Preview pane for HTML, Markdown, and other lightweight markup formats.");
   plugin->info->version = VERSION;
   plugin->info->author = "xiota";
-
   plugin->funcs->init = preview_init;
   plugin->funcs->configure = preview_configure;
-  // plugin->funcs->help = nullptr;
+  plugin->funcs->help = nullptr;
   plugin->funcs->cleanup = preview_cleanup;
-  // plugin->funcs->callbacks = preview_callbacks;
+  plugin->funcs->callbacks = nullptr;
 
   GEANY_PLUGIN_REGISTER(plugin, 225);
 }

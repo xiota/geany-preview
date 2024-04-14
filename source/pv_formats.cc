@@ -19,7 +19,10 @@
 #include "pv_formats.h"
 
 #include "auxiliary.h"
+#include "config.h"
 #include "process.h"
+
+extern class PreviewSettings *gSettings;
 
 std::string find_css(std::string const &css_fn) {
   std::string css_path =
@@ -65,7 +68,7 @@ std::string pandoc(std::string const &work_dir, std::string const &input,
   if (input.empty()) {
     return {};
   }
-  if (gSettings.pandoc_disabled) {
+  if (gSettings->pandoc_disabled) {
     return std::string("<pre>") + _("Pandoc has been disabled.") +
            std::string("</pre>");
   }
@@ -79,10 +82,10 @@ std::string pandoc(std::string const &work_dir, std::string const &input,
   args_str.push_back("--to=html");
   args_str.push_back("--quiet");
 
-  if (!gSettings.pandoc_fragment) {
+  if (!gSettings->pandoc_fragment) {
     args_str.push_back("--standalone");
   }
-  if (gSettings.pandoc_toc) {
+  if (gSettings->pandoc_toc) {
     args_str.push_back("--toc");
     args_str.push_back("--toc-depth=6");
   }
