@@ -20,7 +20,7 @@
 
 #include "auxiliary.h"
 
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+extern GeanyData *geany_data;
 
 void PreviewSettings::initialize() {
   add_setting((TkuiSetting *)&startup_timeout, TKUI_PREF_TYPE_INTEGER,
