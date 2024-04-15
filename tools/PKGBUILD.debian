@@ -46,11 +46,6 @@ _pkgsrc="geany-preview"
 source=("$_pkgsrc"::"git+$url.git#branch=$_branch")
 sha256sums=('SKIP')
 
-prepare() {
-  cd "$_pkgsrc"
-  ln -s meson.options meson_options.txt
-}
-
 build() {
   cd "$_pkgsrc"
   meson rewrite kwargs set project / version "$pkgver"

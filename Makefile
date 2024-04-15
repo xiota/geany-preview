@@ -1,25 +1,36 @@
-.SILENT:
-.PHONY: all build clean clear clear-version configure help info install sysinstall uninstall update-version
-notarget: help
-
 plugin_name := preview
 
-info: help
-help:
-	echo "Please provide a target:" ; \
-	echo "   build      - build in ./build" ; \
-	echo "   clean      - delete build and pkgdir" ; \
-	echo "   configure  - configure in ./build" ; \
-	echo "   install    - install to ./pkgdir" ; \
-	echo "   sysinstall - install to system" ; \
-	echo "   uninstall  - delete from system" ; \
+
+.SILENT:
+.PHONY: all dist dist-clean install uninstall clean help update-version clear-version configure build
+
+all: configure build
+
+install:
+	cd build && \
+	meson install && \
 	:
 
-all: update-version configure build install
+uninstall:
+	sudo rm -f /usr/lib/geany/$(plugin_name).so ; \
+	sudo rm -rf /usr/share/geany-$(plugin_name) ; \
+	sudo rm -rf /usr/share/doc/geany-$(plugin_name) ; \
+	:
+
+clean:
+	rm -rf build && \
+	:
+
+help:
+	echo "Please provide a target:" ; \
+	echo "  [default]   - configure and build" ; \
+	echo "   install    - install to system" ; \
+	echo "   uninstall  - delete from system" ; \
+	echo "   clean      - delete build dir" ; \
+	:
 
 update-version:
-	version=$(shell git describe --tags --long --abbrev=7 | sed -E 's/^[^0-9]*//;s/-([0-9]*-g.*)$$/.r\1/;s/-/./g') && \
-	version="$${version##.r0.*}" && \
+	version=$(shell git describe --tags --abbrev=7 | sed -E 's/^[^0-9]*//;s/-([0-9]*-g.*)$$/.r\1/;s/-/./g') && \
 	meson rewrite kwargs set project / version $$version && \
 	echo "project version: $$version" && \
 	:
@@ -28,32 +39,35 @@ clear-version:
 	meson rewrite kwargs delete project / version - && \
 	:
 
-install:
-	meson install -C build --destdir=../pkgdir
-
-sysinstall:
-	sudo meson install -C build
-
-uninstall:
-uninstall:
-	sudo rm -f /usr/lib/geany/$(plugin_name).so ; \
-	sudo rm -rf /usr/share/geany-$(plugin_name) ; \
-	sudo rm -rf /usr/share/doc/geany-$(plugin_name) ; \
-	:
-
-clean-all: clear-version clean
-
-clean:
-	rm -rf build && \
-	rm -rf pkgdir && \
-	:
-
-clear: clear-version clean
-
 configure:
-	if [ ! -d build ] ; then meson setup build ; else meson setup build --reconfigure ; fi
+	export PKG_CONFIG_PATH="$(pkgconf_path)" && \
+	meson setup build -Dcpp_std=c++17 && \
+	:
 
 build:
-	if [ ! -d build ] ; then meson setup build ; fi && \
-	meson compile -C build && \
+	export PKG_CONFIG_PATH="$(pkgconf_path)" && \
+	cd build && \
+	ninja && \
+	:
+
+dist:
+	export version=$(shell git describe --tags --abbrev=7 | sed -E 's/^[^0-9]*//;s/-([0-9]*-g.*)$$/.r\1/;s/-/./g') && \
+	echo "... $${version} ..." && \
+	export pkgdir="geany-plugin-preview_$$version" && \
+	echo "... $${pkgdir} ..." && \
+	mkdir -p "$${pkgdir}" && \
+	cp --reflink=auto -r -t "$${pkgdir}/" -- data docs source tools config* *.md Makefile meson* && \
+	pushd "$${pkgdir}" && \
+	echo "rewrite version..." && \
+	meson rewrite kwargs set project / version $$version && \
+	echo "rewrite depends..." && \
+	meson rewrite kwargs delete dependency libpodofo version xxx && \
+	popd && \
+	echo "tar..." && \
+	tar -c -J --numeric-owner --owner=0 -f "$${pkgdir}.orig.tar.xz" "$${pkgdir}" && \
+	:
+
+dist-clean:
+	rm -rf geany-plugin-preview_*/ && \
+	rm -f geany-plugin-preview_*.orig.tar.xz && \
 	:
