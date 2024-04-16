@@ -1,6 +1,6 @@
 /*
  * Preview Geany Plugin
- * Copyright 2021 xiota
+ * Copyright 2021-2024 xiota
  *
  * Code Format, Markdown (Geany Plugins)
  * Copyright 2013 Matthew <mbrush@codebrainz.ca>
@@ -23,6 +23,7 @@
 
 #include "auxiliary.h"
 #include "fountain.h"
+#include "pv_config_dialog.h"
 #include "pv_formats.h"
 #include "pv_settings.h"
 
@@ -1021,103 +1022,9 @@ void preview_document_signal(GObject *obj, GeanyDocument *doc,
   }
 }
 
-void preview_pref_save_config(GtkWidget *self, GtkWidget *dialog) {
-  gSettings->save();
-}
-
-void preview_pref_reload_config(GtkWidget *self, GtkWidget *dialog) {
-  gSettings->load();
-  // wv_apply_settings();
-}
-
-void preview_pref_reset_config(GtkWidget *self, GtkWidget *dialog) {
-  gSettings->reset();
-}
-
-void preview_pref_edit_config(GtkWidget *self, GtkWidget *dialog) {
-  namespace fs = std::filesystem;
-
-  gSettings->load();
-
-  static fs::path conf_fn = fs::path{geany_data->app->configdir} / "plugins" /
-                            "preview" / "preview.conf";
-
-  GeanyDocument *doc =
-      document_open_file(conf_fn.c_str(), false, nullptr, nullptr);
-  document_reload_force(doc, nullptr);
-
-  if (dialog != nullptr) {
-    gtk_widget_destroy(GTK_WIDGET(dialog));
-  }
-}
-
-void preview_pref_open_config_folder(GtkWidget *self, GtkWidget *dialog) {
-  namespace fs = std::filesystem;
-
-  fs::path conf_dir =
-      fs::path{geany_data->app->configdir} / "plugins" / "preview";
-  std::string command = R"(xdg-open ")" + conf_dir.string() + R"(")";
-
-  if (std::system(command.c_str())) {
-    // ignore return value
-  }
-}
-
 GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
                              gpointer data) {
-  GtkWidget *box, *btn;
-  char *tooltip;
-
-  box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
-
-  tooltip = g_strdup(_("Save the active settings to the config file."));
-  btn = gtk_button_new_with_label(_("Save Config"));
-  g_signal_connect(btn, "clicked", G_CALLBACK(preview_pref_save_config),
-                   dialog);
-  gtk_box_pack_start(GTK_BOX(box), btn, false, false, 3);
-  gtk_widget_set_tooltip_text(btn, tooltip);
-  g_free(tooltip);
-
-  tooltip = g_strdup(
-      _("Reload settings from the config file.  May be used "
-        "to apply preferences after editing without restarting Geany."));
-  btn = gtk_button_new_with_label(_("Reload Config"));
-  g_signal_connect(btn, "clicked", G_CALLBACK(preview_pref_reload_config),
-                   dialog);
-  gtk_box_pack_start(GTK_BOX(box), btn, false, false, 3);
-  gtk_widget_set_tooltip_text(btn, tooltip);
-  g_free(tooltip);
-
-  tooltip =
-      g_strdup(_("Delete the current config file and restore the default "
-                 "file with explanatory comments."));
-  btn = gtk_button_new_with_label(_("Reset Config"));
-  g_signal_connect(btn, "clicked", G_CALLBACK(preview_pref_reset_config),
-                   dialog);
-  gtk_box_pack_start(GTK_BOX(box), btn, false, false, 3);
-  gtk_widget_set_tooltip_text(btn, tooltip);
-  g_free(tooltip);
-
-  tooltip = g_strdup(_("Open the config file in Geany for editing."));
-  btn = gtk_button_new_with_label(_("Edit Config"));
-  g_signal_connect(btn, "clicked", G_CALLBACK(preview_pref_edit_config),
-                   dialog);
-  gtk_box_pack_start(GTK_BOX(box), btn, false, false, 3);
-  gtk_widget_set_tooltip_text(btn, tooltip);
-  g_free(tooltip);
-
-  tooltip =
-      g_strdup(_("Open the config folder in the default file manager.  The "
-                 "config folder "
-                 "contains the stylesheets, which may be edited."));
-  btn = gtk_button_new_with_label(_("Open Config Folder"));
-  g_signal_connect(btn, "clicked", G_CALLBACK(preview_pref_open_config_folder),
-                   dialog);
-  gtk_box_pack_start(GTK_BOX(box), btn, false, false, 3);
-  gtk_widget_set_tooltip_text(btn, tooltip);
-  g_free(tooltip);
-
-  return box;
+  return getConfigDialog(dialog);
 }
 
 void preview_cleanup(GeanyPlugin *plugin, gpointer pdata) {
@@ -1199,18 +1106,15 @@ gboolean preview_init(GeanyPlugin *plugin, gpointer pdata) {
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
   item = gtk_menu_item_new_with_label(_("Edit Config File"));
-  g_signal_connect(item, "activate", G_CALLBACK(preview_pref_edit_config),
-                   nullptr);
+  g_signal_connect(item, "activate", G_CALLBACK(editConfig), nullptr);
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
   item = gtk_menu_item_new_with_label(_("Reload Config File"));
-  g_signal_connect(item, "activate", G_CALLBACK(preview_pref_reload_config),
-                   nullptr);
+  g_signal_connect(item, "activate", G_CALLBACK(reloadConfig), nullptr);
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
   item = gtk_menu_item_new_with_label(_("Open Config Folder"));
-  g_signal_connect(item, "activate",
-                   G_CALLBACK(preview_pref_open_config_folder), nullptr);
+  g_signal_connect(item, "activate", G_CALLBACK(openConfigFolder), nullptr);
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
   item = gtk_separator_menu_item_new();

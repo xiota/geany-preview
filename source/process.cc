@@ -1,6 +1,4 @@
 /*
- * process.c
- *
  * Copyright 2013 Matthew <mbrush@codebrainz.ca>
  *
  * This program is free software; you can redistribute it and/or modify

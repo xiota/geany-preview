@@ -59,6 +59,7 @@ library(
     'source/auxiliary.cc',
     'source/fountain.cc',
     'source/process.cc',
+    'source/pv_config_dialog.cc',
     'source/pv_formats.cc',
     'source/pv_main.cc',
     'source/pv_settings.cc',
