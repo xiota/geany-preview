@@ -265,7 +265,7 @@ bool use_snippets(GeanyDocument *doc) {
   return true;
 }
 
-PreviewFileType get_filetype_from_string(std::string const &fn) {
+PreviewFileType get_filetype_from_string(const std::string &fn) {
   if (fn.empty() || fn == GEANY_STRING_UNTITLED) {
     return get_filetype_from_string(gSettings->default_type);
   }
@@ -408,7 +408,7 @@ PreviewFileType get_filetype(GeanyDocument *doc) {
   return PREVIEW_FILETYPE_NONE;
 }
 
-std::string update_preview(bool const bGetContents) {
+std::string update_preview(const bool bGetContents) {
   GeanyDocument *doc = document_get_current();
   if (!DOC_VALID(doc)) {
     WEBVIEW_WARN(_("Unknown document type."));
@@ -715,7 +715,7 @@ void preview_menu_preferences(GtkWidget *self, GtkWidget *dialog) {
 }
 
 // from markdown plugin
-std::string replace_extension(std::string const &fn, std::string const &ext) {
+std::string replace_extension(const std::string &fn, const std::string &ext) {
   if (fn.empty()) {
     return ext;
   }

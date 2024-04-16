@@ -211,11 +211,11 @@ class PreviewSettings {
   std::string extra_css{"extra-media.css"};
 
  private:
-  bool kf_has_key(std::string const &key);
+  bool kf_has_key(const std::string &key);
 
-  void add_setting(TkuiSetting *setting, TkuiSettingType const &type,
-                   std::string const &name, std::string const &comment,
-                   bool const &session);
+  void add_setting(TkuiSetting *setting, const TkuiSettingType &type,
+                   const std::string &name, const std::string &comment,
+                   const bool &session);
 
  private:
   GKeyFile *keyfile = nullptr;

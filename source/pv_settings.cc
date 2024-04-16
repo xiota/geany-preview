@@ -221,15 +221,15 @@ void PreviewSettings::kf_close() {
   }
 }
 
-bool PreviewSettings::kf_has_key(std::string const &key) {
+bool PreviewSettings::kf_has_key(const std::string &key) {
   return g_key_file_has_key(keyfile, PREVIEW_KF_GROUP, key.c_str(), nullptr);
 }
 
 void PreviewSettings::add_setting(TkuiSetting *setting,
-                                  TkuiSettingType const &type,
-                                  std::string const &name,
-                                  std::string const &comment,
-                                  bool const &session) {
+                                  const TkuiSettingType &type,
+                                  const std::string &name,
+                                  const std::string &comment,
+                                  const bool &session) {
   TkuiSettingPref pref{type, name, comment, session, setting};
   pref_entries.push_back(pref);
 }

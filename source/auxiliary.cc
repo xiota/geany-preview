@@ -22,17 +22,17 @@
 #include <fstream>
 #include <iostream>
 
-std::string &ltrim_inplace(std::string &s, char const *t) {
+std::string &ltrim_inplace(std::string &s, const char *t) {
   s.erase(0, s.find_first_not_of(t));
   return s;
 }
 
-std::string &rtrim_inplace(std::string &s, char const *t) {
+std::string &rtrim_inplace(std::string &s, const char *t) {
   s.erase(s.find_last_not_of(t) + 1);
   return s;
 }
 
-std::string &trim_inplace(std::string &s, char const *t) {
+std::string &trim_inplace(std::string &s, const char *t) {
   return ltrim_inplace(rtrim_inplace(s, t), t);
 }
 
@@ -64,12 +64,12 @@ std::string replace_all(std::string subject, const std::string_view &search,
   return replace_all_inplace(subject, search, replace);
 }
 
-bool begins_with(std::string const &input, std::string const &match) {
+bool begins_with(const std::string &input, const std::string &match) {
   return !strncmp(input.c_str(), match.c_str(), match.length());
 }
 
-std::vector<std::string> split_string(std::string_view const &str,
-                                      std::string_view const &delimiter) {
+std::vector<std::string> split_string(const std::string_view &str,
+                                      const std::string_view &delimiter) {
   std::vector<std::string> result;
 
   std::string::size_type pos = 0;
@@ -86,7 +86,7 @@ std::vector<std::string> split_string(std::string_view const &str,
   return result;
 }
 
-std::vector<std::string> split_lines(std::string_view const &s) {
+std::vector<std::string> split_lines(const std::string_view &s) {
   return split_string(s, "\n");
 }
 
@@ -115,13 +115,13 @@ static HtmlEntities entities[] = {
     {"&#91;", "["}, {"&#93;", "]"}, {"&#92;", "\\"}, {"&#60;", "<"},
     {"&#62;", ">"}, {"&#46;", "."}};
 
-bool is_upper(std::string_view const &s) {
+bool is_upper(const std::string_view &s) {
   return std::all_of(s.begin(), s.end(),
                      [](unsigned char c) { return !std::islower(c); });
 }
 
 std::string &encode_entities_inplace(std::string &input,
-                                     bool const bProcessAllEntities) {
+                                     const bool bProcessAllEntities) {
   for (std::size_t pos = 0; pos < input.length();) {
     switch (input[pos]) {
       case '&':
@@ -149,7 +149,7 @@ std::string &encode_entities_inplace(std::string &input,
   return input;
 }
 
-std::string encode_entities(std::string input, bool const bProcessAllEntities) {
+std::string encode_entities(std::string input, const bool bProcessAllEntities) {
   return encode_entities_inplace(input, bProcessAllEntities);
 }
 
@@ -204,7 +204,7 @@ std::vector<std::string> cstrv_assign(char **input) {
   return output;
 }
 
-std::vector<std::string> cstrv_copy(char const *const *input) {
+std::vector<std::string> cstrv_copy(const char *const *input) {
   std::vector<std::string> output;
 
   if (input) {
@@ -216,7 +216,7 @@ std::vector<std::string> cstrv_copy(char const *const *input) {
 }
 
 // usage: (char **)cstrv_get().data()
-std::vector<char *> cstrv_get(std::vector<std::string> const input) {
+std::vector<char *> cstrv_get(const std::vector<std::string> input) {
   std::vector<char *> output;
   for (std::size_t i = 0; i < input.size(); ++i) {
     output.push_back(const_cast<char *>(input[i].c_str()));
@@ -225,7 +225,7 @@ std::vector<char *> cstrv_get(std::vector<std::string> const input) {
   return output;
 }
 
-std::string file_get_contents(std::string const &filename) {
+std::string file_get_contents(const std::string &filename) {
   try {
     std::ifstream instream(filename.c_str(), std::ios::in);
     std::string content((std::istreambuf_iterator<char>(instream)),
@@ -237,8 +237,8 @@ std::string file_get_contents(std::string const &filename) {
   }
 }
 
-bool file_set_contents(std::string const &filename,
-                       std::string const &contents) {
+bool file_set_contents(const std::string &filename,
+                       const std::string &contents) {
   try {
     std::ofstream outstream(filename.c_str(), std::ios::out);
     copy(contents.begin(), contents.end(),
@@ -250,7 +250,7 @@ bool file_set_contents(std::string const &filename,
   }
 }
 
-void print_regex_error(std::regex_error &e, char const *file, int const line) {
+void print_regex_error(std::regex_error &e, const char *file, const int line) {
   switch (e.code()) {
     case std::regex_constants::error_collate:
       fprintf(stderr,

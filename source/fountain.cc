@@ -30,7 +30,7 @@ namespace Fountain {
 
 namespace {
 
-bool isForced(std::string const &input) {
+bool isForced(const std::string &input) {
   if (input.empty()) {
     return false;
   }
@@ -52,7 +52,7 @@ bool isForced(std::string const &input) {
   return false;
 }
 
-bool isTransition(std::string const &input) {
+bool isTransition(const std::string &input) {
   if (input.empty()) {
     return false;
   }
@@ -116,7 +116,7 @@ bool isTransition(std::string const &input) {
   return false;
 }
 
-std::string parseTransition(std::string const &input) {
+std::string parseTransition(const std::string &input) {
   if (input.empty()) {
     return {};
   }
@@ -126,7 +126,7 @@ std::string parseTransition(std::string const &input) {
   return to_upper(ws_trim(input));
 }
 
-bool isSceneHeader(std::string const &input) {
+bool isSceneHeader(const std::string &input) {
   if (input.length() < 2) {
     return false;
   }
@@ -155,7 +155,7 @@ bool isSceneHeader(std::string const &input) {
 
 // returns <scene description, scene number>
 // Note: in should already be length checked by isSceneHeader()
-auto parseSceneHeader(std::string const &input) {
+auto parseSceneHeader(const std::string &input) {
   std::string first;
   std::string second;
   bool forced_scene{false};
@@ -180,7 +180,7 @@ auto parseSceneHeader(std::string const &input) {
   return std::make_pair(first, second);
 }
 
-bool isCenter(std::string const &input) {
+bool isCenter(const std::string &input) {
   if (input.length() < 2) {
     return false;
   }
@@ -196,7 +196,7 @@ bool isCenter(std::string const &input) {
   return false;
 }
 
-bool isNotation(std::string const &input) {
+bool isNotation(const std::string &input) {
   if (input.length() < 4) {
     return false;
   }
@@ -224,7 +224,7 @@ bool isNotation(std::string const &input) {
   return false;
 }
 
-bool isCharacter(std::string const &input) {
+bool isCharacter(const std::string &input) {
   if (input.empty()) {
     return false;
   }
@@ -255,7 +255,7 @@ bool isCharacter(std::string const &input) {
 }
 
 // Note: input should already be length checked by isCharacter()
-std::string parseCharacter(std::string const &input) {
+std::string parseCharacter(const std::string &input) {
   // Note: input should already be left-trimmed,
   // otherwise indent would be removed here
 
@@ -275,7 +275,7 @@ std::string parseCharacter(std::string const &input) {
 }
 
 // Note: input should already be length checked by isCharacter()
-bool isDualDialog(std::string const &input) {
+bool isDualDialog(const std::string &input) {
   if (input.back() == '^') {
     return true;
   }
@@ -283,7 +283,7 @@ bool isDualDialog(std::string const &input) {
   return false;
 }
 
-bool isParenthetical(std::string const &input) {
+bool isParenthetical(const std::string &input) {
   if (!input.length()) {
     return false;
   }
@@ -310,7 +310,7 @@ bool isParenthetical(std::string const &input) {
   return false;
 }
 
-bool isContinuation(std::string const &input) {
+bool isContinuation(const std::string &input) {
   if (input.empty()) {
     return false;
   }
@@ -321,7 +321,7 @@ bool isContinuation(std::string const &input) {
   return false;
 }
 
-auto parseKeyValue(std::string const &input) {
+auto parseKeyValue(const std::string &input) {
   std::string key;
   std::string value;
 
@@ -404,7 +404,7 @@ std::string &parseEscapeSequences_inplace(std::string &input) {
 
 }  // namespace
 
-std::string ScriptNode::to_string(int const &flags) const {
+std::string ScriptNode::to_string(const int &flags) const {
   static int dialog_state = 0;
   std::string output;
 
@@ -549,7 +549,7 @@ std::string ScriptNode::to_string(int const &flags) const {
   return output;
 }
 
-std::string Script::to_string(int const &flags) const {
+std::string Script::to_string(const int &flags) const {
   std::string output{"<Fountain>\n"};
 
   for (auto node : nodes) {
@@ -560,7 +560,7 @@ std::string Script::to_string(int const &flags) const {
   return output;
 }
 
-std::string Script::parseNodeText(std::string const &input) {
+std::string Script::parseNodeText(const std::string &input) {
   try {
     static const std::regex re_bolditalic(R"(\*{3}([^*]+?)\*{3})");
     static const std::regex re_bold(R"(\*{2}([^*]+?)\*{2})");
@@ -586,7 +586,7 @@ std::string Script::parseNodeText(std::string const &input) {
   }
 }
 
-void Script::parseFountain(std::string const &text) {
+void Script::parseFountain(const std::string &text) {
   clear();
 
   if (!text.length()) {
@@ -864,8 +864,8 @@ void Script::parseFountain(std::string const &text) {
 }
 
 // html similar to screenplain html output (can use the same css files)
-std::string ftn2screenplain(std::string const &input, std::string const &css_fn,
-                            bool const &embed_css) {
+std::string ftn2screenplain(const std::string &input, const std::string &css_fn,
+                            const bool &embed_css) {
   std::string output{"<!DOCTYPE html>\n<html>\n<head>\n"};
 
   if (!css_fn.empty()) {
@@ -952,8 +952,8 @@ std::string ftn2screenplain(std::string const &input, std::string const &css_fn,
 }
 
 // html similar to textplay html output (can use the same css files)
-std::string ftn2textplay(std::string const &input, std::string const &css_fn,
-                         bool const &embed_css) {
+std::string ftn2textplay(const std::string &input, const std::string &css_fn,
+                         const bool &embed_css) {
   std::string output{"<!DOCTYPE html>\n<html>\n<head>\n"};
 
   if (!css_fn.empty()) {
@@ -1047,7 +1047,7 @@ std::string ftn2textplay(std::string const &input, std::string const &css_fn,
   return output;
 }
 
-std::string ftn2fdx(std::string const &input) {
+std::string ftn2fdx(const std::string &input) {
   std::string output{
       R"(<?xml version="1.0" encoding="UTF-8" standalone="no" ?>)"};
   output += '\n';
@@ -1134,8 +1134,8 @@ std::string ftn2fdx(std::string const &input) {
   return output;
 }
 
-std::string ftn2xml(std::string const &input, std::string const &css_fn,
-                    bool const &embed_css) {
+std::string ftn2xml(const std::string &input, const std::string &css_fn,
+                    const bool &embed_css) {
   std::string output{"<!DOCTYPE html>\n<html>\n<head>\n"};
 
   if (!css_fn.empty()) {
@@ -1173,8 +1173,8 @@ std::string ftn2xml(std::string const &input, std::string const &css_fn,
   return output;
 }
 
-std::string ftn2html(std::string const &input, std::string const &css_fn,
-                     bool const &embed_css) {
+std::string ftn2html(const std::string &input, const std::string &css_fn,
+                     const bool &embed_css) {
   std::string output{"<!DOCTYPE html>\n<html>\n<head>\n"};
   if (!css_fn.empty()) {
     if (embed_css) {
@@ -1281,10 +1281,10 @@ namespace {  // PDF export
 #define PODOFO_RAISE_ERROR(code) \
   throw ::PoDoFo::PdfError(code, __FILE__, __LINE__)
 
-void add_char(std::string const &strAdd, std::string &strNormal,
+void add_char(const std::string &strAdd, std::string &strNormal,
               std::string &strBold, std::string &strItalic,
               std::string &strBoldItalic, std::string &strUnderline,
-              bool const &bBold, bool const &bItalic, bool const &bUnderline) {
+              const bool &bBold, const bool &bItalic, const bool &bUnderline) {
   if (bBold && bItalic) {
     strBoldItalic.append(strAdd);
     strBold.append(std::string(strAdd.length(), ' '));
@@ -1314,7 +1314,7 @@ void add_char(std::string const &strAdd, std::string &strNormal,
   }
 }
 
-auto split_formatting(std::string const &input) {
+auto split_formatting(const std::string &input) {
   static bool bBold{false};
   static bool bItalic{false};
   static bool bUnderline{false};
@@ -1439,12 +1439,12 @@ auto split_formatting(std::string const &input) {
 }
 
 std::string &center_text_inplace(std::string &text,
-                                 int const line_length = 60) {
+                                 const int line_length = 60) {
   text = std::string(int((line_length - text.length() + 1) / 2.), ' ') + text;
   return text;
 }
 
-std::vector<std::string> wrap_text(std::string const &text, int const width) {
+std::vector<std::string> wrap_text(const std::string &text, const int width) {
   std::vector<std::string> words = split_string(ws_rtrim(text), " ");
   std::vector<std::string> lines;
   const std::size_t cwidth = (width * 10) / 72;
@@ -1479,8 +1479,8 @@ std::vector<std::string> wrap_text(std::string const &text, int const width) {
   return lines;
 }
 
-std::vector<std::string> pdfTextLines(std::string const &text,
-                                      int const width = 432) {
+std::vector<std::string> pdfTextLines(const std::string &text,
+                                      const int width = 432) {
   std::vector<std::string> temp = split_string(ws_rtrim(text), "\n");
   std::vector<std::string> lines;
 
@@ -1494,10 +1494,10 @@ std::vector<std::string> pdfTextLines(std::string const &text,
 }
 
 void pdfTextAdd(PoDoFo::PdfDocument &document, PoDoFo::PdfPainter &painter,
-                std::string const &text, std::string const &font, int line,
-                int const width = 432, int const left_margin = 108,
-                int const bottom_margin = 72, int const print_height = 648,
-                PoDoFo::PdfHorizontalAlignment const horizontalAlignment =
+                const std::string &text, const std::string &font, int line,
+                const int width = 432, const int left_margin = 108,
+                const int bottom_margin = 72, const int print_height = 648,
+                const PoDoFo::PdfHorizontalAlignment horizontalAlignment =
                     PoDoFo::PdfHorizontalAlignment::Left) {
   // set alignment parameters
   PoDoFo::PdfDrawTextMultiLineParams drawParams;
@@ -1583,7 +1583,7 @@ void pdfTextAdd(PoDoFo::PdfDocument &document, PoDoFo::PdfPainter &painter,
 
 }  // namespace
 
-bool ftn2pdf(std::string const &fn, std::string const &input) {
+bool ftn2pdf(const std::string &fn, const std::string &input) {
   const int lines_per_page = 54;
   const int line_char_length = 60;
   const int width_print = 432;
@@ -1621,7 +1621,7 @@ bool ftn2pdf(std::string const &fn, std::string const &input) {
   // process script
   Fountain::Script script(input);
 
-  int const flags = Fountain::ScriptNodeType::ftnContinuation |
+  const int flags = Fountain::ScriptNodeType::ftnContinuation |
                     Fountain::ScriptNodeType::ftnKeyValue |
                     Fountain::ScriptNodeType::ftnUnknown;
 

@@ -33,15 +33,15 @@ enum PandocOptions {
   PANDOC_TOC = 2
 };
 
-std::string find_css(std::string const &css_fn);
-std::string find_copy_css(std::string const &css_fn, std::string const &src);
+std::string find_css(const std::string &css_fn);
+std::string find_copy_css(const std::string &css_fn, const std::string &src);
 
 // wrappers around command line programs
-std::string pandoc(std::string const &work_dir, std::string const &input,
-                   std::string const &in_format);
+std::string pandoc(const std::string &work_dir, const std::string &input,
+                   const std::string &in_format);
 
-std::string asciidoctor(std::string const &work_dir, std::string const &input);
-std::string asciidoc(std::string const &work_dir, std::string const &input);
+std::string asciidoctor(const std::string &work_dir, const std::string &input);
+std::string asciidoc(const std::string &work_dir, const std::string &input);
 
-void addMarkdownExtension(cmark_parser *parser, std::string const &extName);
-std::string cmark_gfm(std::string const &input);
+void addMarkdownExtension(cmark_parser *parser, const std::string &extName);
+std::string cmark_gfm(const std::string &input);

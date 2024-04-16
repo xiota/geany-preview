@@ -24,7 +24,7 @@
 
 extern class PreviewSettings *gSettings;
 
-std::string find_css(std::string const &css_fn) {
+std::string find_css(const std::string &css_fn) {
   std::string css_path =
       cstr_assign(g_build_filename(geany_data->app->configdir, "plugins",
                                    "preview", css_fn.c_str(), nullptr));
@@ -39,8 +39,8 @@ std::string find_css(std::string const &css_fn) {
   }
 }
 
-std::string find_copy_css(std::string const &css_fn,
-                          std::string const &src_fn) {
+std::string find_copy_css(const std::string &css_fn,
+                          const std::string &src_fn) {
   std::string css_path =
       cstr_assign(g_build_filename(geany_data->app->configdir, "plugins",
                                    "preview", css_fn.c_str(), nullptr));
@@ -63,8 +63,8 @@ std::string find_copy_css(std::string const &css_fn,
   }
 }
 
-std::string pandoc(std::string const &work_dir, std::string const &input,
-                   std::string const &from_format) {
+std::string pandoc(const std::string &work_dir, const std::string &input,
+                   const std::string &from_format) {
   if (input.empty()) {
     return {};
   }
@@ -119,7 +119,7 @@ std::string pandoc(std::string const &work_dir, std::string const &input,
   return strOutput;
 }
 
-std::string asciidoctor(std::string const &work_dir, std::string const &input) {
+std::string asciidoctor(const std::string &work_dir, const std::string &input) {
   if (input.empty()) {
     return {};
   }
@@ -170,7 +170,7 @@ std::string asciidoctor(std::string const &work_dir, std::string const &input) {
   return strOutput;
 }
 
-std::string asciidoc(std::string const &work_dir, std::string const &input) {
+std::string asciidoc(const std::string &work_dir, const std::string &input) {
   if (input.empty()) {
     return {};
   }
@@ -218,14 +218,14 @@ std::string asciidoc(std::string const &work_dir, std::string const &input) {
 }
 
 // This function makes enabling cmark-gfm extensions easier
-void addMarkdownExtension(cmark_parser *parser, std::string const &extName) {
+void addMarkdownExtension(cmark_parser *parser, const std::string &extName) {
   cmark_syntax_extension *ext = cmark_find_syntax_extension(extName.c_str());
   if (ext) {
     cmark_parser_attach_syntax_extension(parser, ext);
   }
 }
 
-std::string cmark_gfm(std::string const &input) {
+std::string cmark_gfm(const std::string &input) {
   int options = CMARK_OPT_TABLE_PREFER_STYLE_ATTRIBUTES | CMARK_OPT_FOOTNOTES |
                 CMARK_OPT_SMART;
 
