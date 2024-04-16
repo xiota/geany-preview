@@ -1043,16 +1043,7 @@ void preview_cleanup(GeanyPlugin *plugin, gpointer pdata) {
   gtk_widget_destroy(gSideBarPreviewPage);
 }
 
-gboolean preview_init(GeanyPlugin *plugin, gpointer pdata) {
-  geany_plugin = plugin;
-  geany_data = plugin->geany_data;
-
-  gScrollY.resize(50, 0);
-
-  gSettings = new PreviewSettings();
-  gSettings->initialize();
-  gSettings->load();
-
+void createCallbacks() {
   // Callbacks
   GEANY_PSC("geany-startup-complete", preview_document_signal);
   GEANY_PSC("editor-notify", preview_editor_notify);
@@ -1061,8 +1052,9 @@ gboolean preview_init(GeanyPlugin *plugin, gpointer pdata) {
   GEANY_PSC("document-new", preview_document_signal);
   GEANY_PSC("document-open", preview_document_signal);
   GEANY_PSC("document-reload", preview_document_signal);
+}
 
-  // Set keyboard shortcuts
+void createPreviewShortcuts() {
   GeanyKeyGroup *group =
       plugin_set_key_group(geany_plugin, "Preview", PREVIEW_KEY_COUNT,
                            (GeanyKeyGroupCallback)preview_key_binding);
@@ -1079,18 +1071,16 @@ gboolean preview_init(GeanyPlugin *plugin, gpointer pdata) {
                        GdkModifierType(0), "preview_export_pdf",
                        _("Export Fountain screenplay to PDF"), nullptr);
 #endif  // ENABLE_EXPORT_PDF
+}
 
-  // set up menu
-  // GeanyKeyGroup *group;
-  GtkWidget *item;
-
-  gPreviewMenu = gtk_menu_item_new_with_label(_("Preview"));
-  ui_add_document_sensitive(gPreviewMenu);
+GtkWidget *createPreviewMenu() {
+  GtkWidget *gPluginMenu = gtk_menu_item_new_with_label(_("Preview"));
+  ui_add_document_sensitive(gPluginMenu);
 
   GtkWidget *submenu = gtk_menu_new();
-  gtk_menu_item_set_submenu(GTK_MENU_ITEM(gPreviewMenu), submenu);
+  gtk_menu_item_set_submenu(GTK_MENU_ITEM(gPluginMenu), submenu);
 
-  item = gtk_menu_item_new_with_label(_("Export to HTML..."));
+  GtkWidget *item = gtk_menu_item_new_with_label(_("Export to HTML..."));
   g_signal_connect(item, "activate", G_CALLBACK(preview_menu_export_html),
                    nullptr);
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
@@ -1125,10 +1115,16 @@ gboolean preview_init(GeanyPlugin *plugin, gpointer pdata) {
                    nullptr);
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
-  gtk_widget_show_all(gPreviewMenu);
+  gtk_widget_show_all(gPluginMenu);
 
   gtk_menu_shell_append(GTK_MENU_SHELL(geany_data->main_widgets->tools_menu),
-                        gPreviewMenu);
+                        gPluginMenu);
+
+  return gPluginMenu;
+}
+
+void createWebView() {
+  gScrollY.resize(50, 0);
 
   // set up webview
   gWebViewSettings = webkit_settings_new();
@@ -1175,6 +1171,22 @@ gboolean preview_init(GeanyPlugin *plugin, gpointer pdata) {
     gHandleTimeout = g_timeout_add(gSettings->startup_timeout,
                                    update_timeout_callback, nullptr);
   }
+}
+
+gboolean preview_init(GeanyPlugin *plugin, gpointer pdata) {
+  geany_plugin = plugin;
+  geany_data = plugin->geany_data;
+
+  gSettings = new PreviewSettings();
+  gSettings->initialize();
+  gSettings->load();
+
+  createPreviewShortcuts();
+  gPreviewMenu = createPreviewMenu();
+
+  createCallbacks();
+
+  createWebView();
 
   return true;
 }
