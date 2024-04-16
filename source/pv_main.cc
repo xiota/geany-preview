@@ -74,14 +74,23 @@ void wv_save_position_callback(GObject *object, GAsyncResult *result,
   JSCValue *value = nullptr;
   GError *error = nullptr;
 
+#if WEBKIT_CHECK_VERSION(2, 40, 0)
   value = webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(object),
                                                      result, &error);
   if (!value) {
+#else
+  WebKitJavascriptResult *js_result = webkit_web_view_run_javascript_finish(
+      WEBKIT_WEB_VIEW(object), result, &error);
+  if (!js_result) {
+#endif
     g_warning(_("Error running javascript: %s"), error->message);
     GERROR_FREE(error);
     return;
   }
 
+#if !WEBKIT_CHECK_VERSION(2, 40, 0)
+  value = webkit_javascript_result_get_js_value(js_result);
+#endif
   int temp = jsc_value_to_int32(value);
   if (gScrollY.size() <= idx) {
     gScrollY.resize(idx + 50, 0);
@@ -89,12 +98,20 @@ void wv_save_position_callback(GObject *object, GAsyncResult *result,
   if (temp > 0) {
     gScrollY[idx] = temp;
   }
+#if !WEBKIT_CHECK_VERSION(2, 40, 0)
+  webkit_javascript_result_unref(js_result);
+#endif
 }
 
 void wv_save_position() {
+#if WEBKIT_CHECK_VERSION(2, 40, 0)
   webkit_web_view_evaluate_javascript(
       WEBKIT_WEB_VIEW(gWebView), "window.scrollY", -1, nullptr, nullptr,
       nullptr, wv_save_position_callback, nullptr);
+#else
+  webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(gWebView), "window.scrollY",
+                                 nullptr, wv_save_position_callback, nullptr);
+#endif
 }
 
 void wv_apply_settings() {
@@ -158,9 +175,14 @@ void wv_load_position() {
   } else {
     script = "window.scrollTo(0, " + std::to_string(gScrollY[idx]) + ");";
   }
+#if WEBKIT_CHECK_VERSION(2, 40, 0)
   webkit_web_view_evaluate_javascript(WEBKIT_WEB_VIEW(gWebView), script.c_str(),
                                       -1, nullptr, nullptr, nullptr, nullptr,
                                       nullptr);
+#else
+  webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(gWebView), script.c_str(),
+                                 nullptr, nullptr, nullptr);
+#endif
 }
 
 void wv_loading_callback(WebKitWebView *web_view, WebKitLoadEvent load_event,

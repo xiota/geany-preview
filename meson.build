@@ -17,7 +17,11 @@ doc_faq = 'docs/CQA.md'
 
 geany = dependency('geany')
 cmark = dependency('libcmark-gfm')
-webkit2gtk = dependency('webkit2gtk-4.1')
+
+webkit2gtk = dependency('webkit2gtk-4.0', required: false)
+if not webkit2gtk.found()
+  webkit2gtk = dependency('webkit2gtk-4.1')
+endif
 
 pdf_export = get_option('pdf_export')
 if pdf_export.allowed()
