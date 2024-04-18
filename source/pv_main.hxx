@@ -15,8 +15,8 @@
 #include "pv_settings.hxx"
 #include "webkit2/webkit2.h"
 
-extern GeanyPlugin *geany_plugin;
-extern GeanyData *geany_data;
+extern GeanyPlugin * geany_plugin;
+extern GeanyData * geany_data;
 
 enum PreviewFileType {
   PREVIEW_FILETYPE_NONE,

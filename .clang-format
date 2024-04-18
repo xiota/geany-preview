@@ -1,6 +1,13 @@
-BasedOnStyle:  Google
-AlignArrayOfStructures: Right
+BasedOnStyle: Google
+AlignAfterOpenBracket: BlockIndent
+AlignArrayOfStructures: Left
+AllowShortFunctionsOnASingleLine: Empty
+BinPackArguments: true
+BinPackParameters: true
+ColumnLimit: 96
 DerivePointerAlignment: false
-PointerAlignment: Right
+InsertBraces: true
+InsertNewlineAtEOF: true
+PointerAlignment: Middle
 QualifierAlignment: Left
 ReferenceAlignment: Pointer

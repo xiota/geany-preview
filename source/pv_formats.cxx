@@ -5,16 +5,16 @@
 
 #include "pv_formats.hxx"
 
-#include "ftn2xml/auxiliary.hxx"
 #include "config.h"
+#include "ftn2xml/auxiliary.hxx"
 #include "process.hxx"
 
-extern class PreviewSettings *gSettings;
+extern class PreviewSettings * gSettings;
 
-std::string find_css(const std::string &css_fn) {
-  std::string css_path =
-      cstr_assign(g_build_filename(geany_data->app->configdir, "plugins",
-                                   "preview", css_fn.c_str(), nullptr));
+std::string find_css(const std::string & css_fn) {
+  std::string css_path = cstr_assign(g_build_filename(
+      geany_data->app->configdir, "plugins", "preview", css_fn.c_str(), nullptr
+  ));
 
   std::string css_dn = cstr_assign(g_path_get_dirname(css_path.c_str()));
   g_mkdir_with_parents(css_dn.c_str(), 0755);
@@ -26,11 +26,10 @@ std::string find_css(const std::string &css_fn) {
   }
 }
 
-std::string find_copy_css(const std::string &css_fn,
-                          const std::string &src_fn) {
-  std::string css_path =
-      cstr_assign(g_build_filename(geany_data->app->configdir, "plugins",
-                                   "preview", css_fn.c_str(), nullptr));
+std::string find_copy_css(const std::string & css_fn, const std::string & src_fn) {
+  std::string css_path = cstr_assign(g_build_filename(
+      geany_data->app->configdir, "plugins", "preview", css_fn.c_str(), nullptr
+  ));
 
   std::string css_dn = cstr_assign(g_path_get_dirname(css_path.c_str()));
   g_mkdir_with_parents(css_dn.c_str(), 0755);
@@ -50,14 +49,14 @@ std::string find_copy_css(const std::string &css_fn,
   }
 }
 
-std::string pandoc(const std::string &work_dir, const std::string &input,
-                   const std::string &from_format) {
+std::string pandoc(
+    const std::string & work_dir, const std::string & input, const std::string & from_format
+) {
   if (input.empty()) {
     return {};
   }
   if (gSettings->pandoc_disabled) {
-    return std::string("<pre>") + _("Pandoc has been disabled.") +
-           std::string("</pre>");
+    return std::string("<pre>") + _("Pandoc has been disabled.") + std::string("</pre>");
   }
 
   std::vector<std::string> args_str;
@@ -89,7 +88,7 @@ std::string pandoc(const std::string &work_dir, const std::string &input,
   }
 
   // run program
-  FmtProcess *proc = fmt_process_open(work_dir, args_str);
+  FmtProcess * proc = fmt_process_open(work_dir, args_str);
 
   if (!proc) {
     // command not found, FmtProcess will print warning
@@ -106,7 +105,7 @@ std::string pandoc(const std::string &work_dir, const std::string &input,
   return strOutput;
 }
 
-std::string asciidoctor(const std::string &work_dir, const std::string &input) {
+std::string asciidoctor(const std::string & work_dir, const std::string & input) {
   if (input.empty()) {
     return {};
   }
@@ -122,7 +121,7 @@ std::string asciidoctor(const std::string &work_dir, const std::string &input) {
   args_str.push_back("-");
 
   // run program
-  FmtProcess *proc = fmt_process_open(work_dir, args_str);
+  FmtProcess * proc = fmt_process_open(work_dir, args_str);
 
   if (!proc) {
     // command not found
@@ -137,27 +136,25 @@ std::string asciidoctor(const std::string &work_dir, const std::string &input) {
   }
 
   // attach asciidoctor.css if it exists
-  std::string css_fn =
-      find_copy_css("asciidoctor.css", PREVIEW_CSS_ASCIIDOCTOR);
+  std::string css_fn = find_copy_css("asciidoctor.css", PREVIEW_CSS_ASCIIDOCTOR);
 
   if (!css_fn.empty()) {
     std::string css_contents = file_get_contents(css_fn);
 
     std::size_t pos = strOutput.find("</head>");
     if (pos != std::string::npos) {
-      std::string rep_text = "\n<style type='text/css'>\n" + css_contents +
-                             "\n</style>\n</head>\n";
+      std::string rep_text =
+          "\n<style type='text/css'>\n" + css_contents + "\n</style>\n</head>\n";
       strOutput.insert(pos, rep_text);
     } else {
-      strOutput = "<!DOCTYPE html>\n<html>\n<head>\n<style type='text/css'>\n" +
-                  css_contents + "\n</style>\n</head>\n<body>\n" + strOutput +
-                  "</body></html>";
+      strOutput = "<!DOCTYPE html>\n<html>\n<head>\n<style type='text/css'>\n" + css_contents +
+                  "\n</style>\n</head>\n<body>\n" + strOutput + "</body></html>";
     }
   }
   return strOutput;
 }
 
-std::string asciidoc(const std::string &work_dir, const std::string &input) {
+std::string asciidoc(const std::string & work_dir, const std::string & input) {
   if (input.empty()) {
     return {};
   }
@@ -169,7 +166,7 @@ std::string asciidoc(const std::string &work_dir, const std::string &input) {
   args_str.push_back("-");
 
   // run program
-  FmtProcess *proc = fmt_process_open(work_dir, args_str);
+  FmtProcess * proc = fmt_process_open(work_dir, args_str);
 
   if (!proc) {
     // command not found
@@ -184,47 +181,44 @@ std::string asciidoc(const std::string &work_dir, const std::string &input) {
   }
 
   // attach asciidoctor.css if it exists
-  std::string css_fn =
-      find_copy_css("asciidoctor.css", PREVIEW_CSS_ASCIIDOCTOR);
+  std::string css_fn = find_copy_css("asciidoctor.css", PREVIEW_CSS_ASCIIDOCTOR);
 
   if (!css_fn.empty()) {
     std::string css_contents = file_get_contents(css_fn);
 
     std::size_t pos = strOutput.find("</head>");
     if (pos != std::string::npos) {
-      std::string rep_text = "\n<style type='text/css'>\n" + css_contents +
-                             "\n</style>\n</head>\n";
+      std::string rep_text =
+          "\n<style type='text/css'>\n" + css_contents + "\n</style>\n</head>\n";
       strOutput.insert(pos, rep_text);
     } else {
-      strOutput = "<!DOCTYPE html>\n<html>\n<head>\n<style type='text/css'>\n" +
-                  css_contents + "\n</style>\n</head>\n<body>\n" + strOutput +
-                  "</body></html>";
+      strOutput = "<!DOCTYPE html>\n<html>\n<head>\n<style type='text/css'>\n" + css_contents +
+                  "\n</style>\n</head>\n<body>\n" + strOutput + "</body></html>";
     }
   }
   return strOutput;
 }
 
 // This function makes enabling cmark-gfm extensions easier
-void addMarkdownExtension(cmark_parser *parser, const std::string &extName) {
-  cmark_syntax_extension *ext = cmark_find_syntax_extension(extName.c_str());
+void addMarkdownExtension(cmark_parser * parser, const std::string & extName) {
+  cmark_syntax_extension * ext = cmark_find_syntax_extension(extName.c_str());
   if (ext) {
     cmark_parser_attach_syntax_extension(parser, ext);
   }
 }
 
-std::string cmark_gfm(const std::string &input) {
-  int options = CMARK_OPT_TABLE_PREFER_STYLE_ATTRIBUTES | CMARK_OPT_FOOTNOTES |
-                CMARK_OPT_SMART;
+std::string cmark_gfm(const std::string & input) {
+  int options = CMARK_OPT_TABLE_PREFER_STYLE_ATTRIBUTES | CMARK_OPT_FOOTNOTES | CMARK_OPT_SMART;
 
   cmark_gfm_core_extensions_ensure_registered();
 
-  cmark_parser *parser = cmark_parser_new(options);
+  cmark_parser * parser = cmark_parser_new(options);
 
   addMarkdownExtension(parser, "strikethrough");
   addMarkdownExtension(parser, "table");
   addMarkdownExtension(parser, "tasklist");
 
-  cmark_node *doc;
+  cmark_node * doc;
   cmark_parser_feed(parser, input.c_str(), input.length());
   doc = cmark_parser_finish(parser);
   cmark_parser_free(parser);

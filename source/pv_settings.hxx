@@ -33,7 +33,7 @@ class TkuiSettingPref {
   std::string name;
   std::string comment;
   bool session;
-  TkuiSetting *setting;
+  TkuiSetting * setting;
 };
 
 class PreviewSettings {
@@ -72,14 +72,14 @@ class PreviewSettings {
   int update_interval_fast = 25;
   double size_factor_fast = 0.001;
 
-  std::string desc_default_type = _(
-      "The default type for new documents.  Use the format name or extension.\n"
-      "  - none*\n"
-      "  - markdown\n"
-      "  - latex\n"
-      "  - rst\n"
-      "  - t2t\n"
-      "  - ... etc");
+  std::string desc_default_type =
+      _("The default type for new documents.  Use the format name or extension.\n"
+        "  - none*\n"
+        "  - markdown\n"
+        "  - latex\n"
+        "  - rst\n"
+        "  - t2t\n"
+        "  - ... etc");
   std::string default_type{"none"};
 
   std::string desc_processor_html =
@@ -198,13 +198,14 @@ class PreviewSettings {
   std::string extra_css{"extra-media.css"};
 
  private:
-  bool kf_has_key(const std::string &key);
+  bool kf_has_key(const std::string & key);
 
-  void add_setting(TkuiSetting *setting, const TkuiSettingType &type,
-                   const std::string &name, const std::string &comment,
-                   const bool &session);
+  void add_setting(
+      TkuiSetting * setting, const TkuiSettingType & type, const std::string & name,
+      const std::string & comment, const bool & session
+  );
 
  private:
-  GKeyFile *keyfile = nullptr;
+  GKeyFile * keyfile = nullptr;
   std::vector<TkuiSettingPref> pref_entries;
 };

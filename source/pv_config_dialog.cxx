@@ -5,13 +5,13 @@
 
 #include "pv_config_dialog.hxx"
 
-extern GeanyData *geany_data;
+extern GeanyData * geany_data;
 
-extern PreviewSettings *gSettings;
+extern PreviewSettings * gSettings;
 
-GtkWidget *getConfigDialog(GtkDialog *dialog) {
+GtkWidget * getConfigDialog(GtkDialog * dialog) {
   GtkWidget *box, *btn;
-  char *tooltip;
+  char * tooltip;
 
   box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
 
@@ -47,9 +47,9 @@ GtkWidget *getConfigDialog(GtkDialog *dialog) {
   gtk_widget_set_tooltip_text(btn, tooltip);
   g_free(tooltip);
 
-  tooltip = g_strdup(
-      _("Open the config folder in the default file manager.  "
-        "The config folder contains the stylesheets, which may be edited."));
+  tooltip =
+      g_strdup(_("Open the config folder in the default file manager.  "
+                 "The config folder contains the stylesheets, which may be edited."));
   btn = gtk_button_new_with_label(_("Open Config Folder"));
   g_signal_connect(btn, "clicked", G_CALLBACK(openConfigFolder), dialog);
   gtk_box_pack_start(GTK_BOX(box), btn, false, false, 3);
@@ -58,25 +58,28 @@ GtkWidget *getConfigDialog(GtkDialog *dialog) {
   return box;
 }
 
-void saveConfig(GtkWidget *self, GtkWidget *dialog) { gSettings->save(); }
+void saveConfig(GtkWidget * self, GtkWidget * dialog) {
+  gSettings->save();
+}
 
-void reloadConfig(GtkWidget *self, GtkWidget *dialog) {
+void reloadConfig(GtkWidget * self, GtkWidget * dialog) {
   gSettings->load();
   // wv_apply_settings();
 }
 
-void resetConfig(GtkWidget *self, GtkWidget *dialog) { gSettings->reset(); }
+void resetConfig(GtkWidget * self, GtkWidget * dialog) {
+  gSettings->reset();
+}
 
-void editConfig(GtkWidget *self, GtkWidget *dialog) {
+void editConfig(GtkWidget * self, GtkWidget * dialog) {
   namespace fs = std::filesystem;
 
   gSettings->load();
 
-  fs::path conf_fn = fs::path{geany_data->app->configdir} / "plugins" /
-                     "preview" / "preview.conf";
+  fs::path conf_fn =
+      fs::path{geany_data->app->configdir} / "plugins" / "preview" / "preview.conf";
 
-  GeanyDocument *doc =
-      document_open_file(conf_fn.c_str(), false, nullptr, nullptr);
+  GeanyDocument * doc = document_open_file(conf_fn.c_str(), false, nullptr, nullptr);
   document_reload_force(doc, nullptr);
 
   if (dialog != nullptr) {
@@ -84,11 +87,10 @@ void editConfig(GtkWidget *self, GtkWidget *dialog) {
   }
 }
 
-void openConfigFolder(GtkWidget *self, GtkWidget *dialog) {
+void openConfigFolder(GtkWidget * self, GtkWidget * dialog) {
   namespace fs = std::filesystem;
 
-  fs::path conf_dir =
-      fs::path{geany_data->app->configdir} / "plugins" / "preview";
+  fs::path conf_dir = fs::path{geany_data->app->configdir} / "plugins" / "preview";
   std::string command = R"(xdg-open ")" + conf_dir.string() + R"(")";
 
   if (std::system(command.c_str())) {

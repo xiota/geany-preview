@@ -9,8 +9,8 @@
 
 #include "geanyplugin.h"
 
-extern GeanyPlugin *geany_plugin;
-extern GeanyData *geany_data;
+extern GeanyPlugin * geany_plugin;
+extern GeanyData * geany_data;
 
 #define DEBUG printf("%s\n\t%d\n\t%s\n\n", __FILE__, __LINE__, __FUNCTION__);
 
@@ -26,9 +26,8 @@ extern GeanyData *geany_data;
     _z_ = nullptr;       \
   } while (0)
 
-#define GEANY_PSC(sig, cb)                                                  \
-  plugin_signal_connect(geany_plugin, nullptr, (sig), true, G_CALLBACK(cb), \
-                        nullptr)
+#define GEANY_PSC(sig, cb) \
+  plugin_signal_connect(geany_plugin, nullptr, (sig), true, G_CALLBACK(cb), nullptr)
 
 #if GLIB_MAJOR_VERSION <= 2 && GLIB_MINOR_VERSION < 58
 #define G_SOURCE_FUNC(f) ((GSourceFunc)(void (*)(void))(f))

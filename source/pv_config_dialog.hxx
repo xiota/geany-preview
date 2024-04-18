@@ -11,14 +11,14 @@
 #include "geanyplugin.h"
 #include "pv_settings.hxx"
 
-GtkWidget *getConfigDialog(GtkDialog *dialog);
+GtkWidget * getConfigDialog(GtkDialog * dialog);
 
-void saveConfig(GtkWidget *self, GtkWidget *dialog);
+void saveConfig(GtkWidget * self, GtkWidget * dialog);
 
-void reloadConfig(GtkWidget *self, GtkWidget *dialog);
+void reloadConfig(GtkWidget * self, GtkWidget * dialog);
 
-void resetConfig(GtkWidget *self, GtkWidget *dialog);
+void resetConfig(GtkWidget * self, GtkWidget * dialog);
 
-void editConfig(GtkWidget *self, GtkWidget *dialog);
+void editConfig(GtkWidget * self, GtkWidget * dialog);
 
-void openConfigFolder(GtkWidget *self, GtkWidget *dialog);
+void openConfigFolder(GtkWidget * self, GtkWidget * dialog);

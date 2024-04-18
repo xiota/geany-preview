@@ -3,30 +3,30 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+#include "pv_main.hxx"
+
 #include "ftn2xml/auxiliary.hxx"
 #include "ftn2xml/fountain.hxx"
 #include "pv_config_dialog.hxx"
 #include "pv_formats.hxx"
-#include "pv_main.hxx"
 #include "pv_settings.hxx"
 
-#define WEBVIEW_WARN(msg) \
-  webkit_web_view_load_plain_text(WEBKIT_WEB_VIEW(gWebView), (msg))
+#define WEBVIEW_WARN(msg) webkit_web_view_load_plain_text(WEBKIT_WEB_VIEW(gWebView), (msg))
 
-GeanyPlugin *geany_plugin = nullptr;
-GeanyData *geany_data = nullptr;
+GeanyPlugin * geany_plugin = nullptr;
+GeanyData * geany_data = nullptr;
 
-PreviewSettings *gSettings = nullptr;
+PreviewSettings * gSettings = nullptr;
 
 namespace {  // globals
 
-GtkWidget *gPreviewMenu = nullptr;
-GtkWidget *gScrolledWindow = nullptr;
+GtkWidget * gPreviewMenu = nullptr;
+GtkWidget * gScrolledWindow = nullptr;
 
-GtkWidget *gWebView = nullptr;
-WebKitSettings *gWebViewSettings = nullptr;
-WebKitWebContext *gWebViewContext = nullptr;
-WebKitUserContentManager *gWebViewContentManager = nullptr;
+GtkWidget * gWebView = nullptr;
+WebKitSettings * gWebViewSettings = nullptr;
+WebKitWebContext * gWebViewContext = nullptr;
+WebKitUserContentManager * gWebViewContentManager = nullptr;
 
 bool gSnippetActive = false;
 int gPreviewSideBarPageNumber = 0;
@@ -37,33 +37,31 @@ ulong gHandleTimeout = 0;
 ulong gHandleSidebarSwitchPage = 0;
 ulong gHandleSidebarShow = 0;
 
-GeanyDocument *gCurrentDocument = nullptr;
+GeanyDocument * gCurrentDocument = nullptr;
 
 PreviewFileType gFileType = PREVIEW_FILETYPE_NONE;
-GtkNotebook *gSideBarNotebook = nullptr;
-GtkWidget *gSideBarPreviewPage = nullptr;
+GtkNotebook * gSideBarNotebook = nullptr;
+GtkWidget * gSideBarPreviewPage = nullptr;
 
 }  // namespace
 
 namespace {  // webview and preview pane functions
 
-void wv_save_position_callback(GObject *object, GAsyncResult *result,
-                               gpointer user_data) {
-  GeanyDocument *doc = document_get_current();
+void wv_save_position_callback(GObject * object, GAsyncResult * result, gpointer user_data) {
+  GeanyDocument * doc = document_get_current();
   g_return_if_fail(DOC_VALID(doc));
 
   std::size_t idx = document_get_notebook_page(doc);
 
-  JSCValue *value = nullptr;
-  GError *error = nullptr;
+  JSCValue * value = nullptr;
+  GError * error = nullptr;
 
 #if WEBKIT_CHECK_VERSION(2, 40, 0)
-  value = webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(object),
-                                                     result, &error);
+  value = webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(object), result, &error);
   if (!value) {
 #else
-  WebKitJavascriptResult *js_result = webkit_web_view_run_javascript_finish(
-      WEBKIT_WEB_VIEW(object), result, &error);
+  WebKitJavascriptResult * js_result =
+      webkit_web_view_run_javascript_finish(WEBKIT_WEB_VIEW(object), result, &error);
   if (!js_result) {
 #endif
     g_warning(_("Error running javascript: %s"), error->message);
@@ -89,11 +87,13 @@ void wv_save_position_callback(GObject *object, GAsyncResult *result,
 void wv_save_position() {
 #if WEBKIT_CHECK_VERSION(2, 40, 0)
   webkit_web_view_evaluate_javascript(
-      WEBKIT_WEB_VIEW(gWebView), "window.scrollY", -1, nullptr, nullptr,
-      nullptr, wv_save_position_callback, nullptr);
+      WEBKIT_WEB_VIEW(gWebView), "window.scrollY", -1, nullptr, nullptr, nullptr,
+      wv_save_position_callback, nullptr
+  );
 #else
-  webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(gWebView), "window.scrollY",
-                                 nullptr, wv_save_position_callback, nullptr);
+  webkit_web_view_run_javascript(
+      WEBKIT_WEB_VIEW(gWebView), "window.scrollY", nullptr, wv_save_position_callback, nullptr
+  );
 #endif
 }
 
@@ -101,7 +101,8 @@ void wv_apply_settings() {
   webkit_user_content_manager_remove_all_style_sheets(gWebViewContentManager);
 
   webkit_settings_set_default_font_family(
-      gWebViewSettings, gSettings->default_font_family.c_str());
+      gWebViewSettings, gSettings->default_font_family.c_str()
+  );
 
   // attach headers css
   std::string css_fn = find_copy_css("preview.css", PREVIEW_CSS_HEADERS);
@@ -109,11 +110,11 @@ void wv_apply_settings() {
   if (!css_fn.empty()) {
     std::string contents = file_get_contents(css_fn);
     if (!contents.empty()) {
-      WebKitUserStyleSheet *stylesheet = webkit_user_style_sheet_new(
+      WebKitUserStyleSheet * stylesheet = webkit_user_style_sheet_new(
           contents.c_str(), WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES,
-          WEBKIT_USER_STYLE_LEVEL_AUTHOR, nullptr, nullptr);
-      webkit_user_content_manager_add_style_sheet(gWebViewContentManager,
-                                                  stylesheet);
+          WEBKIT_USER_STYLE_LEVEL_AUTHOR, nullptr, nullptr
+      );
+      webkit_user_content_manager_add_style_sheet(gWebViewContentManager, stylesheet);
     }
   }
 
@@ -132,17 +133,17 @@ void wv_apply_settings() {
   if (!css_fn.empty()) {
     std::string contents = file_get_contents(css_fn);
     if (!contents.empty()) {
-      WebKitUserStyleSheet *stylesheet = webkit_user_style_sheet_new(
+      WebKitUserStyleSheet * stylesheet = webkit_user_style_sheet_new(
           contents.c_str(), WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES,
-          WEBKIT_USER_STYLE_LEVEL_AUTHOR, nullptr, nullptr);
-      webkit_user_content_manager_add_style_sheet(gWebViewContentManager,
-                                                  stylesheet);
+          WEBKIT_USER_STYLE_LEVEL_AUTHOR, nullptr, nullptr
+      );
+      webkit_user_content_manager_add_style_sheet(gWebViewContentManager, stylesheet);
     }
   }
 }
 
 void wv_load_position() {
-  GeanyDocument *doc = document_get_current();
+  GeanyDocument * doc = document_get_current();
   g_return_if_fail(DOC_VALID(doc));
 
   std::size_t idx = document_get_notebook_page(doc);
@@ -159,17 +160,19 @@ void wv_load_position() {
     script = "window.scrollTo(0, " + std::to_string(gScrollY[idx]) + ");";
   }
 #if WEBKIT_CHECK_VERSION(2, 40, 0)
-  webkit_web_view_evaluate_javascript(WEBKIT_WEB_VIEW(gWebView), script.c_str(),
-                                      -1, nullptr, nullptr, nullptr, nullptr,
-                                      nullptr);
+  webkit_web_view_evaluate_javascript(
+      WEBKIT_WEB_VIEW(gWebView), script.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr
+  );
 #else
-  webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(gWebView), script.c_str(),
-                                 nullptr, nullptr, nullptr);
+  webkit_web_view_run_javascript(
+      WEBKIT_WEB_VIEW(gWebView), script.c_str(), nullptr, nullptr, nullptr
+  );
 #endif
 }
 
-void wv_loading_callback(WebKitWebView *web_view, WebKitLoadEvent load_event,
-                         gpointer user_data) {
+void wv_loading_callback(
+    WebKitWebView * web_view, WebKitLoadEvent load_event, gpointer user_data
+) {
   // don't wait for WEBKIT_LOAD_FINISHED, othewise preview will flicker
   wv_load_position();
 }
@@ -178,22 +181,19 @@ void wv_loading_callback(WebKitWebView *web_view, WebKitLoadEvent load_event,
  * Other Functions
  */
 
-std::string combine_head_body(std::string &strHead, std::string &strOutput) {
+std::string combine_head_body(std::string & strHead, std::string & strOutput) {
   trim_inplace(strHead);
   if (!strHead.empty()) {
     if (strOutput.substr(0, 1000).find("<body") != std::string::npos) {
       try {
-        static const std::regex re_body(R"((<body[^>]*>))",
-                                        std::regex_constants::icase);
-        strHead =
-            "$1\n<pre class='geany_preview_headers'>" + strHead + "</pre>\n";
+        static const std::regex re_body(R"((<body[^>]*>))", std::regex_constants::icase);
+        strHead = "$1\n<pre class='geany_preview_headers'>" + strHead + "</pre>\n";
         strOutput = std::regex_replace(strOutput, re_body, strHead);
-      } catch (std::regex_error &e) {
+      } catch (std::regex_error & e) {
         print_regex_error(e, __FILE__, __LINE__);
       }
     } else {
-      strOutput = "<pre class='geany_preview_headers'>" + strHead + "</pre>\n" +
-                  strOutput;
+      strOutput = "<pre class='geany_preview_headers'>" + strHead + "</pre>\n" + strOutput;
     }
   }
 
@@ -201,11 +201,9 @@ std::string combine_head_body(std::string &strHead, std::string &strOutput) {
       strOutput.substr(0, 500).find("<style") == std::string::npos) {
     if (strOutput.substr(0, 100).find("<head") != std::string::npos) {
       try {
-        static const std::regex re_head(R"((<head[^>]*>))",
-                                        std::regex_constants::icase);
-        strOutput =
-            std::regex_replace(strOutput, re_head, "$1\n<style></style>");
-      } catch (std::regex_error &e) {
+        static const std::regex re_head(R"((<head[^>]*>))", std::regex_constants::icase);
+        strOutput = std::regex_replace(strOutput, re_head, "$1\n<style></style>");
+      } catch (std::regex_error & e) {
         print_regex_error(e, __FILE__, __LINE__);
       }
     } else {
@@ -216,7 +214,7 @@ std::string combine_head_body(std::string &strHead, std::string &strOutput) {
   return strOutput;
 }
 
-bool use_snippets(GeanyDocument *doc) {
+bool use_snippets(GeanyDocument * doc) {
   g_return_val_if_fail(DOC_VALID(doc), false);
 
   const int length = sci_get_length(doc->editor->sci);
@@ -253,8 +251,7 @@ bool use_snippets(GeanyDocument *doc) {
         }
       }
       {  // When Geany build does not support Fountain
-        std::string strFormat =
-            to_lower(cstr_assign(g_path_get_basename(DOC_FILENAME(doc))));
+        std::string strFormat = to_lower(cstr_assign(g_path_get_basename(DOC_FILENAME(doc))));
 
         if (strFormat.find("fountain") != std::string::npos) {
           if (!gSettings->snippet_fountain) {
@@ -271,20 +268,19 @@ bool use_snippets(GeanyDocument *doc) {
   return true;
 }
 
-PreviewFileType get_filetype_from_string(const std::string &fn) {
+PreviewFileType get_filetype_from_string(const std::string & fn) {
   if (fn.empty() || fn == GEANY_STRING_UNTITLED) {
     return get_filetype_from_string(gSettings->default_type);
   }
 
-  std::string strFormat =
-      to_lower(cstr_assign(g_path_get_basename(fn.c_str())));
+  std::string strFormat = to_lower(cstr_assign(g_path_get_basename(fn.c_str())));
 
   if (strFormat.empty()) {
     return PREVIEW_FILETYPE_NONE;
   }
 
   bool bSetDocFileType = false;
-  GeanyDocument *doc = document_get_current();
+  GeanyDocument * doc = document_get_current();
   if (DOC_VALID(doc)) {
     bSetDocFileType = true;
   }
@@ -292,7 +288,7 @@ PreviewFileType get_filetype_from_string(const std::string &fn) {
   if (strFormat.find("fountain") != std::string::npos ||
       strFormat.find("spmd") != std::string::npos) {
     if (bSetDocFileType) {
-      if (GeanyFiletype *nft = filetypes_lookup_by_name("Fountain")) {
+      if (GeanyFiletype * nft = filetypes_lookup_by_name("Fountain")) {
         document_set_filetype(doc, nft);
       }
     }
@@ -307,8 +303,7 @@ PreviewFileType get_filetype_from_string(const std::string &fn) {
       document_set_filetype(doc, filetypes[GEANY_FILETYPES_MARKDOWN]);
     }
     return PREVIEW_FILETYPE_MARKDOWN;
-  } else if (strFormat.find("txt") != std::string::npos ||
-             strFormat.find("plain") != std::string::npos) {
+  } else if (strFormat.find("txt") != std::string::npos || strFormat.find("plain") != std::string::npos) {
     return PREVIEW_FILETYPE_PLAIN;
   } else if (strFormat.find("gfm") != std::string::npos) {
     return PREVIEW_FILETYPE_GFM;
@@ -331,8 +326,7 @@ PreviewFileType get_filetype_from_string(const std::string &fn) {
       document_set_filetype(doc, filetypes[GEANY_FILETYPES_REST]);
     }
     return PREVIEW_FILETYPE_REST;
-  } else if (strFormat.find("txt2tags") != std::string::npos ||
-             strFormat.find("t2t") != std::string::npos) {
+  } else if (strFormat.find("txt2tags") != std::string::npos || strFormat.find("t2t") != std::string::npos) {
     if (bSetDocFileType) {
       document_set_filetype(doc, filetypes[GEANY_FILETYPES_TXT2TAGS]);
     }
@@ -355,8 +349,7 @@ PreviewFileType get_filetype_from_string(const std::string &fn) {
       return PREVIEW_FILETYPE_VIMWIKI;
     } else if (strFormat.find("twiki") != std::string::npos) {
       return PREVIEW_FILETYPE_TWIKI;
-    } else if (strFormat.find("mediawiki") != std::string::npos ||
-               strFormat.find("wikipedia") != std::string::npos) {
+    } else if (strFormat.find("mediawiki") != std::string::npos || strFormat.find("wikipedia") != std::string::npos) {
       return PREVIEW_FILETYPE_MEDIAWIKI;
     } else {
       return PREVIEW_FILETYPE_WIKI;
@@ -370,7 +363,7 @@ PreviewFileType get_filetype_from_string(const std::string &fn) {
   return PREVIEW_FILETYPE_NONE;
 }
 
-PreviewFileType get_filetype(GeanyDocument *doc) {
+PreviewFileType get_filetype(GeanyDocument * doc) {
   g_return_val_if_fail(DOC_VALID(doc), PREVIEW_FILETYPE_NONE);
 
   switch (doc->file_type->id) {
@@ -415,7 +408,7 @@ PreviewFileType get_filetype(GeanyDocument *doc) {
 }
 
 std::string update_preview(const bool bGetContents) {
-  GeanyDocument *doc = document_get_current();
+  GeanyDocument * doc = document_get_current();
   if (!DOC_VALID(doc)) {
     WEBVIEW_WARN(_("Unknown document type."));
     return {};
@@ -435,20 +428,17 @@ std::string update_preview(const bool bGetContents) {
   // save scroll position and set callback if needed
   wv_save_position();
   if (gHandleLoadFinished == 0) {
-    gHandleLoadFinished =
-        g_signal_connect_swapped(WEBKIT_WEB_VIEW(gWebView), "load-changed",
-                                 G_CALLBACK(wv_loading_callback), nullptr);
+    gHandleLoadFinished = g_signal_connect_swapped(
+        WEBKIT_WEB_VIEW(gWebView), "load-changed", G_CALLBACK(wv_loading_callback), nullptr
+    );
   }
-  std::string uri =
-      cstr_assign(g_filename_to_uri(DOC_FILENAME(doc), nullptr, nullptr));
-  if (uri.empty() || uri.length() < 7 ||
-      strncmp(uri.c_str(), "file://", 7) != 0) {
+  std::string uri = cstr_assign(g_filename_to_uri(DOC_FILENAME(doc), nullptr, nullptr));
+  if (uri.empty() || uri.length() < 7 || strncmp(uri.c_str(), "file://", 7) != 0) {
     uri = "file:///tmp/blank.html";
   }
 
   std::string work_dir = cstr_assign(g_path_get_dirname(DOC_FILENAME(doc)));
-  char *text = (char *)scintilla_send_message(doc->editor->sci,
-                                              SCI_GETCHARACTERPOINTER, 0, 0);
+  char * text = (char *)scintilla_send_message(doc->editor->sci, SCI_GETCHARACTERPOINTER, 0, 0);
   std::string strPlain;   // used to output errors
   std::string strOutput;  // used to html output after processing
   std::string strHead;    // holds email-style headers
@@ -479,15 +469,15 @@ std::string update_preview(const bool bGetContents) {
         end = position + 2 * amount;
       }
 
-      int start_line = scintilla_send_message(
-          doc->editor->sci, SCI_LINEFROMPOSITION, start, start);
-      start = scintilla_send_message(doc->editor->sci, SCI_POSITIONFROMLINE,
-                                     start_line, start_line);
+      int start_line =
+          scintilla_send_message(doc->editor->sci, SCI_LINEFROMPOSITION, start, start);
+      start = scintilla_send_message(
+          doc->editor->sci, SCI_POSITIONFROMLINE, start_line, start_line
+      );
 
-      int end_line = scintilla_send_message(doc->editor->sci,
-                                            SCI_LINEFROMPOSITION, end, end);
-      end = scintilla_send_message(doc->editor->sci, SCI_GETLINEENDPOSITION,
-                                   end_line, end_line);
+      int end_line = scintilla_send_message(doc->editor->sci, SCI_LINEFROMPOSITION, end, end);
+      end =
+          scintilla_send_message(doc->editor->sci, SCI_GETLINEENDPOSITION, end_line, end_line);
 
       strBody = std::string(text + start, end - start);
     } else {
@@ -503,7 +493,7 @@ std::string update_preview(const bool bGetContents) {
     if (std::regex_search(strBody, re_has_header)) {
       has_header = true;
     }
-  } catch (std::regex_error &e) {
+  } catch (std::regex_error & e) {
     print_regex_error(e, __FILE__, __LINE__);
   }
 
@@ -532,8 +522,8 @@ std::string update_preview(const bool bGetContents) {
     try {
       if (!strHead.empty()) {
         static const std::regex re_format(
-            R"((content-type|format):\s*([^\n]*))",
-            std::regex_constants::icase);
+            R"((content-type|format):\s*([^\n]*))", std::regex_constants::icase
+        );
         std::smatch format_match;
         if (std::regex_search(strHead, format_match, re_format)) {
           if (format_match.size() > 2) {
@@ -542,7 +532,7 @@ std::string update_preview(const bool bGetContents) {
           }
         }
       }
-    } catch (std::regex_error &e) {
+    } catch (std::regex_error & e) {
       print_regex_error(e, __FILE__, __LINE__);
     }
   }
@@ -551,8 +541,7 @@ std::string update_preview(const bool bGetContents) {
     case PREVIEW_FILETYPE_HTML:
       if (gSettings->processor_html == "disable") {
         strPlain = _("Preview of HTML documents has been disabled.");
-      } else if (gSettings->processor_html.find("pandoc") !=
-                 std::string::npos) {
+      } else if (gSettings->processor_html.find("pandoc") != std::string::npos) {
         strOutput = pandoc(work_dir, strBody, "html");
       } else {
         strOutput = strBody;
@@ -561,8 +550,7 @@ std::string update_preview(const bool bGetContents) {
     case PREVIEW_FILETYPE_MARKDOWN:
       if (gSettings->processor_markdown == "disable") {
         strPlain = _("Preview of Markdown documents has been disabled.");
-      } else if (gSettings->processor_markdown.find("pandoc") !=
-                 std::string::npos) {
+      } else if (gSettings->processor_markdown.find("pandoc") != std::string::npos) {
         strOutput = pandoc(work_dir, strBody, gSettings->pandoc_markdown);
       } else {
         strOutput = cmark_gfm(strBody);
@@ -596,8 +584,7 @@ std::string update_preview(const bool bGetContents) {
       if (gSettings->processor_fountain == "disable") {
         strPlain = _("Preview of Fountain screenplays has been disabled.");
       } else {
-        std::string css_fn =
-            find_copy_css("fountain.css", PREVIEW_CSS_FOUNTAIN);
+        std::string css_fn = find_copy_css("fountain.css", PREVIEW_CSS_FOUNTAIN);
         strOutput = Fountain::ftn2xml(strBody, css_fn, true);
       }
       break;
@@ -631,8 +618,8 @@ std::string update_preview(const bool bGetContents) {
     case PREVIEW_FILETYPE_PLAIN:
     case PREVIEW_FILETYPE_EMAIL: {
       if (!strHead.empty()) {
-        strBody = "<pre style='white-space: pre-wrap;'>" +
-                  encode_entities_inplace(strBody) + "</pre>";
+        strBody = "<pre style='white-space: pre-wrap;'>" + encode_entities_inplace(strBody) +
+                  "</pre>";
         strOutput = strBody;
       }
     } break;
@@ -642,8 +629,7 @@ std::string update_preview(const bool bGetContents) {
   }
 
   if (strOutput.empty() && strPlain.empty()) {
-    strPlain = std::string{doc->file_type->name} + ", " +
-               std::string{doc->encoding} + ".";
+    strPlain = std::string{doc->file_type->name} + ", " + std::string{doc->encoding} + ".";
   }
 
   std::string contents;
@@ -659,8 +645,7 @@ std::string update_preview(const bool bGetContents) {
 
     // output to webview
     webkit_web_context_clear_cache(gWebViewContext);
-    webkit_web_view_load_html(WEBKIT_WEB_VIEW(gWebView), strOutput.c_str(),
-                              uri.c_str());
+    webkit_web_view_load_html(WEBKIT_WEB_VIEW(gWebView), strOutput.c_str(), uri.c_str());
 
     if (bGetContents) {
       contents = strOutput;
@@ -681,15 +666,16 @@ gboolean update_timeout_callback(gpointer user_data) {
 }  // namespace
 
 namespace {  // Sidebar Functions and Callbacks
-void preview_sidebar_switch_page(GtkNotebook *nb, GtkWidget *page, int page_num,
-                                 gpointer user_data) {
+void preview_sidebar_switch_page(
+    GtkNotebook * nb, GtkWidget * page, int page_num, gpointer user_data
+) {
   if (gPreviewSideBarPageNumber == page_num) {
     gCurrentDocument = nullptr;
     update_preview(false);
   }
 }
 
-void preview_sidebar_show(GtkNotebook *nb, gpointer user_data) {
+void preview_sidebar_show(GtkNotebook * nb, gpointer user_data) {
   if (gtk_notebook_get_current_page(nb) == gPreviewSideBarPageNumber) {
     gCurrentDocument = nullptr;
     update_preview(false);
@@ -700,13 +686,11 @@ void preview_sidebar_show(GtkNotebook *nb, gpointer user_data) {
 namespace {  // Keybinding and Preferences
 
 void preview_toggle_editor_preview() {
-  GeanyDocument *doc = document_get_current();
+  GeanyDocument * doc = document_get_current();
   if (doc != nullptr) {
-    GtkWidget *sci = GTK_WIDGET(doc->editor->sci);
-    if (gtk_widget_has_focus(sci) &&
-        gtk_widget_is_visible(GTK_WIDGET(gSideBarNotebook))) {
-      gtk_notebook_set_current_page(gSideBarNotebook,
-                                    gPreviewSideBarPageNumber);
+    GtkWidget * sci = GTK_WIDGET(doc->editor->sci);
+    if (gtk_widget_has_focus(sci) && gtk_widget_is_visible(GTK_WIDGET(gSideBarNotebook))) {
+      gtk_notebook_set_current_page(gSideBarNotebook, gPreviewSideBarPageNumber);
       g_signal_emit_by_name(G_OBJECT(gSideBarNotebook), "grab-focus", nullptr);
       gtk_widget_grab_focus(GTK_WIDGET(gWebView));
     } else {
@@ -716,7 +700,7 @@ void preview_toggle_editor_preview() {
   }
 }
 
-void preview_menu_preferences(GtkWidget *self, GtkWidget *dialog) {
+void preview_menu_preferences(GtkWidget * self, GtkWidget * dialog) {
   plugin_show_configure(geany_plugin);
 }
 
@@ -725,14 +709,13 @@ void preview_menu_preferences(GtkWidget *self, GtkWidget *dialog) {
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 // From Markdown Plugin
-std::string replace_extension(const std::string &fn, const std::string &ext) {
+std::string replace_extension(const std::string & fn, const std::string & ext) {
   if (fn.empty()) {
     return ext;
   }
 
-  char *fn_noext =
-      g_filename_from_utf8(fn.c_str(), -1, nullptr, nullptr, nullptr);
-  char *dot = strrchr(fn_noext, '.');
+  char * fn_noext = g_filename_from_utf8(fn.c_str(), -1, nullptr, nullptr, nullptr);
+  char * dot = strrchr(fn_noext, '.');
   if (dot != nullptr) {
     *dot = '\0';
   }
@@ -742,16 +725,16 @@ std::string replace_extension(const std::string &fn, const std::string &ext) {
 }
 
 // From Markdown Plugin
-void preview_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
-  GeanyDocument *doc = document_get_current();
+void preview_menu_export_html(GtkWidget * self, GtkWidget * dialog) {
+  GeanyDocument * doc = document_get_current();
   g_return_if_fail(DOC_VALID(doc));
 
-  GtkWidget *save_dialog = gtk_file_chooser_dialog_new(
+  GtkWidget * save_dialog = gtk_file_chooser_dialog_new(
       _("Save As HTML"), GTK_WINDOW(geany_data->main_widgets->window),
       GTK_FILE_CHOOSER_ACTION_SAVE, _("Cancel"), GTK_RESPONSE_CANCEL, _("Save"),
-      GTK_RESPONSE_ACCEPT, nullptr);
-  gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(save_dialog),
-                                                 true);
+      GTK_RESPONSE_ACCEPT, nullptr
+  );
+  gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(save_dialog), true);
 
   std::string fn = replace_extension(DOC_FILENAME(doc), ".html");
   if (g_file_test(fn.c_str(), G_FILE_TEST_EXISTS)) {
@@ -763,16 +746,14 @@ void preview_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
     // suggested name for the file, since GtkFileChooser won't do it.
     std::string dn = cstr_assign(g_path_get_dirname(fn.c_str()));
     std::string bn = cstr_assign(g_path_get_basename(fn.c_str()));
-    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog),
-                                        dn.c_str());
-    std::string utf8_name = cstr_assign(
-        g_filename_to_utf8(bn.c_str(), -1, nullptr, nullptr, nullptr));
-    gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(save_dialog),
-                                      utf8_name.c_str());
+    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog), dn.c_str());
+    std::string utf8_name =
+        cstr_assign(g_filename_to_utf8(bn.c_str(), -1, nullptr, nullptr, nullptr));
+    gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(save_dialog), utf8_name.c_str());
   }
 
   // add file type filters to the chooser
-  GtkFileFilter *filter = gtk_file_filter_new();
+  GtkFileFilter * filter = gtk_file_filter_new();
   gtk_file_filter_set_name(filter, _("HTML Files"));
   gtk_file_filter_add_mime_type(filter, "text/html");
   gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(save_dialog), filter);
@@ -783,14 +764,11 @@ void preview_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
   gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(save_dialog), filter);
 
   bool saved = false;
-  while (!saved &&
-         gtk_dialog_run(GTK_DIALOG(save_dialog)) == GTK_RESPONSE_ACCEPT) {
+  while (!saved && gtk_dialog_run(GTK_DIALOG(save_dialog)) == GTK_RESPONSE_ACCEPT) {
     std::string html = update_preview(true);
-    fn = cstr_assign(
-        gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(save_dialog)));
+    fn = cstr_assign(gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(save_dialog)));
     if (!file_set_contents(fn, html)) {
-      dialogs_show_msgbox(GTK_MESSAGE_ERROR,
-                          _("Failed to export HTML to file."));
+      dialogs_show_msgbox(GTK_MESSAGE_ERROR, _("Failed to export HTML to file."));
     } else {
       saved = true;
     }
@@ -802,8 +780,8 @@ void preview_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
 
 #if ENABLE_EXPORT_PDF
 
-void preview_menu_export_pdf(GtkWidget *self, GtkWidget *dialog) {
-  GeanyDocument *doc = document_get_current();
+void preview_menu_export_pdf(GtkWidget * self, GtkWidget * dialog) {
+  GeanyDocument * doc = document_get_current();
   g_return_if_fail(DOC_VALID(doc));
 
   // PDF export only supported for Fountain
@@ -813,15 +791,14 @@ void preview_menu_export_pdf(GtkWidget *self, GtkWidget *dialog) {
     return;
   }
 
-  char *text = (char *)scintilla_send_message(doc->editor->sci,
-                                              SCI_GETCHARACTERPOINTER, 0, 0);
+  char * text = (char *)scintilla_send_message(doc->editor->sci, SCI_GETCHARACTERPOINTER, 0, 0);
 
-  GtkWidget *save_dialog = gtk_file_chooser_dialog_new(
+  GtkWidget * save_dialog = gtk_file_chooser_dialog_new(
       _("Save As PDF"), GTK_WINDOW(geany_data->main_widgets->window),
       GTK_FILE_CHOOSER_ACTION_SAVE, _("Cancel"), GTK_RESPONSE_CANCEL, _("Save"),
-      GTK_RESPONSE_ACCEPT, nullptr);
-  gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(save_dialog),
-                                                 true);
+      GTK_RESPONSE_ACCEPT, nullptr
+  );
+  gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(save_dialog), true);
 
   std::string fn = replace_extension(DOC_FILENAME(doc), ".pdf");
   if (g_file_test(fn.c_str(), G_FILE_TEST_EXISTS)) {
@@ -833,16 +810,14 @@ void preview_menu_export_pdf(GtkWidget *self, GtkWidget *dialog) {
     // suggested name for the file, since GtkFileChooser won't do it.
     std::string dn = cstr_assign(g_path_get_dirname(fn.c_str()));
     std::string bn = cstr_assign(g_path_get_basename(fn.c_str()));
-    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog),
-                                        dn.c_str());
-    std::string utf8_name = cstr_assign(
-        g_filename_to_utf8(bn.c_str(), -1, nullptr, nullptr, nullptr));
-    gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(save_dialog),
-                                      utf8_name.c_str());
+    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog), dn.c_str());
+    std::string utf8_name =
+        cstr_assign(g_filename_to_utf8(bn.c_str(), -1, nullptr, nullptr, nullptr));
+    gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(save_dialog), utf8_name.c_str());
   }
 
   // add file type filters to the chooser
-  GtkFileFilter *filter = gtk_file_filter_new();
+  GtkFileFilter * filter = gtk_file_filter_new();
   gtk_file_filter_set_name(filter, _("PDF Files"));
   gtk_file_filter_add_mime_type(filter, "application/pdf");
   gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(save_dialog), filter);
@@ -853,14 +828,11 @@ void preview_menu_export_pdf(GtkWidget *self, GtkWidget *dialog) {
   gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(save_dialog), filter);
 
   bool saved = false;
-  while (!saved &&
-         gtk_dialog_run(GTK_DIALOG(save_dialog)) == GTK_RESPONSE_ACCEPT) {
-    fn = cstr_assign(
-        gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(save_dialog)));
+  while (!saved && gtk_dialog_run(GTK_DIALOG(save_dialog)) == GTK_RESPONSE_ACCEPT) {
+    fn = cstr_assign(gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(save_dialog)));
 
     if (!Fountain::ftn2pdf(fn, text)) {
-      dialogs_show_msgbox(GTK_MESSAGE_ERROR,
-                          _("Failed to export PDF to file."));
+      dialogs_show_msgbox(GTK_MESSAGE_ERROR, _("Failed to export PDF to file."));
     } else {
       saved = true;
     }
@@ -894,22 +866,22 @@ bool preview_key_binding(int key_id) {
 
 }  // namespace
 
-bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
-                           SCNotification *notif, gpointer user_data) {
+bool preview_editor_notify(
+    GObject * obj, GeanyEditor * editor, SCNotification * notif, gpointer user_data
+) {
   // no update when update pending
   if (gHandleTimeout) {
     return false;
   }
 
   // no updates when preview pane is hidden
-  if (gtk_notebook_get_current_page(gSideBarNotebook) !=
-          gPreviewSideBarPageNumber ||
+  if (gtk_notebook_get_current_page(gSideBarNotebook) != gPreviewSideBarPageNumber ||
       !gtk_widget_is_visible(GTK_WIDGET(gSideBarNotebook))) {
     return false;
   }
 
   // no update if document invalid
-  GeanyDocument *doc = document_get_current();
+  GeanyDocument * doc = document_get_current();
   if (!DOC_VALID(doc)) {
     WEBVIEW_WARN(_("Unknown document type."));
     return false;
@@ -992,16 +964,14 @@ bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
     case FAST: {
       // delay for faster programs (native html/markdown/fountain and pandoc)
       double _tt = (double)length * gSettings->size_factor_fast;
-      timeout = (int)_tt > gSettings->update_interval_fast
-                    ? (int)_tt
-                    : gSettings->update_interval_fast;
+      timeout = (int)_tt > gSettings->update_interval_fast ? (int)_tt
+                                                           : gSettings->update_interval_fast;
     } break;
     case SLOW: {
       // delay for slower programs (asciidoctor)
       double _tt = (double)length * gSettings->size_factor_slow;
-      timeout = (int)_tt > gSettings->update_interval_slow
-                    ? (int)_tt
-                    : gSettings->update_interval_slow;
+      timeout = (int)_tt > gSettings->update_interval_slow ? (int)_tt
+                                                           : gSettings->update_interval_slow;
     } break;
     case SUPER_SLOW:
       // slow update when unhandled filetype;
@@ -1014,36 +984,32 @@ bool preview_editor_notify(GObject *obj, GeanyEditor *editor,
   return true;
 }
 
-void preview_document_signal(GObject *obj, GeanyDocument *doc,
-                             gpointer user_data) {
+void preview_document_signal(GObject * obj, GeanyDocument * doc, gpointer user_data) {
   gCurrentDocument = nullptr;
 
   // no updates when preview pane is hidden
-  if (gtk_notebook_get_current_page(gSideBarNotebook) !=
-          gPreviewSideBarPageNumber ||
+  if (gtk_notebook_get_current_page(gSideBarNotebook) != gPreviewSideBarPageNumber ||
       !gtk_widget_is_visible(GTK_WIDGET(gSideBarNotebook))) {
     return;
   }
 
   // update only when update not already pending
   if (!gHandleTimeout) {
-    gHandleTimeout = g_timeout_add(gSettings->update_interval_fast,
-                                   update_timeout_callback, nullptr);
+    gHandleTimeout =
+        g_timeout_add(gSettings->update_interval_fast, update_timeout_callback, nullptr);
   }
 }
 
-GtkWidget *preview_configure(GeanyPlugin *plugin, GtkDialog *dialog,
-                             gpointer data) {
+GtkWidget * preview_configure(GeanyPlugin * plugin, GtkDialog * dialog, gpointer data) {
   return getConfigDialog(dialog);
 }
 
-void preview_cleanup(GeanyPlugin *plugin, gpointer pdata) {
+void preview_cleanup(GeanyPlugin * plugin, gpointer pdata) {
   gSettings->kf_close();
   delete gSettings;
 
   if (gHandleSidebarSwitchPage) {
-    g_clear_signal_handler(&gHandleSidebarSwitchPage,
-                           GTK_WIDGET(gSideBarNotebook));
+    g_clear_signal_handler(&gHandleSidebarSwitchPage, GTK_WIDGET(gSideBarNotebook));
   }
   if (gHandleSidebarShow) {
     g_clear_signal_handler(&gHandleSidebarShow, GTK_WIDGET(gSideBarNotebook));
@@ -1065,40 +1031,41 @@ void createCallbacks() {
 }
 
 void createPreviewShortcuts() {
-  GeanyKeyGroup *group =
-      plugin_set_key_group(geany_plugin, "Preview", PREVIEW_KEY_COUNT,
-                           (GeanyKeyGroupCallback)preview_key_binding);
+  GeanyKeyGroup * group = plugin_set_key_group(
+      geany_plugin, "Preview", PREVIEW_KEY_COUNT, (GeanyKeyGroupCallback)preview_key_binding
+  );
 
-  keybindings_set_item(group, PREVIEW_KEY_TOGGLE_EDITOR, nullptr, 0,
-                       GdkModifierType(0), "preview_toggle_editor",
-                       _("Toggle focus between editor and preview"), nullptr);
+  keybindings_set_item(
+      group, PREVIEW_KEY_TOGGLE_EDITOR, nullptr, 0, GdkModifierType(0), "preview_toggle_editor",
+      _("Toggle focus between editor and preview"), nullptr
+  );
 
-  keybindings_set_item(group, PREVIEW_KEY_EXPORT_HTML, nullptr, 0,
-                       GdkModifierType(0), "preview_export_html",
-                       _("Export document to HTML"), nullptr);
+  keybindings_set_item(
+      group, PREVIEW_KEY_EXPORT_HTML, nullptr, 0, GdkModifierType(0), "preview_export_html",
+      _("Export document to HTML"), nullptr
+  );
 #if ENABLE_EXPORT_PDF
-  keybindings_set_item(group, PREVIEW_KEY_EXPORT_PDF, nullptr, 0,
-                       GdkModifierType(0), "preview_export_pdf",
-                       _("Export Fountain screenplay to PDF"), nullptr);
+  keybindings_set_item(
+      group, PREVIEW_KEY_EXPORT_PDF, nullptr, 0, GdkModifierType(0), "preview_export_pdf",
+      _("Export Fountain screenplay to PDF"), nullptr
+  );
 #endif  // ENABLE_EXPORT_PDF
 }
 
-GtkWidget *createPreviewMenu() {
-  GtkWidget *gPluginMenu = gtk_menu_item_new_with_label(_("Preview"));
+GtkWidget * createPreviewMenu() {
+  GtkWidget * gPluginMenu = gtk_menu_item_new_with_label(_("Preview"));
   ui_add_document_sensitive(gPluginMenu);
 
-  GtkWidget *submenu = gtk_menu_new();
+  GtkWidget * submenu = gtk_menu_new();
   gtk_menu_item_set_submenu(GTK_MENU_ITEM(gPluginMenu), submenu);
 
-  GtkWidget *item = gtk_menu_item_new_with_label(_("Export to HTML..."));
-  g_signal_connect(item, "activate", G_CALLBACK(preview_menu_export_html),
-                   nullptr);
+  GtkWidget * item = gtk_menu_item_new_with_label(_("Export to HTML..."));
+  g_signal_connect(item, "activate", G_CALLBACK(preview_menu_export_html), nullptr);
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
 #if ENABLE_EXPORT_PDF
   item = gtk_menu_item_new_with_label(_("Export to PDF..."));
-  g_signal_connect(item, "activate", G_CALLBACK(preview_menu_export_pdf),
-                   nullptr);
+  g_signal_connect(item, "activate", G_CALLBACK(preview_menu_export_pdf), nullptr);
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 #endif  // ENABLE_EXPORT_PDF
 
@@ -1121,14 +1088,12 @@ GtkWidget *createPreviewMenu() {
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
   item = gtk_menu_item_new_with_label(_("Preferences"));
-  g_signal_connect(item, "activate", G_CALLBACK(preview_menu_preferences),
-                   nullptr);
+  g_signal_connect(item, "activate", G_CALLBACK(preview_menu_preferences), nullptr);
   gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
 
   gtk_widget_show_all(gPluginMenu);
 
-  gtk_menu_shell_append(GTK_MENU_SHELL(geany_data->main_widgets->tools_menu),
-                        gPluginMenu);
+  gtk_menu_shell_append(GTK_MENU_SHELL(geany_data->main_widgets->tools_menu), gPluginMenu);
 
   return gPluginMenu;
 }
@@ -1141,36 +1106,35 @@ void createWebView() {
   gWebView = webkit_web_view_new_with_settings(gWebViewSettings);
 
   gWebViewContext = webkit_web_view_get_context(WEBKIT_WEB_VIEW(gWebView));
-  gWebViewContentManager =
-      webkit_web_view_get_user_content_manager(WEBKIT_WEB_VIEW(gWebView));
+  gWebViewContentManager = webkit_web_view_get_user_content_manager(WEBKIT_WEB_VIEW(gWebView));
 
   gScrolledWindow = gtk_scrolled_window_new(nullptr, nullptr);
   gtk_container_add(GTK_CONTAINER(gScrolledWindow), gWebView);
-  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(gScrolledWindow),
-                                 GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+  gtk_scrolled_window_set_policy(
+      GTK_SCROLLED_WINDOW(gScrolledWindow), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC
+  );
 
   gSideBarNotebook = GTK_NOTEBOOK(geany->main_widgets->sidebar_notebook);
-  gPreviewSideBarPageNumber = gtk_notebook_append_page(
-      gSideBarNotebook, gScrolledWindow, gtk_label_new(_("Preview")));
+  gPreviewSideBarPageNumber =
+      gtk_notebook_append_page(gSideBarNotebook, gScrolledWindow, gtk_label_new(_("Preview")));
 
   // show preview pane
   gtk_widget_show_all(gScrolledWindow);
   gtk_notebook_set_current_page(gSideBarNotebook, gPreviewSideBarPageNumber);
 
-  gSideBarPreviewPage =
-      gtk_notebook_get_nth_page(gSideBarNotebook, gPreviewSideBarPageNumber);
+  gSideBarPreviewPage = gtk_notebook_get_nth_page(gSideBarNotebook, gPreviewSideBarPageNumber);
 
-  gtk_widget_set_name(GTK_WIDGET(gSideBarPreviewPage),
-                      "geany-preview-sidebar-page");
+  gtk_widget_set_name(GTK_WIDGET(gSideBarPreviewPage), "geany-preview-sidebar-page");
 
   // signal handlers to update notebook
-  gHandleSidebarSwitchPage =
-      g_signal_connect(GTK_WIDGET(gSideBarNotebook), "switch-page",
-                       G_CALLBACK(preview_sidebar_switch_page), nullptr);
+  gHandleSidebarSwitchPage = g_signal_connect(
+      GTK_WIDGET(gSideBarNotebook), "switch-page", G_CALLBACK(preview_sidebar_switch_page),
+      nullptr
+  );
 
-  gHandleSidebarShow =
-      g_signal_connect(GTK_WIDGET(gSideBarNotebook), "show",
-                       G_CALLBACK(preview_sidebar_show), nullptr);
+  gHandleSidebarShow = g_signal_connect(
+      GTK_WIDGET(gSideBarNotebook), "show", G_CALLBACK(preview_sidebar_show), nullptr
+  );
 
   wv_apply_settings();
 
@@ -1178,12 +1142,12 @@ void createWebView() {
 
   // preview may need to be updated after a delay on first use
   if (gHandleTimeout == 0) {
-    gHandleTimeout = g_timeout_add(gSettings->startup_timeout,
-                                   update_timeout_callback, nullptr);
+    gHandleTimeout =
+        g_timeout_add(gSettings->startup_timeout, update_timeout_callback, nullptr);
   }
 }
 
-gboolean preview_init(GeanyPlugin *plugin, gpointer pdata) {
+gboolean preview_init(GeanyPlugin * plugin, gpointer pdata) {
   geany_plugin = plugin;
   geany_data = plugin->geany_data;
 
@@ -1201,10 +1165,10 @@ gboolean preview_init(GeanyPlugin *plugin, gpointer pdata) {
   return true;
 }
 
-void geany_load_module(GeanyPlugin *plugin) {
+void geany_load_module(GeanyPlugin * plugin) {
   plugin->info->name = "Preview";
-  plugin->info->description = _(
-      "Preview pane for HTML, Markdown, and other lightweight markup formats.");
+  plugin->info->description =
+      _("Preview pane for HTML, Markdown, and other lightweight markup formats.");
   plugin->info->version = VERSION;
   plugin->info->author = "xiota";
   plugin->funcs->init = preview_init;

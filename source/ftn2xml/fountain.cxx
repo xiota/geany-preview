@@ -3,16 +3,17 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+#include "fountain.hxx"
+
 #include <cstring>
 
 #include "auxiliary.hxx"
-#include "fountain.hxx"
 
 namespace Fountain {
 
 namespace {
 
-bool isForced(const std::string &input) {
+bool isForced(const std::string & input) {
   if (input.empty()) {
     return false;
   }
@@ -34,7 +35,7 @@ bool isForced(const std::string &input) {
   return false;
 }
 
-bool isTransition(const std::string &input) {
+bool isTransition(const std::string & input) {
   if (input.empty()) {
     return false;
   }
@@ -83,7 +84,7 @@ bool isTransition(const std::string &input) {
   }
 
   // Other transitions
-  const char *transitions[] = {
+  const char * transitions[] = {
       "DISSOLVE:",      "END CREDITS:", "FADE IN:",         "FREEZE FRAME:",
       "INTERCUT WITH:", "IRIS IN:",     "OPENING CREDITS:", "SPLIT SCREEN:",
       "STOCK SHOT:",    "TIME CUT:",    "TITLE OVER:",      "WIPE:",
@@ -98,7 +99,7 @@ bool isTransition(const std::string &input) {
   return false;
 }
 
-std::string parseTransition(const std::string &input) {
+std::string parseTransition(const std::string & input) {
   if (input.empty()) {
     return {};
   }
@@ -108,7 +109,7 @@ std::string parseTransition(const std::string &input) {
   return to_upper(ws_trim(input));
 }
 
-bool isSceneHeader(const std::string &input) {
+bool isSceneHeader(const std::string & input) {
   if (input.length() < 2) {
     return false;
   }
@@ -123,13 +124,13 @@ bool isSceneHeader(const std::string &input) {
 
   try {
     static const std::regex re_scene_header(
-        R"(^(INT|EXT|EST|INT\.?/EXT|EXT\.?/INT|I/E|E/I)[\.\ ])",
-        std::regex_constants::icase);
+        R"(^(INT|EXT|EST|INT\.?/EXT|EXT\.?/INT|I/E|E/I)[\.\ ])", std::regex_constants::icase
+    );
 
     if (std::regex_search(input, re_scene_header)) {
       return true;
     }
-  } catch (std::regex_error &e) {
+  } catch (std::regex_error & e) {
     print_regex_error(e, __FILE__, __LINE__);
   }
   return false;
@@ -137,7 +138,7 @@ bool isSceneHeader(const std::string &input) {
 
 // returns <scene description, scene number>
 // Note: in should already be length checked by isSceneHeader()
-auto parseSceneHeader(const std::string &input) {
+auto parseSceneHeader(const std::string & input) {
   std::string first;
   std::string second;
   bool forced_scene{false};
@@ -162,7 +163,7 @@ auto parseSceneHeader(const std::string &input) {
   return std::make_pair(first, second);
 }
 
-bool isCenter(const std::string &input) {
+bool isCenter(const std::string & input) {
   if (input.length() < 2) {
     return false;
   }
@@ -178,7 +179,7 @@ bool isCenter(const std::string &input) {
   return false;
 }
 
-bool isNotation(const std::string &input) {
+bool isNotation(const std::string & input) {
   if (input.length() < 4) {
     return false;
   }
@@ -206,7 +207,7 @@ bool isNotation(const std::string &input) {
   return false;
 }
 
-bool isCharacter(const std::string &input) {
+bool isCharacter(const std::string & input) {
   if (input.empty()) {
     return false;
   }
@@ -237,7 +238,7 @@ bool isCharacter(const std::string &input) {
 }
 
 // Note: input should already be length checked by isCharacter()
-std::string parseCharacter(const std::string &input) {
+std::string parseCharacter(const std::string & input) {
   // Note: input should already be left-trimmed,
   // otherwise indent would be removed here
 
@@ -257,7 +258,7 @@ std::string parseCharacter(const std::string &input) {
 }
 
 // Note: input should already be length checked by isCharacter()
-bool isDualDialog(const std::string &input) {
+bool isDualDialog(const std::string & input) {
   if (input.back() == '^') {
     return true;
   }
@@ -265,7 +266,7 @@ bool isDualDialog(const std::string &input) {
   return false;
 }
 
-bool isParenthetical(const std::string &input) {
+bool isParenthetical(const std::string & input) {
   if (!input.length()) {
     return false;
   }
@@ -292,7 +293,7 @@ bool isParenthetical(const std::string &input) {
   return false;
 }
 
-bool isContinuation(const std::string &input) {
+bool isContinuation(const std::string & input) {
   if (input.empty()) {
     return false;
   }
@@ -303,7 +304,7 @@ bool isContinuation(const std::string &input) {
   return false;
 }
 
-auto parseKeyValue(const std::string &input) {
+auto parseKeyValue(const std::string & input) {
   std::string key;
   std::string value;
 
@@ -318,7 +319,7 @@ auto parseKeyValue(const std::string &input) {
 }
 
 // replace escape sequences with entities in a single pass
-std::string &parseEscapeSequences_inplace(std::string &input) {
+std::string & parseEscapeSequences_inplace(std::string & input) {
   for (std::size_t pos = 0; pos < input.length();) {
     switch (input[pos]) {
       case '\t':
@@ -386,7 +387,7 @@ std::string &parseEscapeSequences_inplace(std::string &input) {
 
 }  // namespace
 
-std::string ScriptNode::to_string(const int &flags) const {
+std::string ScriptNode::to_string(const int & flags) const {
   static int dialog_state = 0;
   std::string output;
 
@@ -395,8 +396,7 @@ std::string ScriptNode::to_string(const int &flags) const {
       if (flags & type) {
         break;
       }
-      output = "<meta>\n<key>" + key + "</key>\n<value>" + value +
-               "</value>\n</meta>\n";
+      output = "<meta>\n<key>" + key + "</key>\n<value>" + value + "</value>\n</meta>\n";
       break;
     case ScriptNodeType::ftnPageBreak:
       if (flags & type) {
@@ -433,8 +433,8 @@ std::string ScriptNode::to_string(const int &flags) const {
         break;
       }
       if (!key.empty()) {
-        output = "<SceneHeader><SceneNumL>" + key + "</SceneNumL>" + value +
-                 +"<SceneNumR>" + key + "</SceneNumR></SceneHeader>\n";
+        output = "<SceneHeader><SceneNumL>" + key + "</SceneNumL>" + value + +"<SceneNumR>" +
+                 key + "</SceneNumR></SceneHeader>\n";
       } else {
         output = "<SceneHeader>" + value + "</SceneHeader>\n";
       }
@@ -531,7 +531,7 @@ std::string ScriptNode::to_string(const int &flags) const {
   return output;
 }
 
-std::string Script::to_string(const int &flags) const {
+std::string Script::to_string(const int & flags) const {
   std::string output{"<Fountain>\n"};
 
   for (auto node : nodes) {
@@ -542,14 +542,13 @@ std::string Script::to_string(const int &flags) const {
   return output;
 }
 
-std::string Script::parseNodeText(const std::string &input) {
+std::string Script::parseNodeText(const std::string & input) {
   try {
     static const std::regex re_bolditalic(R"(\*{3}([^*]+?)\*{3})");
     static const std::regex re_bold(R"(\*{2}([^*]+?)\*{2})");
     static const std::regex re_italic(R"(\*{1}([^*]+?)\*{1})");
     static const std::regex re_underline(R"(_([^_\n]+)_)");
-    std::string output =
-        std::regex_replace(input, re_bolditalic, "<b><i>$1</i></b>");
+    std::string output = std::regex_replace(input, re_bolditalic, "<b><i>$1</i></b>");
     output = std::regex_replace(output, re_bold, "<b>$1</b>");
     output = std::regex_replace(output, re_italic, "<i>$1</i>");
     output = std::regex_replace(output, re_underline, "<u>$1</u>");
@@ -562,13 +561,13 @@ std::string Script::parseNodeText(const std::string &input) {
     output = std::regex_replace(output, re_note_3, "<note>$1</note>");
 
     return output;
-  } catch (std::regex_error &e) {
+  } catch (std::regex_error & e) {
     print_regex_error(e, __FILE__, __LINE__);
     return input;
   }
 }
 
-void Script::parseFountain(const std::string &text) {
+void Script::parseFountain(const std::string & text) {
   clear();
 
   if (!text.length()) {
@@ -588,7 +587,7 @@ void Script::parseFountain(const std::string &text) {
     parseEscapeSequences_inplace(strTmp);
 
     lines = split_lines(strTmp);
-  } catch (std::regex_error &e) {
+  } catch (std::regex_error & e) {
     print_regex_error(e, __FILE__, __LINE__);
   }
 
@@ -600,7 +599,7 @@ void Script::parseFountain(const std::string &text) {
     if (std::regex_search(text, re_has_header)) {
       has_header = true;
     }
-  } catch (std::regex_error &e) {
+  } catch (std::regex_error & e) {
     print_regex_error(e, __FILE__, __LINE__);
   }
 
@@ -608,7 +607,7 @@ void Script::parseFountain(const std::string &text) {
   int currSection = 1;
 
   // process line-by-line
-  for (auto &line : lines) {
+  for (auto & line : lines) {
     std::string s = ws_ltrim(line);
 
     if (has_header) {
@@ -699,8 +698,7 @@ void Script::parseFountain(const std::string &text) {
     if (isParenthetical(s)) {
       if (!nodes.empty()) {
         ScriptNodeType ct = nodes.back().type;
-        if (ct == ScriptNodeType::ftnParenthetical ||
-            ct == ScriptNodeType::ftnCharacter ||
+        if (ct == ScriptNodeType::ftnParenthetical || ct == ScriptNodeType::ftnCharacter ||
             ct == ScriptNodeType::ftnSpeech) {
           new_node(ScriptNodeType::ftnParenthetical);
           append(ws_trim(s));
@@ -731,8 +729,7 @@ void Script::parseFountain(const std::string &text) {
       }
     } else if (!nodes.empty()) {
       ScriptNodeType ct = nodes.back().type;
-      if (ct == ScriptNodeType::ftnParenthetical ||
-          ct == ScriptNodeType::ftnCharacter) {
+      if (ct == ScriptNodeType::ftnParenthetical || ct == ScriptNodeType::ftnCharacter) {
         if (s.length() > 1 && s[0] == '~') {
           new_node(ScriptNodeType::ftnLyric);
           append(ws_ltrim(s.substr(1)));
@@ -846,8 +843,9 @@ void Script::parseFountain(const std::string &text) {
 }
 
 // html similar to screenplain html output (can use the same css files)
-std::string ftn2screenplain(const std::string &input, const std::string &css_fn,
-                            const bool &embed_css) {
+std::string ftn2screenplain(
+    const std::string & input, const std::string & css_fn, const bool & embed_css
+) {
   std::string output{"<!DOCTYPE html>\n<html>\n<head>\n"};
 
   if (!css_fn.empty()) {
@@ -871,9 +869,10 @@ std::string ftn2screenplain(const std::string &input, const std::string &css_fn,
   Fountain::Script script;
   script.parseFountain(input);
 
-  output += script.to_string(Fountain::ScriptNodeType::ftnContinuation |
-                             Fountain::ScriptNodeType::ftnKeyValue |
-                             Fountain::ScriptNodeType::ftnUnknown);
+  output += script.to_string(
+      Fountain::ScriptNodeType::ftnContinuation | Fountain::ScriptNodeType::ftnKeyValue |
+      Fountain::ScriptNodeType::ftnUnknown
+  );
 
   output += "\n</div>\n</body>\n</html>\n";
 
@@ -893,8 +892,7 @@ std::string ftn2screenplain(const std::string &input, const std::string &css_fn,
     replace_all_inplace(output, "<Character>", R"(<p class="character">)");
     replace_all_inplace(output, "</Character>", "</p>");
 
-    replace_all_inplace(output, "<Parenthetical>",
-                        R"(<p class="parenthetical">)");
+    replace_all_inplace(output, "<Parenthetical>", R"(<p class="parenthetical">)");
     replace_all_inplace(output, "</Parenthetical>", "</p>");
 
     replace_all_inplace(output, "<Speech>", R"(<p class="speech">)");
@@ -926,7 +924,7 @@ std::string ftn2screenplain(const std::string &input, const std::string &css_fn,
 
     static const std::regex re_newlines(R"(\n+)");
     output = std::regex_replace(output, re_newlines, "\n");
-  } catch (std::regex_error &e) {
+  } catch (std::regex_error & e) {
     print_regex_error(e, __FILE__, __LINE__);
   }
 
@@ -934,8 +932,9 @@ std::string ftn2screenplain(const std::string &input, const std::string &css_fn,
 }
 
 // html similar to textplay html output (can use the same css files)
-std::string ftn2textplay(const std::string &input, const std::string &css_fn,
-                         const bool &embed_css) {
+std::string ftn2textplay(
+    const std::string & input, const std::string & css_fn, const bool & embed_css
+) {
   std::string output{"<!DOCTYPE html>\n<html>\n<head>\n"};
 
   if (!css_fn.empty()) {
@@ -959,19 +958,18 @@ std::string ftn2textplay(const std::string &input, const std::string &css_fn,
   Fountain::Script script;
   script.parseFountain(input);
 
-  output += script.to_string(Fountain::ScriptNodeType::ftnContinuation |
-                             Fountain::ScriptNodeType::ftnKeyValue |
-                             Fountain::ScriptNodeType::ftnUnknown);
+  output += script.to_string(
+      Fountain::ScriptNodeType::ftnContinuation | Fountain::ScriptNodeType::ftnKeyValue |
+      Fountain::ScriptNodeType::ftnUnknown
+  );
 
   output += "\n</div>\n</body>\n</html>\n";
 
   try {
-    replace_all_inplace(output, "<Transition>",
-                        R"(<h3 class="right-transition">)");
+    replace_all_inplace(output, "<Transition>", R"(<h3 class="right-transition">)");
     replace_all_inplace(output, "</Transition>", "</h3>");
 
-    replace_all_inplace(output, "<SceneHeader>",
-                        R"(<h2 class="full-slugline">)");
+    replace_all_inplace(output, "<SceneHeader>", R"(<h2 class="full-slugline">)");
     replace_all_inplace(output, "</SceneHeader>", "</h2>");
 
     replace_all_inplace(output, "<Action>", R"(<p class="action">)");
@@ -983,8 +981,7 @@ std::string ftn2textplay(const std::string &input, const std::string &css_fn,
     replace_all_inplace(output, "<Character>", R"(<dt class="character">)");
     replace_all_inplace(output, "</Character>", "</dt>");
 
-    replace_all_inplace(output, "<Parenthetical>",
-                        R"(<dd class="parenthetical">)");
+    replace_all_inplace(output, "<Parenthetical>", R"(<dd class="parenthetical">)");
     replace_all_inplace(output, "</Parenthetical>", "</dd>");
 
     replace_all_inplace(output, "<Speech>", R"(<dd class="dialogue">)");
@@ -993,8 +990,7 @@ std::string ftn2textplay(const std::string &input, const std::string &css_fn,
     replace_all_inplace(output, "<Dialog>", R"(<div class="dialog">)");
     replace_all_inplace(output, "</Dialog>", "</div>");
 
-    replace_all_inplace(output, "<DialogDual>",
-                        R"(<div class="dialog_wrapper">)");
+    replace_all_inplace(output, "<DialogDual>", R"(<div class="dialog_wrapper">)");
     replace_all_inplace(output, "</DialogDual>", "</div>");
 
     replace_all_inplace(output, "<DialogLeft>", R"(<dl class="first">)");
@@ -1022,16 +1018,15 @@ std::string ftn2textplay(const std::string &input, const std::string &css_fn,
     //   <h5 class="goldman-slugline"></h5>
     //   <span class="revised"></span>
 
-  } catch (std::regex_error &e) {
+  } catch (std::regex_error & e) {
     print_regex_error(e, __FILE__, __LINE__);
   }
 
   return output;
 }
 
-std::string ftn2fdx(const std::string &input) {
-  std::string output{
-      R"(<?xml version="1.0" encoding="UTF-8" standalone="no" ?>)"};
+std::string ftn2fdx(const std::string & input) {
+  std::string output{R"(<?xml version="1.0" encoding="UTF-8" standalone="no" ?>)"};
   output += '\n';
   output += R"(<FinalDraft DocumentType="Script" Template="No" Version="1">)";
   output += "\n<Content>\n";
@@ -1039,45 +1034,39 @@ std::string ftn2fdx(const std::string &input) {
   Fountain::Script script;
   script.parseFountain(input);
 
-  output += script.to_string(Fountain::ScriptNodeType::ftnContinuation |
-                             Fountain::ScriptNodeType::ftnKeyValue |
-                             Fountain::ScriptNodeType::ftnSection |
-                             Fountain::ScriptNodeType::ftnSynopsis |
-                             Fountain::ScriptNodeType::ftnUnknown);
+  output += script.to_string(
+      Fountain::ScriptNodeType::ftnContinuation | Fountain::ScriptNodeType::ftnKeyValue |
+      Fountain::ScriptNodeType::ftnSection | Fountain::ScriptNodeType::ftnSynopsis |
+      Fountain::ScriptNodeType::ftnUnknown
+  );
 
   output += "\n</Content>\n</FinalDraft>\n";
 
   try {
-    replace_all_inplace(output, "<Transition>",
-                        R"(<Paragraph Type="Transition"><Text>)");
+    replace_all_inplace(output, "<Transition>", R"(<Paragraph Type="Transition"><Text>)");
     replace_all_inplace(output, "</Transition>", "</Text></Paragraph>");
 
-    replace_all_inplace(output, "<SceneHeader>",
-                        R"(<Paragraph Type="Scene Heading"><Text>)");
+    replace_all_inplace(output, "<SceneHeader>", R"(<Paragraph Type="Scene Heading"><Text>)");
     replace_all_inplace(output, "</SceneHeader>", "</Text></Paragraph>");
 
-    replace_all_inplace(output, "<Action>",
-                        R"(<Paragraph Type="Action"><Text>)");
+    replace_all_inplace(output, "<Action>", R"(<Paragraph Type="Action"><Text>)");
     replace_all_inplace(output, "</Action>", "</Text></Paragraph>");
 
-    replace_all_inplace(output, "<Character>",
-                        R"(<Paragraph Type="Character"><Text>)");
+    replace_all_inplace(output, "<Character>", R"(<Paragraph Type="Character"><Text>)");
     replace_all_inplace(output, "</Character>", "</Text></Paragraph>");
 
-    replace_all_inplace(output, "<Parenthetical>",
-                        R"(<Paragraph Type="Parenthetical"><Text>)");
+    replace_all_inplace(output, "<Parenthetical>", R"(<Paragraph Type="Parenthetical"><Text>)");
     replace_all_inplace(output, "</Parenthetical>", "</Text></Paragraph>");
 
-    replace_all_inplace(output, "<Speech>",
-                        R"(<Paragraph Type="Dialogue"><Text>)");
+    replace_all_inplace(output, "<Speech>", R"(<Paragraph Type="Dialogue"><Text>)");
     replace_all_inplace(output, "</Speech>", "</Text></Paragraph>");
 
     replace_all_inplace(output, "<DualDialog>", "<Paragraph><DualDialog>");
     replace_all_inplace(output, "</DualDialog>", "</DualDialog></Paragraph>");
 
     replace_all_inplace(
-        output, "<ActionCenter>",
-        R"(<Paragraph Type="Action" Alignment="Center"><Text>)");
+        output, "<ActionCenter>", R"(<Paragraph Type="Action" Alignment="Center"><Text>)"
+    );
     replace_all_inplace(output, "</ActionCenter>", "</Text></Paragraph>");
 
     replace_all_inplace(output, "<b>", R"(<Text Style="Bold">)");
@@ -1090,8 +1079,8 @@ std::string ftn2fdx(const std::string &input) {
     replace_all_inplace(output, "</u>", "</Text>");
 
     replace_all_inplace(
-        output, "<PageBreak>",
-        R"(<Paragraph Type="Action" StartsNewPage="Yes"><Text>)");
+        output, "<PageBreak>", R"(<Paragraph Type="Action" StartsNewPage="Yes"><Text>)"
+    );
     replace_all_inplace(output, "</PageBreak>", "</Text></Paragraph>");
 
     replace_all_inplace(output, "<Note>", "<ScriptNote><Text>");
@@ -1109,15 +1098,16 @@ std::string ftn2fdx(const std::string &input) {
 
     static const std::regex re_newlines(R"(\n+)");
     output = std::regex_replace(output, re_newlines, "\n");
-  } catch (std::regex_error &e) {
+  } catch (std::regex_error & e) {
     print_regex_error(e, __FILE__, __LINE__);
   }
 
   return output;
 }
 
-std::string ftn2xml(const std::string &input, const std::string &css_fn,
-                    const bool &embed_css) {
+std::string ftn2xml(
+    const std::string & input, const std::string & css_fn, const bool & embed_css
+) {
   std::string output{"<!DOCTYPE html>\n<html>\n<head>\n"};
 
   if (!css_fn.empty()) {
@@ -1139,24 +1129,26 @@ std::string ftn2xml(const std::string &input, const std::string &css_fn,
   Fountain::Script script;
   script.parseFountain(input);
 
-  output += script.to_string(Fountain::ScriptNodeType::ftnContinuation |
-                             Fountain::ScriptNodeType::ftnKeyValue |
-                             Fountain::ScriptNodeType::ftnUnknown);
+  output += script.to_string(
+      Fountain::ScriptNodeType::ftnContinuation | Fountain::ScriptNodeType::ftnKeyValue |
+      Fountain::ScriptNodeType::ftnUnknown
+  );
 
   output += "\n</body>\n</html>\n";
 
   try {
     static const std::regex re_newlines(R"(\n+)");
     output = std::regex_replace(output, re_newlines, "\n");
-  } catch (std::regex_error &e) {
+  } catch (std::regex_error & e) {
     print_regex_error(e, __FILE__, __LINE__);
   }
 
   return output;
 }
 
-std::string ftn2html(const std::string &input, const std::string &css_fn,
-                     const bool &embed_css) {
+std::string ftn2html(
+    const std::string & input, const std::string & css_fn, const bool & embed_css
+) {
   std::string output{"<!DOCTYPE html>\n<html>\n<head>\n"};
   if (!css_fn.empty()) {
     if (embed_css) {
@@ -1179,9 +1171,10 @@ std::string ftn2html(const std::string &input, const std::string &css_fn,
   Fountain::Script script;
   script.parseFountain(input);
 
-  output += script.to_string(Fountain::ScriptNodeType::ftnContinuation |
-                             Fountain::ScriptNodeType::ftnKeyValue |
-                             Fountain::ScriptNodeType::ftnUnknown);
+  output += script.to_string(
+      Fountain::ScriptNodeType::ftnContinuation | Fountain::ScriptNodeType::ftnKeyValue |
+      Fountain::ScriptNodeType::ftnUnknown
+  );
 
   output += "\n</div>\n</body>\n</html>\n";
 
@@ -1192,8 +1185,7 @@ std::string ftn2html(const std::string &input, const std::string &css_fn,
     replace_all_inplace(output, "<Transition>", R"(<div class="Transition">)");
     replace_all_inplace(output, "</Transition>", "</div>");
 
-    replace_all_inplace(output, "<SceneHeader>",
-                        R"(<div class="SceneHeader">)");
+    replace_all_inplace(output, "<SceneHeader>", R"(<div class="SceneHeader">)");
     replace_all_inplace(output, "</SceneHeader>", "</div>");
 
     replace_all_inplace(output, "<Action>", R"(<div class="Action">)");
@@ -1205,8 +1197,7 @@ std::string ftn2html(const std::string &input, const std::string &css_fn,
     replace_all_inplace(output, "<Character>", R"(<div class="Character">)");
     replace_all_inplace(output, "</Character>", "</div>");
 
-    replace_all_inplace(output, "<Parenthetical>",
-                        R"(<div class="Parenthetical">)");
+    replace_all_inplace(output, "<Parenthetical>", R"(<div class="Parenthetical">)");
     replace_all_inplace(output, "</Parenthetical>", "</div>");
 
     replace_all_inplace(output, "<Speech>", R"(<div class="Speech">)");
@@ -1221,8 +1212,7 @@ std::string ftn2html(const std::string &input, const std::string &css_fn,
     replace_all_inplace(output, "<DialogLeft>", R"(<div class="DialogLeft">)");
     replace_all_inplace(output, "</DialogLeft>", "</div>");
 
-    replace_all_inplace(output, "<DialogRight>",
-                        R"(<div class="DialogRight">)");
+    replace_all_inplace(output, "<DialogRight>", R"(<div class="DialogRight">)");
     replace_all_inplace(output, "</DialogRight>", "</div>");
 
     replace_all_inplace(output, "<PageBreak>", R"(<div class="PageBreak">)");
@@ -1239,18 +1229,20 @@ std::string ftn2html(const std::string &input, const std::string &css_fn,
 
     for (std::size_t i = 1; i <= 6; i++) {
       std::string lvl = std::to_string(i);
-      replace_all_inplace(output, "<SectionH" + lvl + ">",
-                          R"(<div class="SectionH)" + lvl + R"(">)");
+      replace_all_inplace(
+          output, "<SectionH" + lvl + ">", R"(<div class="SectionH)" + lvl + R"(">)"
+      );
       replace_all_inplace(output, "</SectionH" + lvl + ">", "</div>");
 
-      replace_all_inplace(output, "<SynopsisH" + lvl + ">",
-                          R"(<div class="SynopsisH)" + lvl + R"(">)");
+      replace_all_inplace(
+          output, "<SynopsisH" + lvl + ">", R"(<div class="SynopsisH)" + lvl + R"(">)"
+      );
       replace_all_inplace(output, "</SynopsisH" + lvl + ">", "</div>");
     }
 
     static const std::regex re_newlines(R"(\n+)");
     output = std::regex_replace(output, re_newlines, "\n");
-  } catch (std::regex_error &e) {
+  } catch (std::regex_error & e) {
     print_regex_error(e, __FILE__, __LINE__);
   }
 
