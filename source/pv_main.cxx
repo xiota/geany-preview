@@ -1,31 +1,14 @@
 /*
- * Preview Geany Plugin
- * Copyright 2021-2024 xiota
- *
- * Code Format, Markdown (Geany Plugins)
- * Copyright 2013 Matthew <mbrush@codebrainz.ca>
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * SPDX-FileCopyrightText: Copyright 2021-2024 xiota
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-#include "pv_main.h"
-
-#include "auxiliary.h"
-#include "fountain.h"
-#include "pv_config_dialog.h"
-#include "pv_formats.h"
-#include "pv_settings.h"
+#include "ftn2xml/auxiliary.hxx"
+#include "ftn2xml/fountain.hxx"
+#include "pv_config_dialog.hxx"
+#include "pv_formats.hxx"
+#include "pv_main.hxx"
+#include "pv_settings.hxx"
 
 #define WEBVIEW_WARN(msg) \
   webkit_web_view_load_plain_text(WEBKIT_WEB_VIEW(gWebView), (msg))
@@ -737,7 +720,11 @@ void preview_menu_preferences(GtkWidget *self, GtkWidget *dialog) {
   plugin_show_configure(geany_plugin);
 }
 
-// from markdown plugin
+/* SPDX-SnippetBegin
+ * SPDX-SnippetCopyrightText: Copyright 2013 Matthew <mbrush@codebrainz.ca>
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+// From Markdown Plugin
 std::string replace_extension(const std::string &fn, const std::string &ext) {
   if (fn.empty()) {
     return ext;
@@ -754,7 +741,7 @@ std::string replace_extension(const std::string &fn, const std::string &ext) {
   return new_fn;
 }
 
-// from markdown plugin
+// From Markdown Plugin
 void preview_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
   GeanyDocument *doc = document_get_current();
   g_return_if_fail(DOC_VALID(doc));
@@ -811,6 +798,7 @@ void preview_menu_export_html(GtkWidget *self, GtkWidget *dialog) {
 
   gtk_widget_destroy(save_dialog);
 }
+/* SPDX-SnippetEnd */
 
 #if ENABLE_EXPORT_PDF
 

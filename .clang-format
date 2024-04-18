@@ -1,4 +1,5 @@
 BasedOnStyle:  Google
+AlignArrayOfStructures: Right
 DerivePointerAlignment: false
 PointerAlignment: Right
 QualifierAlignment: Left

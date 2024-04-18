@@ -24,8 +24,8 @@ if not webkit2gtk.found()
 endif
 
 pdf_export = get_option('pdf_export')
-if pdf_export.allowed()
-  podofo = dependency('libpodofo', version: ['>=0.10.0','<0.11.0'], required: pdf_export)
+if not pdf_export.disabled()
+  podofo = dependency('libpodofo', required: pdf_export)
 else
   podofo = disabler()
 endif
@@ -60,13 +60,13 @@ library(
   plugin_name,
   sources: [
     config_h,
-    'source/auxiliary.cc',
-    'source/fountain.cc',
-    'source/process.cc',
-    'source/pv_config_dialog.cc',
-    'source/pv_formats.cc',
-    'source/pv_main.cc',
-    'source/pv_settings.cc',
+    'source/ftn2xml/auxiliary.cxx',
+    'source/ftn2xml/fountain.cxx',
+    'source/process.cxx',
+    'source/pv_config_dialog.cxx',
+    'source/pv_formats.cxx',
+    'source/pv_main.cxx',
+    'source/pv_settings.cxx',
   ],
   dependencies: [geany, cmark, podofo, webkit2gtk],
   name_prefix: '',

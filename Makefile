@@ -1,5 +1,6 @@
 plugin_name := preview
 
+pkgconf_path := /usr/lib/podofo-0.9/pkgconfig:/usr/lib/pkgconfig
 
 .SILENT:
 .PHONY: all dist dist-clean install uninstall clean help update-version clear-version configure build
