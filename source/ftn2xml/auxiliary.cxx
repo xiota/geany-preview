@@ -228,12 +228,12 @@ std::vector<char *> cstrv_get(const std::vector<std::string> input) {
 
 std::string file_get_contents(const std::string & filename) {
   try {
-    std::ifstream instream(filename.c_str(), std::ios::in);
-    std::string content(
+    std::ifstream instream(filename, std::ios::in);
+    std::string contents(
         (std::istreambuf_iterator<char>(instream)), (std::istreambuf_iterator<char>())
     );
     instream.close();
-    return content;
+    return contents;
   } catch (...) {
     return {};
   }
@@ -241,7 +241,31 @@ std::string file_get_contents(const std::string & filename) {
 
 bool file_set_contents(const std::string & filename, const std::string & contents) {
   try {
-    std::ofstream outstream(filename.c_str(), std::ios::out);
+    std::ofstream outstream(filename, std::ios::out);
+    copy(contents.begin(), contents.end(), std::ostream_iterator<char>(outstream));
+    outstream.close();
+    return true;
+  } catch (...) {
+    return false;
+  }
+}
+
+std::vector<std::uint8_t> file_get_data(const std::string & filename) {
+  try {
+    std::ifstream instream(filename, std::ios::in | std::ios::binary);
+    std::vector<std::uint8_t> contents(
+        (std::istreambuf_iterator<char>(instream)), (std::istreambuf_iterator<char>())
+    );
+    instream.close();
+    return contents;
+  } catch (...) {
+    return {};
+  }
+}
+
+bool file_set_data(const std::string & filename, const std::vector<std::uint8_t> & contents) {
+  try {
+    std::ofstream outstream(filename, std::ios::out | std::ios::binary);
     copy(contents.begin(), contents.end(), std::ostream_iterator<char>(outstream));
     outstream.close();
     return true;

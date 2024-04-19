@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <cstring>
 #include <iterator>
 #include <regex>
@@ -62,7 +63,9 @@ std::vector<std::string> cstrv_copy(const char * const * input);
 std::vector<char *> cstrv_get(const std::vector<std::string> input);
 
 std::string file_get_contents(const std::string & filename);
-
 bool file_set_contents(const std::string & filename, const std::string & contents);
+
+std::vector<std::uint8_t> file_get_data(const std::string & filename);
+bool file_set_data(const std::string & filename, const std::vector<std::uint8_t> & contents);
 
 void print_regex_error(std::regex_error & e, const char * file, const int line);
