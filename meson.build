@@ -7,7 +7,7 @@ project(
 
 prefix = get_option('prefix')
 
-plugin_name = meson.project_name().replace('geany-', '')
+plugin_name = 'preview'
 project_datadir = get_option('datadir') / meson.project_name()
 project_docdir = get_option('datadir') / 'doc' / meson.project_name()
 plugin_conf = plugin_name + '.conf'
@@ -74,15 +74,19 @@ library(
   install_dir: get_option('libdir') / 'geany',
 )
 
-# fix readme paths
-fs = import('fs')
-readme_config = configuration_data()
-readme_config.set('output', fs.read(doc_readme).replace('](docs/', '](').strip())
-doc_readme_mod = configure_file(
-  input: 'meson.output',
-  output: 'Readme.md',
-  configuration: readme_config,
-)
+if meson.version().version_compare('>=0.58.0')
+  # fix readme paths
+  fs = import('fs')
+  readme_config = configuration_data()
+  readme_config.set('output', fs.read(doc_readme).replace('](docs/', '](').strip())
+  doc_readme_mod = configure_file(
+    input: 'meson.output',
+    output: 'Readme.md',
+    configuration: readme_config,
+  )
+else
+  doc_readme_mod = doc_readme
+endif
 
 install_data(
   sources: [
