@@ -36,7 +36,7 @@ An AUR package is available at [aur/geany-plugin-preview-git](https://aur.archli
 git clone https://aur.archlinux.org/geany-plugin-preview.git
 cd geany-plugin-preview
 makepkg
-sudo pacman -U geany-plugin-preview-git-*.pkg.tar.zst
+sudo pacman -U geany-plugin-preview-*.pkg.tar.zst
 ```
 
 ### Ubuntu
@@ -55,7 +55,7 @@ This plugin depends on the following libraries and programs:
 * [Geany](https://geany.org/)
 * [GTK/Glib](http://www.gtk.org)
 * [libcmark-gfm](https://github.com/github/cmark-gfm)
-* [libpodofo](https://github.com/podofo/podofo) (0.10.x)
+* [libpodofo](https://github.com/podofo/podofo)
 * [WebKit2GTK](http://webkitgtk.org)
 
 Optional auxiliary programs may also be used to process additional formats:
