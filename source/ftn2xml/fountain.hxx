@@ -13,27 +13,29 @@
 
 namespace Fountain {
 
-enum ScriptNodeType : int {
+enum ScriptNodeType : unsigned long long {
   ftnNone = 0,
   ftnUnknown = 1ull,
-  ftnKeyValue = 1ull << 1,
-  ftnContinuation = 1ull << 2,
-  ftnPageBreak = 1ull << 3,
-  ftnBlankLine = 1ull << 4,
-  ftnSceneHeader = 1ull << 5,
-  ftnAction = 1ull << 6,
-  ftnActionCenter = 1ull << 7,
-  ftnTransition = 1ull << 8,
-  ftnDialog = 1ull << 9,
-  ftnDialogLeft = 1ull << 10,
-  ftnDialogRight = 1ull << 11,
-  ftnCharacter = 1ull << 12,
-  ftnParenthetical = 1ull << 13,
-  ftnSpeech = 1ull << 14,
-  ftnNotation = 1ull << 15,
-  ftnLyric = 1ull << 16,
-  ftnSection = 1ull << 17,
-  ftnSynopsis = 1ull << 18,
+  ftnBoneyard = 1ull << 1,
+  ftnComment = 1ull << 2,
+  ftnKeyValue = 1ull << 3,
+  ftnContinuation = 1ull << 4,
+  ftnPageBreak = 1ull << 5,
+  ftnBlankLine = 1ull << 6,
+  ftnSceneHeader = 1ull << 7,
+  ftnAction = 1ull << 8,
+  ftnActionCenter = 1ull << 9,
+  ftnTransition = 1ull << 10,
+  ftnDialog = 1ull << 11,
+  ftnDialogLeft = 1ull << 12,
+  ftnDialogRight = 1ull << 13,
+  ftnCharacter = 1ull << 14,
+  ftnParenthetical = 1ull << 15,
+  ftnSpeech = 1ull << 16,
+  ftnNotation = 1ull << 17,
+  ftnLyric = 1ull << 18,
+  ftnSection = 1ull << 19,
+  ftnSynopsis = 1ull << 20,
 };
 
 class ScriptNode {
