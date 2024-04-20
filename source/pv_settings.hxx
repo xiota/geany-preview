@@ -32,7 +32,6 @@ class TkuiSettingPref {
   TkuiSettingType type;
   std::string name;
   std::string comment;
-  bool session;
   TkuiSetting * setting;
 };
 
@@ -41,8 +40,7 @@ class PreviewSettings {
   void initialize();
 
   void load();
-  void save(bool bSession = false);
-  void save_session();
+  void save();
   void reset();
   void kf_open();
   void kf_close();
@@ -202,7 +200,7 @@ class PreviewSettings {
 
   void add_setting(
       TkuiSetting * setting, const TkuiSettingType & type, const std::string & name,
-      const std::string & comment, const bool & session
+      const std::string & comment
   );
 
  private:

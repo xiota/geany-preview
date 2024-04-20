@@ -12,106 +12,90 @@ extern GeanyData * geany_data;
 void PreviewSettings::initialize() {
   add_setting(
       (TkuiSetting *)&startup_timeout, TKUI_PREF_TYPE_INTEGER, "startup_timeout",
-      desc_startup_timeout, false
+      desc_startup_timeout
   );
 
   add_setting(
       (TkuiSetting *)&update_interval_slow, TKUI_PREF_TYPE_INTEGER, "update_interval_slow",
-      desc_update_interval_slow, false
+      desc_update_interval_slow
   );
   add_setting(
       (TkuiSetting *)&size_factor_slow, TKUI_PREF_TYPE_DOUBLE, "size_factor_slow",
-      desc_size_factor_slow, false
+      desc_size_factor_slow
   );
   add_setting(
       (TkuiSetting *)&update_interval_fast, TKUI_PREF_TYPE_INTEGER, "update_interval_fast",
-      desc_update_interval_fast, false
+      desc_update_interval_fast
   );
-  add_setting(
-      (TkuiSetting *)&size_factor_fast, TKUI_PREF_TYPE_DOUBLE, "size_factor_fast", {}, false
-  );
+  add_setting((TkuiSetting *)&size_factor_fast, TKUI_PREF_TYPE_DOUBLE, "size_factor_fast", {});
 
   add_setting(
-      (TkuiSetting *)&default_type, TKUI_PREF_TYPE_STRING, "default_type", desc_default_type,
-      false
+      (TkuiSetting *)&default_type, TKUI_PREF_TYPE_STRING, "default_type", desc_default_type
   );
 
   add_setting(
       (TkuiSetting *)&processor_html, TKUI_PREF_TYPE_STRING, "processor_html",
-      desc_processor_html, false
+      desc_processor_html
   );
   add_setting(
       (TkuiSetting *)&processor_markdown, TKUI_PREF_TYPE_STRING, "processor_markdown",
-      desc_processor_markdown, false
+      desc_processor_markdown
   );
   add_setting(
       (TkuiSetting *)&processor_asciidoc, TKUI_PREF_TYPE_STRING, "processor_asciidoc",
-      desc_processor_asciidoc, false
+      desc_processor_asciidoc
   );
   add_setting(
       (TkuiSetting *)&processor_fountain, TKUI_PREF_TYPE_STRING, "processor_fountain",
-      desc_processor_fountain, false
+      desc_processor_fountain
   );
   add_setting(
-      (TkuiSetting *)&wiki_default, TKUI_PREF_TYPE_STRING, "wiki_default", desc_wiki_default,
-      false
+      (TkuiSetting *)&wiki_default, TKUI_PREF_TYPE_STRING, "wiki_default", desc_wiki_default
   );
 
   add_setting(
       (TkuiSetting *)&pandoc_disabled, TKUI_PREF_TYPE_BOOLEAN, "pandoc_disabled",
-      desc_pandoc_disabled, false
+      desc_pandoc_disabled
   );
   add_setting(
       (TkuiSetting *)&pandoc_fragment, TKUI_PREF_TYPE_BOOLEAN, "pandoc_fragment",
-      desc_pandoc_fragment, false
+      desc_pandoc_fragment
   );
   add_setting(
-      (TkuiSetting *)&pandoc_toc, TKUI_PREF_TYPE_BOOLEAN, "pandoc_toc", desc_pandoc_toc, false
+      (TkuiSetting *)&pandoc_toc, TKUI_PREF_TYPE_BOOLEAN, "pandoc_toc", desc_pandoc_toc
   );
 
   add_setting(
       (TkuiSetting *)&pandoc_markdown, TKUI_PREF_TYPE_STRING, "pandoc_markdown",
-      desc_pandoc_markdown, false
+      desc_pandoc_markdown
   );
   add_setting(
       (TkuiSetting *)&default_font_family, TKUI_PREF_TYPE_STRING, "default_font_family",
-      desc_default_font_family, false
+      desc_default_font_family
   );
 
   add_setting(
       (TkuiSetting *)&extended_types, TKUI_PREF_TYPE_BOOLEAN, "extended_types",
-      desc_extended_types, false
+      desc_extended_types
   );
 
   add_setting(
       (TkuiSetting *)&snippet_window, TKUI_PREF_TYPE_INTEGER, "snippet_window",
-      desc_snippet_window, false
+      desc_snippet_window
   );
-  add_setting(
-      (TkuiSetting *)&snippet_trigger, TKUI_PREF_TYPE_INTEGER, "snippet_trigger", {}, false
-  );
+  add_setting((TkuiSetting *)&snippet_trigger, TKUI_PREF_TYPE_INTEGER, "snippet_trigger", {});
 
   add_setting(
-      (TkuiSetting *)&snippet_html, TKUI_PREF_TYPE_BOOLEAN, "snippet_html", desc_snippet_html,
-      false
+      (TkuiSetting *)&snippet_html, TKUI_PREF_TYPE_BOOLEAN, "snippet_html", desc_snippet_html
   );
+  add_setting((TkuiSetting *)&snippet_markdown, TKUI_PREF_TYPE_BOOLEAN, "snippet_markdown", {});
   add_setting(
-      (TkuiSetting *)&snippet_markdown, TKUI_PREF_TYPE_BOOLEAN, "snippet_markdown", {}, false
+      (TkuiSetting *)&snippet_asciidoctor, TKUI_PREF_TYPE_BOOLEAN, "snippet_asciidoctor", {}
   );
-  add_setting(
-      (TkuiSetting *)&snippet_asciidoctor, TKUI_PREF_TYPE_BOOLEAN, "snippet_asciidoctor", {},
-      false
-  );
-  add_setting(
-      (TkuiSetting *)&snippet_pandoc, TKUI_PREF_TYPE_BOOLEAN, "snippet_pandoc", {}, false
-  );
-  add_setting(
-      (TkuiSetting *)&snippet_fountain, TKUI_PREF_TYPE_BOOLEAN, "snippet_fountain", {}, false
-  );
+  add_setting((TkuiSetting *)&snippet_pandoc, TKUI_PREF_TYPE_BOOLEAN, "snippet_pandoc", {});
+  add_setting((TkuiSetting *)&snippet_fountain, TKUI_PREF_TYPE_BOOLEAN, "snippet_fountain", {});
 
-  add_setting(
-      (TkuiSetting *)&extra_css, TKUI_PREF_TYPE_STRING, "extra_css", desc_extra_css, false
-  );
+  add_setting((TkuiSetting *)&extra_css, TKUI_PREF_TYPE_STRING, "extra_css", desc_extra_css);
 }
 
 void PreviewSettings::load() {
@@ -160,21 +144,13 @@ void PreviewSettings::load() {
   }
 }
 
-void PreviewSettings::save_session() {
-  save(true);
-}
-
-void PreviewSettings::save(bool bSession) {
+void PreviewSettings::save() {
   // Load old contents in case user changed file outside of GUI
   g_key_file_load_from_file(
       keyfile, config_file.c_str(), GKeyFileFlags(G_KEY_FILE_KEEP_COMMENTS), nullptr
   );
 
   for (auto pref : pref_entries) {
-    if (bSession && !pref.session) {
-      continue;
-    }
-
     switch (pref.type) {
       case TKUI_PREF_TYPE_BOOLEAN:
         g_key_file_set_boolean(
@@ -267,9 +243,9 @@ bool PreviewSettings::kf_has_key(const std::string & key) {
 
 void PreviewSettings::add_setting(
     TkuiSetting * setting, const TkuiSettingType & type, const std::string & name,
-    const std::string & comment, const bool & session
+    const std::string & comment
 ) {
-  TkuiSettingPref pref{type, name, comment, session, setting};
+  TkuiSettingPref pref{type, name, comment, setting};
   pref_entries.push_back(pref);
 }
 
