@@ -6,19 +6,19 @@
 #include <geanyplugin.h>
 #include <gtk/gtk.h>
 
-class PreviewPane {
+#include "gtk_attachable.h"
+
+class PreviewPane : public GtkAttachable<PreviewPane> {
  public:
-  PreviewPane();
-  ~PreviewPane();
+  PreviewPane()
+      : GtkAttachable("Preview"), container_(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0)) {}
 
-  GtkWidget *widget() const;
-  void update(GeanyDocument *doc);
+  GtkWidget *widget() const override {
+    return container_;
+  }
 
-  void attach_to_sidebar(GtkNotebook *sidebar);
-  void detach_from_sidebar();
+  void Update(GeanyDocument *doc);
 
  private:
-  GtkWidget *container_ = nullptr;
-  GtkNotebook *sidebar_ = nullptr;
-  int page_index_ = -1;
+  GtkWidget *container_;
 };

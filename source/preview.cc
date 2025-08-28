@@ -8,15 +8,14 @@ static PreviewPane *preview_pane = nullptr;
 
 static void on_document_activate(GObject *, GeanyDocument *doc, gpointer) {
   if (preview_pane) {
-    preview_pane->update(doc);
+    preview_pane->Update(doc);
   }
 }
 
 gboolean preview_init(GeanyPlugin *plugin, gpointer) {
+  auto *notebook = GTK_NOTEBOOK(plugin->geany_data->main_widgets->sidebar_notebook);
   preview_pane = new PreviewPane();
-  preview_pane->attach_to_sidebar(
-      GTK_NOTEBOOK(plugin->geany_data->main_widgets->sidebar_notebook)
-  );
+  preview_pane->AttachToParent(GTK_CONTAINER(notebook));
 
   plugin_signal_connect(
       plugin, nullptr, "document-activate", TRUE, G_CALLBACK(on_document_activate), nullptr
@@ -26,7 +25,7 @@ gboolean preview_init(GeanyPlugin *plugin, gpointer) {
 
 void preview_cleanup(GeanyPlugin *plugin, gpointer) {
   if (preview_pane) {
-    preview_pane->detach_from_sidebar();
+    preview_pane->DetachFromParent();
     delete preview_pane;
     preview_pane = nullptr;
   }
