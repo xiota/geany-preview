@@ -1,16 +1,36 @@
 // SPDX-FileCopyrightText: Copyright 2025 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include "preview_pane.h"
 #include <geanyplugin.h>
-#undef geany
 
-#define TRACE_LOCATION() (std::cout << "File: " << __FILE__ << ", Line: " << __LINE__ << '\n')
+static PreviewPane *preview_pane = nullptr;
+
+static void on_document_activate(GObject *, GeanyDocument *doc, gpointer) {
+  if (preview_pane) {
+    preview_pane->update(doc);
+  }
+}
 
 gboolean preview_init(GeanyPlugin *plugin, gpointer) {
+  preview_pane = new PreviewPane();
+  preview_pane->attach_to_sidebar(
+      GTK_NOTEBOOK(plugin->geany_data->main_widgets->sidebar_notebook)
+  );
+
+  plugin_signal_connect(
+      plugin, nullptr, "document-activate", TRUE, G_CALLBACK(on_document_activate), nullptr
+  );
   return TRUE;
 }
 
-void preview_cleanup(GeanyPlugin *plugin, gpointer) {}
+void preview_cleanup(GeanyPlugin *plugin, gpointer) {
+  if (preview_pane) {
+    preview_pane->detach_from_sidebar();
+    delete preview_pane;
+    preview_pane = nullptr;
+  }
+}
 
 extern "C" G_MODULE_EXPORT void geany_load_module(GeanyPlugin *plugin) {
   plugin->info->name = "Preview";

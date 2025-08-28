@@ -22,6 +22,7 @@ endif
 
 src_files = files(
   'source/preview.cc',
+  'source/preview_pane.cc',
 )
 
 shared_module(
