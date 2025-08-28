@@ -1,0 +1,25 @@
+BasedOnStyle: Google
+AlignAfterOpenBracket: BlockIndent
+AlignArrayOfStructures: Left
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortFunctionsOnASingleLine: Empty
+BinPackArguments: false
+BinPackParameters: false
+ColumnLimit: 96
+DerivePointerAlignment: false
+IncludeBlocks: Preserve
+IncludeCategories:
+  - Regex: '^".*"'
+    Priority: 1
+  - Regex: '^<.*>$'
+    Priority: 2
+IndentPPDirectives: AfterHash
+IndentWidth: 2
+InsertBraces: true
+InsertNewlineAtEOF: true
+PointerAlignment: Right
+QualifierAlignment: Left
+ReferenceAlignment: Pointer
+SortIncludes: true
+SpaceBeforeParens: ControlStatements
+SpacesInAngles: false
