@@ -13,9 +13,9 @@ static void on_document_activate(GObject *, GeanyDocument *doc, gpointer) {
 }
 
 gboolean preview_init(GeanyPlugin *plugin, gpointer) {
-  auto *notebook = GTK_NOTEBOOK(plugin->geany_data->main_widgets->sidebar_notebook);
   preview_pane = new PreviewPane();
-  preview_pane->AttachToParent(GTK_CONTAINER(notebook));
+  preview_pane->AttachToParent(plugin->geany_data->main_widgets->sidebar_notebook)
+      .SelectAsCurrent();
 
   plugin_signal_connect(
       plugin, nullptr, "document-activate", TRUE, G_CALLBACK(on_document_activate), nullptr
