@@ -4,30 +4,27 @@
 #include "preview_pane.h"
 #include <geanyplugin.h>
 
-static PreviewPane *preview_pane = nullptr;
+static PreviewPane preview_pane;
 
 static void on_document_activate(GObject *, GeanyDocument *doc, gpointer) {
-  if (preview_pane) {
-    preview_pane->Update(doc);
-  }
+  preview_pane.Update(doc);
 }
 
 gboolean preview_init(GeanyPlugin *plugin, gpointer) {
-  preview_pane = new PreviewPane();
-  preview_pane->AttachToParent(plugin->geany_data->main_widgets->sidebar_notebook)
+  preview_pane.AttachToParent(plugin->geany_data->main_widgets->sidebar_notebook)
       .SelectAsCurrent();
 
   plugin_signal_connect(
       plugin, nullptr, "document-activate", TRUE, G_CALLBACK(on_document_activate), nullptr
   );
+
   return TRUE;
 }
 
 void preview_cleanup(GeanyPlugin *plugin, gpointer) {
-  if (preview_pane) {
-    preview_pane->DetachFromParent();
-    delete preview_pane;
-    preview_pane = nullptr;
+  preview_pane.DetachFromParent();
+  while (gtk_events_pending()) {
+    gtk_main_iteration_do(FALSE);
   }
 }
 

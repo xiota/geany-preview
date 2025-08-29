@@ -13,19 +13,22 @@ template <typename Derived>
 class GtkAttachable {
  public:
   explicit GtkAttachable(std::string_view label) : label_(label) {}
-
-  virtual ~GtkAttachable() {
-    // Ensure we don't leave our widget attached somewhere
+  ~GtkAttachable() {
     DetachFromParent();
+    // Do not call ClearWeakPointer; GTK clears on widget destroy
   }
 
-  // The underlying GTK widget owned by this component
+  // No copying/moving, unique ownership of underlying widget
+  GtkAttachable(const GtkAttachable &) = delete;
+  GtkAttachable &operator=(const GtkAttachable &) = delete;
+  GtkAttachable(GtkAttachable &&) = delete;
+  GtkAttachable &operator=(GtkAttachable &&) = delete;
+
   virtual GtkWidget *widget() const = 0;
 
-  // Attaches the widget to a parent container if not already attached.
-  // If already attached to a different parent, you must detach first.
   Derived &AttachToParent(GtkWidget *parent) {
-    if (!parent || !widget()) {
+    GtkWidget *w = widget();
+    if (!parent || !w) {
       return static_cast<Derived &>(*this);
     }
     if (parent_ == parent) {
@@ -35,11 +38,13 @@ class GtkAttachable {
       DetachFromParent();  // detach from old parent
     }
 
-    if (GTK_IS_CONTAINER(parent)) {
-      gtk_container_add(GTK_CONTAINER(parent), widget());
-      parent_ = parent;
-      gtk_widget_show(widget());
+    // in case derived class forgot
+    TrackWidget(w);
 
+    if (GTK_IS_CONTAINER(parent)) {
+      gtk_container_add(GTK_CONTAINER(parent), w);
+      parent_ = parent;
+      gtk_widget_show(w);
       ApplyContainerLabel();
     }
 
@@ -48,35 +53,37 @@ class GtkAttachable {
 
   // Detaches the widget from its current parent, if any.
   Derived &DetachFromParent() {
-    if (parent_ && widget()) {
-      if (GTK_IS_CONTAINER(parent_)) {
-        gtk_container_remove(GTK_CONTAINER(parent_), widget());
-        parent_ = nullptr;
+    GtkWidget *w = weak_widget_;
+    if (parent_ && w) {
+      if (!gtk_widget_in_destruction(w) && GTK_IS_CONTAINER(parent_)) {
+        gtk_container_remove(GTK_CONTAINER(parent_), w);
       }
+      parent_ = nullptr;
     }
     return static_cast<Derived &>(*this);
   }
 
   Derived &SelectAsCurrent() {
-    if (!parent_ || !widget()) {
+    GtkWidget *w = weak_widget_;
+    if (!parent_ || !w) {
       return static_cast<Derived &>(*this);
     }
 
     if (GTK_IS_NOTEBOOK(parent_)) {
-      auto page_num = gtk_notebook_page_num(GTK_NOTEBOOK(parent_), widget());
+      auto page_num = gtk_notebook_page_num(GTK_NOTEBOOK(parent_), w);
       if (page_num != -1) {
         gtk_notebook_set_current_page(GTK_NOTEBOOK(parent_), page_num);
       }
     } else if (GTK_IS_STACK(parent_)) {
       gchar *name = nullptr;
-      gtk_container_child_get(GTK_CONTAINER(parent_), widget(), "name", &name, NULL);
+      gtk_container_child_get(GTK_CONTAINER(parent_), w, "name", &name, NULL);
       if (name) {
         gtk_stack_set_visible_child_name(GTK_STACK(parent_), name);
         g_free(name);
       }
     } else if (GTK_IS_ASSISTANT(parent_)) {
       for (int i = 0, n = gtk_assistant_get_n_pages(GTK_ASSISTANT(parent_)); i < n; ++i) {
-        if (gtk_assistant_get_nth_page(GTK_ASSISTANT(parent_), i) == widget()) {
+        if (gtk_assistant_get_nth_page(GTK_ASSISTANT(parent_), i) == w) {
           gtk_assistant_set_current_page(GTK_ASSISTANT(parent_), i);
           break;
         }
@@ -97,22 +104,55 @@ class GtkAttachable {
  protected:
   GtkAttachable() = default;
 
+  // TODO: connect to GtkWidget::parent-set signal to sync parent_
   GtkWidget *parent_ = nullptr;
+  GtkWidget *weak_widget_ = nullptr;
   std::string label_;
 
   void ApplyContainerLabel() {
-    if (label_.empty() || !parent_ || !widget()) {
+    GtkWidget *w = weak_widget_;
+    if (label_.empty() || !parent_ || !w) {
       return;
     }
 
     if (GTK_IS_NOTEBOOK(parent_)) {
-      gtk_notebook_set_tab_label_text(GTK_NOTEBOOK(parent_), widget(), label_.c_str());
+      gtk_notebook_set_tab_label_text(GTK_NOTEBOOK(parent_), w, label_.c_str());
     } else if (GTK_IS_STACK(parent_)) {
-      gtk_container_child_set(GTK_CONTAINER(parent_), widget(), "name", label_.c_str(), NULL);
+      gtk_container_child_set(GTK_CONTAINER(parent_), w, "name", label_.c_str(), NULL);
     } else if (GTK_IS_ASSISTANT(parent_)) {
-      gtk_assistant_set_page_title(GTK_ASSISTANT(parent_), widget(), label_.c_str());
+      gtk_assistant_set_page_title(GTK_ASSISTANT(parent_), w, label_.c_str());
     } else if (GTK_IS_EXPANDER(parent_)) {
       gtk_expander_set_label(GTK_EXPANDER(parent_), label_.c_str());
+    }
+  }
+
+  // Can be called multiple times.
+  // Last call is kept in weak_widget_
+  void TrackWidget(GtkWidget *w) {
+    if (!w) {
+      return;
+    }
+    if (weak_widget_ == w) {
+      return;
+    }
+
+    // Intentionally overwrites weak_widget_ without removing the old weak pointer
+    weak_widget_ = w;
+    g_object_add_weak_pointer(
+        G_OBJECT(weak_widget_), reinterpret_cast<gpointer *>(&weak_widget_)
+    );
+  }
+
+  void ClearWeakPointer(GtkWidget *w = nullptr) {
+    if ((!w && weak_widget_) || (w && w == weak_widget_)) {
+      // Remove weak pointer for the tracked widget
+      g_object_remove_weak_pointer(
+          G_OBJECT(weak_widget_), reinterpret_cast<gpointer *>(&weak_widget_)
+      );
+      weak_widget_ = nullptr;
+    } else if (w) {
+      // Remove weak pointer for a different widget
+      g_object_remove_weak_pointer(G_OBJECT(w), reinterpret_cast<gpointer *>(&w));
     }
   }
 };

@@ -11,7 +11,15 @@
 class PreviewPane : public GtkAttachable<PreviewPane> {
  public:
   PreviewPane()
-      : GtkAttachable("Preview"), container_(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0)) {}
+      : GtkAttachable("Preview"), container_(gtk_scrolled_window_new(nullptr, nullptr)) {
+    gtk_scrolled_window_set_policy(
+        GTK_SCROLLED_WINDOW(container_), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC
+    );
+
+    GtkWidget *label = gtk_label_new("Hello from GTK3!");
+    gtk_container_add(GTK_CONTAINER(container_), label);
+    gtk_widget_show(label);
+  }
 
   GtkWidget *widget() const override {
     return container_;
