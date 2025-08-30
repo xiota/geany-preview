@@ -76,7 +76,7 @@ class GtkAttachable {
       }
     } else if (GTK_IS_STACK(parent_)) {
       gchar *name = nullptr;
-      gtk_container_child_get(GTK_CONTAINER(parent_), w, "name", &name, NULL);
+      gtk_container_child_get(GTK_CONTAINER(parent_), w, "name", &name, nullptr);
       if (name) {
         gtk_stack_set_visible_child_name(GTK_STACK(parent_), name);
         g_free(name);
@@ -117,7 +117,7 @@ class GtkAttachable {
     if (GTK_IS_NOTEBOOK(parent_)) {
       gtk_notebook_set_tab_label_text(GTK_NOTEBOOK(parent_), w, label_.c_str());
     } else if (GTK_IS_STACK(parent_)) {
-      gtk_container_child_set(GTK_CONTAINER(parent_), w, "name", label_.c_str(), NULL);
+      gtk_container_child_set(GTK_CONTAINER(parent_), w, "name", label_.c_str(), nullptr);
     } else if (GTK_IS_ASSISTANT(parent_)) {
       gtk_assistant_set_page_title(GTK_ASSISTANT(parent_), w, label_.c_str());
     } else if (GTK_IS_EXPANDER(parent_)) {

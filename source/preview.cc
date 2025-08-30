@@ -5,13 +5,14 @@
 
 #include "preview_pane.h"
 
-static PreviewPane preview_pane;
+namespace {
+PreviewPane preview_pane;
 
 gboolean onEditorNotify(
-    GObject *object,
+    GObject * /*object*/,
     GeanyEditor *editor,
     SCNotification *notification,
-    gpointer user_data
+    gpointer /*user_data*/
 ) {
   if (!notification || notification->nmhdr.code != SCN_MODIFIED) {
     return FALSE;
@@ -23,11 +24,18 @@ gboolean onEditorNotify(
   return FALSE;
 }
 
-void onDocumentActivate(GObject *object, GeanyDocument *geany_document, gpointer user_data) {
+void onDocumentActivate(
+    GObject * /*object*/,
+    GeanyDocument *geany_document,
+    gpointer /*user_data*/
+) {
   preview_pane.update(geany_document);
 }
 
-gboolean previewInit(GeanyPlugin *plugin, gpointer) {
+gboolean previewInit(
+    GeanyPlugin *plugin,
+    gpointer /*user_data*/
+) {
   preview_pane.attachToParent(plugin->geany_data->main_widgets->sidebar_notebook)
       .selectAsCurrent();
 
@@ -42,12 +50,16 @@ gboolean previewInit(GeanyPlugin *plugin, gpointer) {
   return TRUE;
 }
 
-void previewCleanup(GeanyPlugin *plugin, gpointer) {
+void previewCleanup(
+    GeanyPlugin *plugin,
+    gpointer /*user_data*/
+) {
   preview_pane.detachFromParent();
   while (gtk_events_pending()) {
     gtk_main_iteration_do(FALSE);
   }
 }
+}  // namespace
 
 extern "C" G_MODULE_EXPORT void geany_load_module(GeanyPlugin *plugin) {
   plugin->info->name = "Preview";
