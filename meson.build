@@ -22,11 +22,12 @@ endif
 
 src_files = files(
   'source/converter_cmark_gfm.cc',
+  'source/converter_pandoc.cc',
   'source/converter_registrar.cc',
   'source/document.cc',
-  'source/subprocess.cc',
   'source/preview.cc',
   'source/preview_pane.cc',
+  'source/subprocess.cc',
 )
 
 shared_module(

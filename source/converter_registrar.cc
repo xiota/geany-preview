@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "converter_cmark_gfm.h"
+#include "converter_pandoc.h"
 #include "converter_passthrough.h"
 
 ConverterRegistrar::ConverterRegistrar() {
@@ -18,11 +19,43 @@ ConverterRegistrar::ConverterRegistrar() {
 void ConverterRegistrar::registerBuiltins() {
   registerConverter("html", std::make_unique<ConverterPassthrough>());
   registerConverter("markdown", std::make_unique<ConverterCmarkGfm>());
+
+  // Pandoc converters
+  registerConverter(std::make_unique<ConverterPandoc>("creole"));
+  registerConverter(std::make_unique<ConverterPandoc>("docbook"));
+  registerConverter(std::make_unique<ConverterPandoc>("dokuwiki"));
+  registerConverter(std::make_unique<ConverterPandoc>("latex"));
+  registerConverter(std::make_unique<ConverterPandoc>("man"));
+  registerConverter(std::make_unique<ConverterPandoc>("mediawiki"));
+  registerConverter(std::make_unique<ConverterPandoc>("org"));
+  registerConverter(std::make_unique<ConverterPandoc>("rst"));
+  registerConverter(std::make_unique<ConverterPandoc>("rtf"));
+  registerConverter(std::make_unique<ConverterPandoc>("t2t"));
+  registerConverter(std::make_unique<ConverterPandoc>("textile"));
+  registerConverter(std::make_unique<ConverterPandoc>("tikiwiki"));
+  registerConverter(std::make_unique<ConverterPandoc>("twiki"));
+  registerConverter(std::make_unique<ConverterPandoc>("vimwiki"));
 }
 
 void ConverterRegistrar::registerDefaultMappings() {
   registerFormatAliases("html", "HTML", {".htm", ".html", ".shtml", ".xhtml"});
   registerFormatAliases("markdown", "Markdown", {".md", ".markdown"});
+
+  // Pandoc converters
+  registerFormatAliases("creole", "Creole Wiki", {".creole"});
+  registerFormatAliases("docbook", "DocBook", {".dbk"});                  // extension based
+  registerFormatAliases("dokuwiki", "DokuWiki", {".dokuwiki", ".wiki"});  // extension based
+  registerFormatAliases("latex", "LaTeX", {".tex", ".latex"});
+  registerFormatAliases("man", "Unix Manpage", {".man"});           // extension based
+  registerFormatAliases("mediawiki", "MediaWiki", {".mediawiki"});  // extension based
+  registerFormatAliases("org", "Org mode", {".org"});
+  registerFormatAliases("rst", "reStructuredText", {".rst"});
+  registerFormatAliases("rtf", "Rich Text Format", {".rtf"});  // extension based
+  registerFormatAliases("t2t", "Txt2tags", {".t2t"});
+  registerFormatAliases("textile", "Textile", {".textile"});              // extension based
+  registerFormatAliases("tikiwiki", "TikiWiki", {".tiki", ".tikiwiki"});  // extension based
+  registerFormatAliases("twiki", "TWiki", {".twiki"});                    // extension based
+  registerFormatAliases("vimwiki", "Vimwiki", {".vw", ".vimwiki"});       // extension based
 }
 
 void ConverterRegistrar::registerConverter(std::unique_ptr<Converter> c) {
