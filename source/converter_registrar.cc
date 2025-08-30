@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <utility>
 
+#include "converter_cmark_gfm.h"
 #include "converter_passthrough.h"
 #include "converter_registrar.h"
 
@@ -15,10 +16,12 @@ ConverterRegistrar::ConverterRegistrar() {
 
 void ConverterRegistrar::registerBuiltins() {
   registerConverter("html", std::make_unique<ConverterPassthrough>());
+  registerConverter("markdown", std::make_unique<ConverterCmarkGfm>());
 }
 
 void ConverterRegistrar::registerDefaultMappings() {
   registerFormatAliases("html", "HTML", {".htm", ".html", ".shtml", ".xhtml"});
+  registerFormatAliases("markdown", "Markdown", {".md", ".markdown"});
 }
 
 void ConverterRegistrar::registerConverter(std::unique_ptr<Converter> c) {
