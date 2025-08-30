@@ -5,6 +5,7 @@
 
 #include "gtk_attachable.h"
 
+#include <glib.h>
 #include <gtk/gtk.h>
 #include <webkit2/webkit2.h>
 
@@ -27,10 +28,16 @@ class WebView : public GtkAttachable<WebView> {
     return *this;
   }
 
-  WebView &loadHtml(const std::string &html, const std::string &baseUri = "") {
-    webkit_web_view_load_html(
-        WEBKIT_WEB_VIEW(webview_), html.c_str(), baseUri.empty() ? nullptr : baseUri.c_str()
+  WebView &loadHtml(std::string_view html, const std::string &base_uri = "") {
+    GBytes *bytes = g_bytes_new_static(html.data(), html.size());
+    webkit_web_view_load_bytes(
+        WEBKIT_WEB_VIEW(webview_),
+        bytes,
+        "text/html",
+        "UTF-8",
+        base_uri.empty() ? nullptr : base_uri.c_str()
     );
+    g_bytes_unref(bytes);
     return *this;
   }
 

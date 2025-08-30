@@ -15,7 +15,7 @@ void PreviewPane::update(GeanyDocument *geany_document) {
   auto *conv = registrar_.getConverter(document);
 
   if (conv) {
-    std::string html = conv->toHtml(document.textView());
+    auto html = conv->toHtml(document.textView());
     webview_.loadHtml(html);
   } else {
     webview_.loadHtml(

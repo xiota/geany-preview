@@ -12,5 +12,5 @@ class Converter {
 
   virtual std::string_view id() const = 0;
 
-  virtual std::string toHtml(std::string_view source) = 0;
+  virtual std::string_view toHtml(std::string_view source) = 0;
 };

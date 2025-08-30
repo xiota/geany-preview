@@ -14,7 +14,7 @@ class ConverterPassthrough : public Converter {
     return "passthrough";
   }
 
-  std::string toHtml(std::string_view source) override {
-    return std::string{source};
+  std::string_view toHtml(std::string_view source) override {
+    return source;
   }
 };

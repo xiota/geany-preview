@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <string_view>
 
@@ -15,5 +16,10 @@ class ConverterCmarkGfm final : public Converter {
   std::string_view id() const override {
     return "cmark-gfm";
   }
-  std::string toHtml(std::string_view source) override;
+  std::string_view toHtml(std::string_view source) override;
+
+ private:
+  // Keeps the buffer alive until the next toHtml() call
+  mutable std::unique_ptr<char, decltype(&free)> html_owner_{nullptr, &free};
+  mutable std::string_view html_view_;
 };

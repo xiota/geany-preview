@@ -3,6 +3,9 @@
 
 #include "converter_cmark_gfm.h"
 
+#include <cstdlib>  // for free()
+#include <cstring>  // for std::strlen
+#include <memory>
 #include <string>
 #include <string_view>
 
@@ -18,7 +21,7 @@ void add_extension(cmark_parser *parser, const char *name) {
 }
 }  // namespace
 
-std::string ConverterCmarkGfm::toHtml(std::string_view source) {
+std::string_view ConverterCmarkGfm::toHtml(std::string_view source) {
   int options = CMARK_OPT_TABLE_PREFER_STYLE_ATTRIBUTES | CMARK_OPT_FOOTNOTES | CMARK_OPT_SMART;
 
   cmark_gfm_core_extensions_ensure_registered();
@@ -35,15 +38,16 @@ std::string ConverterCmarkGfm::toHtml(std::string_view source) {
   cmark_node *document = cmark_parser_finish(parser);
 
   cmark_llist *exts = cmark_parser_get_syntax_extensions(parser);
-  char *html = cmark_render_html(document, options, exts);
-
-  std::string result = "<!doctype html><html><head><meta charset=\"utf-8\"></head><body>";
-  result += html;
-  result += "</body></html>";
+  char *html_cstr = cmark_render_html(document, options, exts);
 
   cmark_node_free(document);
   cmark_parser_free(parser);
-  free(html);
 
-  return result;
+  // Take ownership of cmark's malloc'd buffer
+  html_owner_ = std::unique_ptr<char, decltype(&free)>(html_cstr, &free);
+
+  // Point the view into the owned buffer
+  html_view_ = std::string_view(html_owner_.get(), std::strlen(html_owner_.get()));
+
+  return html_view_;
 }
