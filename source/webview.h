@@ -11,12 +11,21 @@
 
 class WebView final : public GtkAttachable<WebView> {
  public:
-  WebView() : GtkAttachable("WebView") {
-    webviewSettings_ = webkit_settings_new();
-    webview_ = webkit_web_view_new_with_settings(webviewSettings_);
-    webviewContext_ = webkit_web_view_get_context(WEBKIT_WEB_VIEW(webview_));
-    webviewContentManager_ =
-        webkit_web_view_get_user_content_manager(WEBKIT_WEB_VIEW(webview_));
+  WebView() noexcept
+      : GtkAttachable("WebView"),
+        webview_settings_(webkit_settings_new()),
+        webview_(webkit_web_view_new_with_settings(webview_settings_)),
+        webview_context_(webkit_web_view_get_context(WEBKIT_WEB_VIEW(webview_))),
+        webview_content_manager_(
+            webkit_web_view_get_user_content_manager(WEBKIT_WEB_VIEW(webview_))
+        ) {
+    trackWidget(webview_);
+  }
+
+  ~WebView() noexcept {
+    if (webview_settings_) {
+      g_object_unref(webview_settings_);
+    }
   }
 
   GtkWidget *widget() const override {
@@ -42,8 +51,8 @@ class WebView final : public GtkAttachable<WebView> {
   }
 
  private:
+  WebKitSettings *webview_settings_ = nullptr;
   GtkWidget *webview_ = nullptr;
-  WebKitSettings *webviewSettings_ = nullptr;
-  WebKitWebContext *webviewContext_ = nullptr;
-  WebKitUserContentManager *webviewContentManager_ = nullptr;
+  WebKitWebContext *webview_context_ = nullptr;
+  WebKitUserContentManager *webview_content_manager_ = nullptr;
 };
