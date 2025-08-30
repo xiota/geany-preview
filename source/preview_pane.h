@@ -42,7 +42,6 @@ class PreviewPane : public GtkAttachable<PreviewPane> {
         GTK_SCROLLED_WINDOW(container_), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC
     );
 
-    webview_.loadHtml("<h1>Hello from GTK3!</h1>");
     webview_.attachToParent(container_);
   }
 
