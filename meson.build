@@ -21,6 +21,7 @@ else
 endif
 
 src_files = files(
+  'source/converter_registrar.cc',
   'source/preview.cc',
   'source/preview_pane.cc',
 )

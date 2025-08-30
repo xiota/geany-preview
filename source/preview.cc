@@ -7,8 +7,20 @@
 
 static PreviewPane preview_pane;
 
-static void onDocumentActivate(GObject *, GeanyDocument *doc, gpointer) {
-  preview_pane.update(doc);
+gboolean
+onEditorNotify(GObject *obj, GeanyEditor *editor, SCNotification *nt, gpointer user_data) {
+  if (!nt || nt->nmhdr.code != SCN_MODIFIED) {
+    return FALSE;
+  }
+
+  GeanyDocument *gdoc = editor ? editor->document : document_get_current();
+
+  preview_pane.update(gdoc);
+  return FALSE;
+}
+
+void onDocumentActivate(GObject *obj, GeanyDocument *gdoc, gpointer user_data) {
+  preview_pane.update(gdoc);
 }
 
 gboolean previewInit(GeanyPlugin *plugin, gpointer) {
@@ -16,7 +28,11 @@ gboolean previewInit(GeanyPlugin *plugin, gpointer) {
       .selectAsCurrent();
 
   plugin_signal_connect(
-      plugin, nullptr, "document-activate", TRUE, G_CALLBACK(onDocumentActivate), nullptr
+      plugin, nullptr, "editor-notify", FALSE, G_CALLBACK(onEditorNotify), nullptr
+  );
+
+  plugin_signal_connect(
+      plugin, nullptr, "document-activate", FALSE, G_CALLBACK(onDocumentActivate), nullptr
   );
 
   return TRUE;
