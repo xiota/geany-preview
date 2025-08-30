@@ -7,20 +7,24 @@
 
 static PreviewPane preview_pane;
 
-gboolean
-onEditorNotify(GObject *obj, GeanyEditor *editor, SCNotification *nt, gpointer user_data) {
-  if (!nt || nt->nmhdr.code != SCN_MODIFIED) {
+gboolean onEditorNotify(
+    GObject *object,
+    GeanyEditor *editor,
+    SCNotification *notification,
+    gpointer user_data
+) {
+  if (!notification || notification->nmhdr.code != SCN_MODIFIED) {
     return FALSE;
   }
 
-  GeanyDocument *gdoc = editor ? editor->document : document_get_current();
+  GeanyDocument *geany_document = editor ? editor->document : document_get_current();
 
-  preview_pane.update(gdoc);
+  preview_pane.update(geany_document);
   return FALSE;
 }
 
-void onDocumentActivate(GObject *obj, GeanyDocument *gdoc, gpointer user_data) {
-  preview_pane.update(gdoc);
+void onDocumentActivate(GObject *object, GeanyDocument *geany_document, gpointer user_data) {
+  preview_pane.update(geany_document);
 }
 
 gboolean previewInit(GeanyPlugin *plugin, gpointer) {

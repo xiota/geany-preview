@@ -14,12 +14,12 @@
 #include <geanyplugin.h>
 #include <gtk/gtk.h>
 
-inline std::string getDocumentText(GeanyDocument *gdoc) {
-  if (!gdoc || !gdoc->editor || !gdoc->editor->sci) {
+inline std::string getDocumentText(GeanyDocument *geany_document) {
+  if (!geany_document || !geany_document->editor || !geany_document->editor->sci) {
     return {};
   }
 
-  ScintillaObject *sci = gdoc->editor->sci;
+  ScintillaObject *sci = geany_document->editor->sci;
   sptr_t length = sci_get_length(sci);
 
   std::string text;
@@ -50,21 +50,21 @@ class PreviewPane : public GtkAttachable<PreviewPane> {
     return container_;
   }
 
-  void update(GeanyDocument *doc);
+  void update(GeanyDocument *document);
 
  private:
   GtkWidget *container_;
   WebView webview_;
   ConverterRegistrar registrar_;
 
-  Document makeDocumentFromGeany(GeanyDocument *gdoc) {
-    if (!gdoc || !gdoc->file_type) {
+  Document makeDocumentFromGeany(GeanyDocument *geany_document) {
+    if (!geany_document || !geany_document->file_type) {
       return {};
     }
     return Document(
-        getDocumentText(gdoc),
-        (gdoc->file_type->name ? gdoc->file_type->name : ""),
-        (gdoc->file_name ? gdoc->file_name : "")
+        getDocumentText(geany_document),
+        (geany_document->file_type->name ? geany_document->file_type->name : ""),
+        (geany_document->file_name ? geany_document->file_name : "")
     );
   }
 };

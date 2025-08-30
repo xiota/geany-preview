@@ -5,16 +5,16 @@
 #include "converter_registrar.h"
 #include "document.h"
 
-void PreviewPane::update(GeanyDocument *gdoc) {
-  if (!gdoc) {
-    return;  // no doc, nothing to preview
+void PreviewPane::update(GeanyDocument *geany_document) {
+  if (!geany_document) {
+    return;
   }
 
-  Document doc = makeDocumentFromGeany(gdoc);
-  auto *conv = registrar_.getConverter(doc);
+  Document document = makeDocumentFromGeany(geany_document);
+  auto *conv = registrar_.getConverter(document);
 
   if (conv) {
-    std::string html = conv->toHtml(doc.text());
+    std::string html = conv->toHtml(document.text());
     webview_.loadHtml(html);
   } else {
     webview_.loadHtml(

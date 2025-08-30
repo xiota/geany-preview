@@ -62,9 +62,9 @@ void ConverterRegistrar::registerFormatAliases(
   }
 }
 
-std::string ConverterRegistrar::resolveConverterKey(const Document &doc) const {
+std::string ConverterRegistrar::resolveConverterKey(const Document &document) const {
   // 1. Try Geany filetype mapping
-  std::string name = doc.filetypeName();
+  std::string name = document.filetypeName();
   auto it = type_to_converter_.find(name);
   if (it != type_to_converter_.end()) {
     return it->second;
@@ -72,7 +72,7 @@ std::string ConverterRegistrar::resolveConverterKey(const Document &doc) const {
 
   // 2. Try extension mapping
   namespace fs = std::filesystem;
-  std::string ext = fs::path(doc.fileName()).extension().string();
+  std::string ext = fs::path(document.fileName()).extension().string();
   std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) {
     return std::tolower(c);
   });
