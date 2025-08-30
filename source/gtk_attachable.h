@@ -14,8 +14,7 @@ class GtkAttachable {
  public:
   explicit GtkAttachable(std::string_view label) : label_(label) {}
   ~GtkAttachable() {
-    DetachFromParent();
-    // Do not call ClearWeakPointer; GTK clears on widget destroy
+    detachFromParent();
   }
 
   // No copying/moving, unique ownership of underlying widget
@@ -26,7 +25,7 @@ class GtkAttachable {
 
   virtual GtkWidget *widget() const = 0;
 
-  Derived &AttachToParent(GtkWidget *parent) {
+  Derived &attachToParent(GtkWidget *parent) {
     GtkWidget *w = widget();
     if (!parent || !w) {
       return static_cast<Derived &>(*this);
@@ -35,25 +34,25 @@ class GtkAttachable {
       return static_cast<Derived &>(*this);
     }
     if (parent_) {
-      DetachFromParent();  // detach from old parent
+      detachFromParent();  // detach from old parent
     }
 
     // in case derived class forgot
-    TrackWidget(w);
+    trackWidget(w);
 
     if (GTK_IS_CONTAINER(parent)) {
       gtk_container_add(GTK_CONTAINER(parent), w);
       parent_ = parent;
       gtk_widget_show(w);
-      ApplyContainerLabel();
+      applyContainerLabel();
     }
 
     return static_cast<Derived &>(*this);
   }
 
   // Detaches the widget from its current parent, if any.
-  Derived &DetachFromParent() {
-    GtkWidget *w = weak_widget_;
+  Derived &detachFromParent() {
+    GtkWidget *w = widget_;
     if (parent_ && w) {
       if (!gtk_widget_in_destruction(w) && GTK_IS_CONTAINER(parent_)) {
         gtk_container_remove(GTK_CONTAINER(parent_), w);
@@ -63,8 +62,8 @@ class GtkAttachable {
     return static_cast<Derived &>(*this);
   }
 
-  Derived &SelectAsCurrent() {
-    GtkWidget *w = weak_widget_;
+  Derived &selectAsCurrent() {
+    GtkWidget *w = widget_;
     if (!parent_ || !w) {
       return static_cast<Derived &>(*this);
     }
@@ -95,22 +94,21 @@ class GtkAttachable {
     return static_cast<Derived &>(*this);
   }
 
-  Derived &SetLabel(std::string_view label) {
+  Derived &setLabel(std::string_view label) {
     label_.assign(label);
-    ApplyContainerLabel();
+    applyContainerLabel();
     return static_cast<Derived &>(*this);
   }
 
  protected:
   GtkAttachable() = default;
 
-  // TODO: connect to GtkWidget::parent-set signal to sync parent_
   GtkWidget *parent_ = nullptr;
-  GtkWidget *weak_widget_ = nullptr;
+  GtkWidget *widget_ = nullptr;
   std::string label_;
 
-  void ApplyContainerLabel() {
-    GtkWidget *w = weak_widget_;
+  void applyContainerLabel() {
+    GtkWidget *w = widget_;
     if (label_.empty() || !parent_ || !w) {
       return;
     }
@@ -127,32 +125,11 @@ class GtkAttachable {
   }
 
   // Can be called multiple times.
-  // Last call is kept in weak_widget_
-  void TrackWidget(GtkWidget *w) {
+  // Last call is kept in widget_
+  void trackWidget(GtkWidget *w) {
     if (!w) {
       return;
     }
-    if (weak_widget_ == w) {
-      return;
-    }
-
-    // Intentionally overwrites weak_widget_ without removing the old weak pointer
-    weak_widget_ = w;
-    g_object_add_weak_pointer(
-        G_OBJECT(weak_widget_), reinterpret_cast<gpointer *>(&weak_widget_)
-    );
-  }
-
-  void ClearWeakPointer(GtkWidget *w = nullptr) {
-    if ((!w && weak_widget_) || (w && w == weak_widget_)) {
-      // Remove weak pointer for the tracked widget
-      g_object_remove_weak_pointer(
-          G_OBJECT(weak_widget_), reinterpret_cast<gpointer *>(&weak_widget_)
-      );
-      weak_widget_ = nullptr;
-    } else if (w) {
-      // Remove weak pointer for a different widget
-      g_object_remove_weak_pointer(G_OBJECT(w), reinterpret_cast<gpointer *>(&w));
-    }
+    widget_ = w;
   }
 };

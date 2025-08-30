@@ -3,7 +3,7 @@
 
 #include "preview_pane.h"
 
-void PreviewPane::Update(GeanyDocument *doc) {
+void PreviewPane::update(GeanyDocument *doc) {
   if (!doc) {
     return;
   }

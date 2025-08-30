@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include <geanyplugin.h>
-#include <gtk/gtk.h>
-
 #include "gtk_attachable.h"
 #include "webview.h"
+
+#include <geanyplugin.h>
+#include <gtk/gtk.h>
 
 class PreviewPane : public GtkAttachable<PreviewPane> {
  public:
@@ -17,15 +17,15 @@ class PreviewPane : public GtkAttachable<PreviewPane> {
         GTK_SCROLLED_WINDOW(container_), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC
     );
 
-    webview_.LoadHtml("<h1>Hello from GTK3!</h1>");
-    webview_.AttachToParent(container_);
+    webview_.loadHtml("<h1>Hello from GTK3!</h1>");
+    webview_.attachToParent(container_);
   }
 
   GtkWidget *widget() const override {
     return container_;
   }
 
-  void Update(GeanyDocument *doc);
+  void update(GeanyDocument *doc);
 
  private:
   GtkWidget *container_;
