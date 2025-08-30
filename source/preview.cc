@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: Copyright 2025 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "preview_pane.h"
-
 #include <geanyplugin.h>
+
+#include "preview_pane.h"
 
 static PreviewPane preview_pane;
 

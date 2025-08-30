@@ -3,16 +3,16 @@
 
 #pragma once
 
-#include "converter_registrar.h"
-#include "gtk_attachable.h"
-#include "webview.h"
+#include <geanyplugin.h>
+#include <gtk/gtk.h>
 
 #include <Scintilla.h>
 #include <ScintillaWidget.h>
 #include <sciwrappers.h>
 
-#include <geanyplugin.h>
-#include <gtk/gtk.h>
+#include "converter_registrar.h"
+#include "gtk_attachable.h"
+#include "webview.h"
 
 inline std::string getDocumentText(GeanyDocument *geany_document) {
   if (!geany_document || !geany_document->editor || !geany_document->editor->sci) {

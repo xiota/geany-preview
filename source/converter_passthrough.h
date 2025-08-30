@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <string>
+#include <string_view>
+
 #include "converter.h"
 
 class ConverterPassthrough : public Converter {

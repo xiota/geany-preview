@@ -3,10 +3,11 @@
 
 #include "converter_cmark_gfm.h"
 
-#include <cmark-gfm-core-extensions.h>
-#include <cmark-gfm.h>
 #include <string>
 #include <string_view>
+
+#include <cmark-gfm-core-extensions.h>
+#include <cmark-gfm.h>
 
 namespace {
 // Helper to attach a GFM extension by name

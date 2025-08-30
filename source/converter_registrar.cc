@@ -1,13 +1,14 @@
 // SPDX-FileCopyrightText: Copyright 2025 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include "converter_registrar.h"
+
 #include <algorithm>
 #include <filesystem>
 #include <utility>
 
 #include "converter_cmark_gfm.h"
 #include "converter_passthrough.h"
-#include "converter_registrar.h"
 
 ConverterRegistrar::ConverterRegistrar() {
   registerBuiltins();

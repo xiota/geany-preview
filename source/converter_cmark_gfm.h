@@ -3,9 +3,10 @@
 
 #pragma once
 
-#include "converter.h"
 #include <string>
 #include <string_view>
+
+#include "converter.h"
 
 class ConverterCmarkGfm final : public Converter {
  public:

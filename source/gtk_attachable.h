@@ -3,9 +3,10 @@
 
 #pragma once
 
-#include <gtk/gtk.h>
 #include <string>
 #include <string_view>
+
+#include <gtk/gtk.h>
 
 // Base class for self-contained GTK UI components with explicit
 // attach/detach lifecycle control.
