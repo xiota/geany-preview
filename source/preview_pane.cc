@@ -11,11 +11,11 @@ void PreviewPane::update(GeanyDocument *geany_document) {
     return;
   }
 
-  Document document = makeDocumentFromGeany(geany_document);
+  Document document(geany_document);
   auto *conv = registrar_.getConverter(document);
 
   if (conv) {
-    std::string html = conv->toHtml(document.text());
+    std::string html = conv->toHtml(document.textView());
     webview_.loadHtml(html);
   } else {
     webview_.loadHtml(

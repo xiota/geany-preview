@@ -6,59 +6,51 @@
 #include <cstddef>     // size_t
 #include <functional>  // std::hash
 #include <string>
+#include <string_view>
+
+struct GeanyDocument;
 
 class Document {
  public:
-  Document() = default;
-  explicit Document(
-      std::string text,
-      std::string filetype_name = "None",
-      std::string file_name = ""
-  )
-      : text_(std::move(text)),
-        filetype_name_(std::move(filetype_name)),
-        file_name_(std::move(file_name)) {}
-
-  // Content
-  const std::string &text() const {
-    return text_;
-  }
-  void setText(std::string text) {
-    text_ = std::move(text);
+  explicit Document(GeanyDocument *geany_document) : geany_document_(geany_document) {
+    updateFiletypeName();
+    updateFileName();
   }
 
-  // Geany filetype name (e.g., "Markdown", "HTML").
+  // Borrowed view into the live Scintilla buffer
+  std::string_view textView() const;
+
+  // Owning copy of the current text
+  std::string text() const {
+    auto view = textView();
+    return std::string{view};
+  }
+
   const std::string &filetypeName() const {
     return filetype_name_;
   }
-  void setFiletypeName(std::string name) {
-    filetype_name_ = std::move(name);
-  }
+  Document &updateFiletypeName();
 
-  // Optional file name for dispatch or display
   const std::string &fileName() const {
     return file_name_;
   }
-  void setFileName(std::string name) {
-    file_name_ = std::move(name);
-  }
+  Document &updateFileName();
 
-  // Detect changes
   size_t lastRenderHash() const {
     return last_render_hash_;
   }
-  void setLastRenderHash(size_t hash) {
+  Document &setLastRenderHash(size_t hash) {
     last_render_hash_ = hash;
+    return *this;
   }
 
   size_t computeHash() const {
-    return std::hash<std::string>{}(text_);
+    return std::hash<std::string_view>{}(textView());
   }
 
  private:
-  std::string text_;
+  GeanyDocument *geany_document_;
   std::string filetype_name_;
   std::string file_name_;
-
   size_t last_render_hash_ = 0;
 };
