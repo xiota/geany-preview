@@ -10,7 +10,7 @@
 #include "gtk_attachable.h"
 #include "webview.h"
 
-class PreviewPane : public GtkAttachable<PreviewPane> {
+class PreviewPane final : public GtkAttachable<PreviewPane> {
  public:
   PreviewPane()
       : GtkAttachable("Preview"), container_(gtk_scrolled_window_new(nullptr, nullptr)) {

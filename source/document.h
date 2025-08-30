@@ -10,7 +10,7 @@
 
 struct GeanyDocument;
 
-class Document {
+class Document final {
  public:
   explicit Document(GeanyDocument *geany_document) : geany_document_(geany_document) {
     updateFiletypeName();

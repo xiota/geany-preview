@@ -8,7 +8,7 @@
 
 #include "converter.h"
 
-class ConverterPassthrough : public Converter {
+class ConverterPassthrough final : public Converter {
  public:
   std::string_view id() const override {
     return "passthrough";

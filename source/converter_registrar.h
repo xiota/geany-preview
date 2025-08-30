@@ -11,7 +11,7 @@
 #include "converter.h"
 #include "document.h"
 
-class ConverterRegistrar {
+class ConverterRegistrar final {
  public:
   ConverterRegistrar();
 

@@ -9,7 +9,7 @@
 #include <gtk/gtk.h>
 #include <webkit2/webkit2.h>
 
-class WebView : public GtkAttachable<WebView> {
+class WebView final : public GtkAttachable<WebView> {
  public:
   WebView() : GtkAttachable("WebView") {
     webviewSettings_ = webkit_settings_new();
