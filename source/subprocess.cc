@@ -8,12 +8,16 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <chrono>
 #include <memory>
 #include <set>
 #include <sstream>
 #include <stdexcept>
+#include <unordered_map>
 
 #include <glib.h>
+
+std::unordered_map<std::string, Subprocess::CacheEntry> Subprocess::binary_cache_;
 
 namespace {
 constexpr std::size_t kIoBufSize = 4096;
@@ -128,11 +132,60 @@ void onChildExit(GPid pid, gint status, gpointer user_data) noexcept {
 }
 }  // namespace
 
+std::chrono::seconds Subprocess::nextCooldown(std::chrono::seconds current) noexcept {
+  if (current < kMaxCooldown) {
+    long long cur = current.count();
+    long long next = (cur * kBackoffNum + (kBackoffDen - 1)) / kBackoffDen;
+    if (next <= cur) {
+      next = cur + 1;
+    }
+    if (next > kMaxCooldown.count()) {
+      next = kMaxCooldown.count();
+    }
+    return std::chrono::seconds(next);
+  }
+  return current;  // already at cap
+}
+
 bool Subprocess::run(
     const std::vector<std::string> &args,
     std::string_view input,
     CompletionHandler handler
 ) const {
+  if (args.empty()) {
+    return false;
+  }
+
+  const std::string &binary = args[0];
+  auto now = std::chrono::steady_clock::now();
+  auto it = binary_cache_.find(binary);
+  if (it != binary_cache_.end()) {
+    CacheEntry &entry = it->second;
+    if (!entry.found) {
+      // If still in cooldown, skip.
+      if (entry.last_check.time_since_epoch().count() != 0 &&
+          (now - entry.last_check) < entry.cooldown) {
+        return false;
+      }
+      // Due for availability check.
+      char *found_path = g_find_program_in_path(binary.c_str());
+      bool found = (found_path != nullptr);
+      if (found_path) {
+        g_free(found_path);
+      }
+      entry.last_check = now;
+      if (found) {
+        // Reset on success.
+        entry.found = true;
+        entry.cooldown = kStartCooldown;
+      } else {
+        // Increase cooldown (cap and hold).
+        entry.cooldown = nextCooldown(entry.cooldown);
+        return false;
+      }
+    }
+  }
+
   // Build argv for GLib
   std::vector<gchar *> argv;
   argv.reserve(args.size() + 1);
@@ -162,6 +215,14 @@ bool Subprocess::run(
     if (error) {
       g_error_free(error);
     }
+    // Mark as missing and apply backoff if spawn fails.
+    auto &entry = binary_cache_[binary];
+    if (entry.last_check.time_since_epoch().count() == 0) {
+      entry.cooldown = kStartCooldown;
+    }
+    entry.found = false;
+    entry.last_check = now;
+    entry.cooldown = nextCooldown(entry.cooldown);
     Subprocess::Result res;
     res.stderr_data = "spawn failed: " + msg;
     res.exit_status = 127;

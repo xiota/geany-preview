@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include <chrono>
 #include <functional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 class Subprocess {
@@ -33,4 +35,21 @@ class Subprocess {
   ) const;
 
   static void cancelAll() noexcept;
+
+ private:
+  static std::chrono::seconds nextCooldown(std::chrono::seconds current) noexcept;
+
+  struct CacheEntry {
+    bool found{false};
+    std::chrono::steady_clock::time_point last_check{};
+    std::chrono::seconds cooldown{std::chrono::seconds(1)};
+  };
+
+  static std::unordered_map<std::string, CacheEntry> binary_cache_;
+
+  // Adaptive backoff parameters: 1s start, 1.25x growth, 5min cap.
+  static constexpr auto kStartCooldown = std::chrono::seconds(1);
+  static constexpr int kBackoffNum = 5;  // multiplier numerator (1.25x)
+  static constexpr int kBackoffDen = 4;  // multiplier denominator
+  static constexpr auto kMaxCooldown = std::chrono::seconds(300);  // 5 minutes
 };
