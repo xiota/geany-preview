@@ -7,28 +7,63 @@
 #include <gtk/gtk.h>
 
 #include "converter_registrar.h"
-#include "gtk_attachable.h"
 #include "webview.h"
 
-class PreviewPane final : public GtkAttachable<PreviewPane> {
+class PreviewPane final {
  public:
-  PreviewPane()
-      : GtkAttachable("Preview"), container_(gtk_scrolled_window_new(nullptr, nullptr)) {
-    gtk_scrolled_window_set_policy(
-        GTK_SCROLLED_WINDOW(container_), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC
-    );
-
-    webview_.attachToParent(container_);
+  PreviewPane(GtkWidget *notebook) : sidebar_notebook_(notebook) {
+    attach();
   }
 
-  GtkWidget *widget() const override {
-    return container_;
+  ~PreviewPane() noexcept {
+    detach();
   }
 
-  void update(GeanyDocument *document);
+  PreviewPane &attach() {
+    auto *webview_widget = webview_.widget();
+    if (webview_widget && GTK_IS_NOTEBOOK(sidebar_notebook_)) {
+      sidebar_page_number_ = gtk_notebook_append_page(
+          GTK_NOTEBOOK(sidebar_notebook_), webview_widget, gtk_label_new("Preview")
+      );
+      gtk_widget_show_all(webview_widget);
+      gtk_notebook_set_current_page(GTK_NOTEBOOK(sidebar_notebook_), sidebar_page_number_);
+    }
+    return *this;
+  }
+
+  PreviewPane &detach() {
+    auto *webview_widget = webview_.widget();
+    if (webview_widget && GTK_IS_NOTEBOOK(sidebar_notebook_)) {
+      int idx = gtk_notebook_page_num(GTK_NOTEBOOK(sidebar_notebook_), webview_widget);
+      if (idx >= 0) {
+        gtk_notebook_remove_page(GTK_NOTEBOOK(sidebar_notebook_), idx);
+      }
+    }
+    return *this;
+  }
+
+  PreviewPane &update(GeanyDocument* geany_document = nullptr) {
+    if (!geany_document) {
+      geany_document = document_get_current();
+    }
+
+    Document document(geany_document);
+    auto *converter = registrar_.getConverter(document);
+
+    if (converter) {
+      auto html = converter->toHtml(document.textView());
+      webview_.loadHtml(html);
+    } else {
+      auto text = document.filetypeName() + ", " + document.encodingName();
+      webview_.loadPlainText(text);
+    }
+    return *this;
+  }
 
  private:
-  GtkWidget *container_;
+  GtkWidget *sidebar_notebook_;
+  int sidebar_page_number_ = 0;
+
   WebView webview_;
   ConverterRegistrar registrar_;
 };

@@ -26,7 +26,6 @@ src_files = files(
   'source/converter_subprocess.cc',
   'source/document.cc',
   'source/preview.cc',
-  'source/preview_pane.cc',
   'source/subprocess.cc',
 )
 

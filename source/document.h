@@ -8,7 +8,7 @@
 #include <string>
 #include <string_view>
 
-struct GeanyDocument;
+#include <document.h>
 
 class Document final {
  public:
@@ -28,17 +28,39 @@ class Document final {
   const std::string &fileName() const {
     return file_name_;
   }
-  Document &updateFileName();
+  Document &updateFileName() {
+    if (geany_document_ && geany_document_->real_path) {
+      file_name_ = geany_document_->real_path;
+    } else {
+      file_name_.clear();
+    }
+    return *this;
+  }
 
   const std::string &filetypeName() const {
     return filetype_name_;
   }
-  Document &updateFiletypeName();
+  Document &updateFiletypeName() {
+    if (geany_document_ && geany_document_->file_type && geany_document_->file_type->name) {
+      filetype_name_ = geany_document_->file_type->name;
+    } else {
+      filetype_name_.clear();
+    }
+    return *this;
+  }
 
   const std::string &encodingName() const {
     return encoding_name_;
   }
-  Document &updateEncodingName();
+  Document &updateEncodingName() {
+    if (geany_document_ && geany_document_->encoding) {
+      encoding_name_ = geany_document_->encoding;
+    } else {
+      encoding_name_.clear();
+    }
+
+    return *this;
+  }
 
   size_t lastRenderHash() const {
     return last_render_hash_;

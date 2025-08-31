@@ -3,37 +3,7 @@
 
 #include "document.h"
 
-#include <geanyplugin.h>
-
 #include <Scintilla.h>
-
-Document &Document::updateFileName() {
-  if (geany_document_ && geany_document_->real_path) {
-    file_name_ = geany_document_->real_path;
-  } else {
-    file_name_.clear();
-  }
-  return *this;
-}
-
-Document &Document::updateFiletypeName() {
-  if (geany_document_ && geany_document_->file_type && geany_document_->file_type->name) {
-    filetype_name_ = geany_document_->file_type->name;
-  } else {
-    filetype_name_.clear();
-  }
-  return *this;
-}
-
-Document &Document::updateEncodingName() {
-  if (geany_document_ && geany_document_->encoding) {
-    encoding_name_ = geany_document_->encoding;
-  } else {
-    encoding_name_.clear();
-  }
-
-  return *this;
-}
 
 std::string_view Document::textView() const {
   if (!geany_document_ || !geany_document_->editor) {
@@ -45,12 +15,12 @@ std::string_view Document::textView() const {
     return {};
   }
 
-  sptr_t length = sci_get_length(sci);
+  auto length = static_cast<size_t>(scintilla_send_message(sci, SCI_GETLENGTH, 0, 0));
   if (length == 0) {
     return {};
   }
 
-  const char *buffer_ptr = reinterpret_cast<const char *>(
+  auto *buffer_ptr = reinterpret_cast<const char *>(
       scintilla_send_message(sci, SCI_GETCHARACTERPOINTER, 0, 0)
   );
 

@@ -3,32 +3,30 @@
 
 #pragma once
 
-#include "gtk_attachable.h"
-
 #include <glib.h>
 #include <gtk/gtk.h>
 #include <webkit2/webkit2.h>
 
-class WebView final : public GtkAttachable<WebView> {
+class WebView final {
  public:
   WebView() noexcept
-      : GtkAttachable("WebView"),
-        webview_settings_(webkit_settings_new()),
+      : webview_settings_(webkit_settings_new()),
         webview_(webkit_web_view_new_with_settings(webview_settings_)),
         webview_context_(webkit_web_view_get_context(WEBKIT_WEB_VIEW(webview_))),
         webview_content_manager_(
             webkit_web_view_get_user_content_manager(WEBKIT_WEB_VIEW(webview_))
-        ) {
-    trackWidget(webview_);
-  }
+        ) {}
 
   ~WebView() noexcept {
     if (webview_settings_) {
       g_object_unref(webview_settings_);
     }
+    if (webview_) {
+      g_object_unref(webview_);
+    }
   }
 
-  GtkWidget *widget() const override {
+  GtkWidget *widget() const {
     return webview_;
   }
 
