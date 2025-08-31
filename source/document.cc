@@ -7,6 +7,15 @@
 
 #include <Scintilla.h>
 
+Document &Document::updateFileName() {
+  if (geany_document_ && geany_document_->real_path) {
+    file_name_ = geany_document_->real_path;
+  } else {
+    file_name_.clear();
+  }
+  return *this;
+}
+
 Document &Document::updateFiletypeName() {
   if (geany_document_ && geany_document_->file_type && geany_document_->file_type->name) {
     filetype_name_ = geany_document_->file_type->name;
@@ -16,12 +25,13 @@ Document &Document::updateFiletypeName() {
   return *this;
 }
 
-Document &Document::updateFileName() {
-  if (geany_document_ && geany_document_->real_path) {
-    file_name_ = geany_document_->real_path;
+Document &Document::updateEncodingName() {
+  if (geany_document_ && geany_document_->encoding) {
+    encoding_name_ = geany_document_->encoding;
   } else {
-    file_name_.clear();
+    encoding_name_.clear();
   }
+
   return *this;
 }
 

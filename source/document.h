@@ -13,8 +13,7 @@ struct GeanyDocument;
 class Document final {
  public:
   explicit Document(GeanyDocument *geany_document) : geany_document_(geany_document) {
-    updateFiletypeName();
-    updateFileName();
+    updateFileName().updateFiletypeName().updateEncodingName();
   }
 
   // Borrowed view into the live Scintilla buffer
@@ -26,15 +25,20 @@ class Document final {
     return std::string{view};
   }
 
+  const std::string &fileName() const {
+    return file_name_;
+  }
+  Document &updateFileName();
+
   const std::string &filetypeName() const {
     return filetype_name_;
   }
   Document &updateFiletypeName();
 
-  const std::string &fileName() const {
-    return file_name_;
+  const std::string &encodingName() const {
+    return encoding_name_;
   }
-  Document &updateFileName();
+  Document &updateEncodingName();
 
   size_t lastRenderHash() const {
     return last_render_hash_;
@@ -50,7 +54,9 @@ class Document final {
 
  private:
   GeanyDocument *geany_document_;
-  std::string filetype_name_;
   std::string file_name_;
+  std::string filetype_name_;
+  std::string encoding_name_;
+
   size_t last_render_hash_ = 0;
 };
