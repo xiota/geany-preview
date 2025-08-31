@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <utility>
 
+#include "converter_asciidoctor.h"
 #include "converter_cmark_gfm.h"
 #include "converter_pandoc.h"
 #include "converter_passthrough.h"
@@ -17,10 +18,14 @@ ConverterRegistrar::ConverterRegistrar() {
 }
 
 void ConverterRegistrar::registerBuiltins() {
+  // Native
   registerConverter("html", std::make_unique<ConverterPassthrough>());
   registerConverter("markdown", std::make_unique<ConverterCmarkGfm>());
 
-  // Pandoc converters
+  // Subprocess
+  registerConverter("asciidoc", std::make_unique<ConverterAsciidoctor>());
+
+  // Pandoc
   registerConverter(std::make_unique<ConverterPandoc>("creole"));
   registerConverter(std::make_unique<ConverterPandoc>("docbook"));
   registerConverter(std::make_unique<ConverterPandoc>("dokuwiki"));
@@ -38,11 +43,15 @@ void ConverterRegistrar::registerBuiltins() {
 }
 
 void ConverterRegistrar::registerDefaultMappings() {
+  // Native
   registerFormatAliases("html", "HTML", {".htm", ".html", ".shtml", ".xhtml"});
-  registerFormatAliases("markdown", "Markdown", {".md", ".markdown"});
+  registerFormatAliases("markdown", "Markdown", {".md", ".markdown", ".txt"});
 
-  // Pandoc converters
-  registerFormatAliases("creole", "Creole Wiki", {".creole"});
+  // Subprocess
+  registerFormatAliases("asciidoc", "Asciidoc", {".asciidoc", ".adoc", ".asc"});
+
+  // Pandoc
+  registerFormatAliases("creole", "Creole Wiki", {".creole"});            // extension based
   registerFormatAliases("docbook", "DocBook", {".dbk"});                  // extension based
   registerFormatAliases("dokuwiki", "DokuWiki", {".dokuwiki", ".wiki"});  // extension based
   registerFormatAliases("latex", "LaTeX", {".tex", ".latex"});
