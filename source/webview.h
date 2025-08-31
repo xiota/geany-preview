@@ -37,17 +37,30 @@ class WebView final : public GtkAttachable<WebView> {
     return *this;
   }
 
-  WebView &loadHtml(std::string_view html, const std::string &base_uri = "") {
-    GBytes *bytes = g_bytes_new_static(html.data(), html.size());
+  WebView &loadMimeType(
+      std::string_view content,
+      const std::string &mime_type = "text/html",
+      const std::string &encoding = "UTF-8",
+      const std::string &base_uri = ""
+  ) {
+    GBytes *bytes = g_bytes_new_static(content.data(), content.size());
     webkit_web_view_load_bytes(
         WEBKIT_WEB_VIEW(webview_),
         bytes,
-        "text/html",
-        "UTF-8",
+        mime_type.empty() ? nullptr : mime_type.c_str(),
+        encoding.empty() ? nullptr : encoding.c_str(),
         base_uri.empty() ? nullptr : base_uri.c_str()
     );
     g_bytes_unref(bytes);
     return *this;
+  }
+
+  WebView &loadPlainText(std::string_view content) {
+    return loadMimeType(content, "text/plain", "UTF-8", "");
+  }
+
+  WebView &loadHtml(std::string_view content, const std::string &base_uri = "") {
+    return loadMimeType(content, "text/html", "UTF-8", base_uri);
   }
 
  private:
