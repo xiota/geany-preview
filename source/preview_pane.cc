@@ -18,8 +18,7 @@ void PreviewPane::update(GeanyDocument *geany_document) {
     auto html = conv->toHtml(document.textView());
     webview_.loadHtml(html);
   } else {
-    webview_.loadHtml(
-        "<!doctype html><html><body><p>No converter registered.</p></body></html>"
-    );
+    auto text = document.filetypeName() + ", " + document.encodingName();
+    webview_.loadPlainText(text);
   }
 }
