@@ -4,6 +4,9 @@
 #pragma once
 
 #include <algorithm>
+#include <functional>
+#include <string>
+#include <string_view>
 
 #include <glib.h>
 #include <gtk/gtk.h>
@@ -20,9 +23,6 @@ class WebView final {
         ) {}
 
   ~WebView() noexcept {
-    if (scroll_restore_handler_id_ > 0) {
-      g_signal_handler_disconnect(webview_, scroll_restore_handler_id_);
-    }
     if (webview_settings_) {
       g_object_unref(webview_settings_);
     }
@@ -35,107 +35,134 @@ class WebView final {
     return webview_;
   }
 
-  WebView &loadUri(const std::string &uri) {
-    webkit_web_view_load_uri(WEBKIT_WEB_VIEW(webview_), uri.c_str());
-    return *this;
-  }
-
-  WebView &loadPlainText(std::string_view content) {
-    return loadMimeType(content, "text/plain", "UTF-8", "");
-  }
-
+  // --- Full reload with minimal shell ---
   WebView &loadHtml(
-      std::string_view content,
+      std::string_view body_content,
       const std::string &base_uri = "",
       double *scroll_fraction_ptr = nullptr
   ) {
-    return loadMimeType(content, "text/html", "UTF-8", base_uri, scroll_fraction_ptr);
-  }
+    double fraction = scroll_fraction_ptr ? *scroll_fraction_ptr : internal_scroll_fraction_;
+    fraction = std::clamp(fraction, 0.0, 1.0);
 
-  WebView &loadMimeType(
-      std::string_view content,
-      const std::string &mime_type = "text/html",
-      const std::string &encoding = "UTF-8",
-      const std::string &base_uri = "",
-      double *scroll_fraction_ptr = nullptr
-  ) {
-    double *target = scroll_fraction_ptr ? scroll_fraction_ptr : &internal_scroll_fraction_;
-    captureScrollFraction(target);
+    std::string html =
+        "<!DOCTYPE html><html lang=\"en\"><head>"
+        "<meta charset=\"UTF-8\">"
+        "<title>Preview</title>"
+        "<style>"
+        "body { margin:0; padding:1rem; font-family:sans-serif; background:#fff; color:#000; }"
+        "</style>"
+        "</head><body>" +
+        std::string(body_content) + "</body></html>";
 
-    GBytes *bytes = g_bytes_new_static(content.data(), content.size());
+    GBytes *bytes = g_bytes_new_static(html.data(), html.size());
     webkit_web_view_load_bytes(
         WEBKIT_WEB_VIEW(webview_),
         bytes,
-        mime_type.empty() ? nullptr : mime_type.c_str(),
-        encoding.empty() ? nullptr : encoding.c_str(),
+        "text/html",
+        "UTF-8",
         base_uri.empty() ? nullptr : base_uri.c_str()
     );
     g_bytes_unref(bytes);
 
-    restoreScrollOnLoad(target);
+    // Restore scroll after reload
+    setScrollFraction(fraction);
+
     return *this;
   }
 
- private:
-  void captureScrollFraction(double *target) const {
+  // --- In-place body swap ---
+  WebView &updateHtml(std::string_view body_content, double *scroll_fraction_ptr = nullptr) {
+    double fraction = scroll_fraction_ptr ? *scroll_fraction_ptr : internal_scroll_fraction_;
+    fraction = std::clamp(fraction, 0.0, 1.0);
+
+    std::string escaped = escapeForJsTemplateLiteral(body_content);
+
+    std::string js = "document.body.innerHTML = `" + escaped +
+                     "`;"
+                     "window.scrollTo(0, document.body.scrollHeight * " +
+                     std::to_string(fraction) + ");";
+
+    webkit_web_view_evaluate_javascript(
+        WEBKIT_WEB_VIEW(webview_), js.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr
+    );
+
+    return *this;
+  }
+
+  // --- Async getter for scroll fraction ---
+  void getScrollFraction(std::function<void(double)> callback) const {
+    auto *cb_ptr = new std::function<void(double)>(std::move(callback));
+
     webkit_web_view_evaluate_javascript(
         WEBKIT_WEB_VIEW(webview_),
-        "document.scrollingElement.scrollTop / document.scrollingElement.scrollHeight",
+        "window.scrollY / document.body.scrollHeight",
         -1,
         nullptr,
         nullptr,
         nullptr,
-        WebView::onScrollFractionCaptured,
-        target
-    );
-  }
-
-  void restoreScrollOnLoad(double *target) {
-    if (scroll_restore_handler_id_ > 0) {
-      g_signal_handler_disconnect(webview_, scroll_restore_handler_id_);
-      scroll_restore_handler_id_ = 0;
-    }
-
-    scroll_restore_handler_id_ = g_signal_connect(
-        webview_,
-        "load-changed",
-        G_CALLBACK(+[](WebKitWebView *wv, WebKitLoadEvent event, gpointer user_data) {
-          if (event != WEBKIT_LOAD_FINISHED) {
-            return;
+        [](GObject *source, GAsyncResult *res, gpointer user_data) {
+          auto *cb = static_cast<std::function<void(double)> *>(user_data);
+          double fraction = 0.0;
+          GError *err = nullptr;
+          JSCValue *val =
+              webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(source), res, &err);
+          if (!err && jsc_value_is_number(val)) {
+            fraction = jsc_value_to_double(val);
           }
-          auto *ptr = static_cast<double *>(user_data);
-          double fraction = std::clamp(*ptr, 0.0, 1.0);
-          std::string js = "window.scrollTo(0, document.scrollingElement.scrollHeight * " +
-                           std::to_string(fraction) + ");";
-          webkit_web_view_evaluate_javascript(
-              wv, js.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr
-          );
-        }),
-        target
+          if (val) {
+            g_object_unref(val);
+          }
+          if (err) {
+            g_error_free(err);
+          }
+          (*cb)(fraction);
+          delete cb;
+        },
+        cb_ptr
     );
   }
 
-  static void onScrollFractionCaptured(GObject *source, GAsyncResult *res, gpointer user_data) {
-    auto *ptr = static_cast<double *>(user_data);
-    GError *err = nullptr;
-    JSCValue *val =
-        webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(source), res, &err);
-    if (!err && jsc_value_is_number(val)) {
-      *ptr = jsc_value_to_double(val);
-    }
-    if (val) {
-      g_object_unref(val);
-    }
-    if (err) {
-      g_error_free(err);
-    }
+  // --- Direct setter for scroll fraction ---
+  void setScrollFraction(double fraction) {
+    fraction = std::clamp(fraction, 0.0, 1.0);
+    std::string js =
+        "window.scrollTo(0, document.body.scrollHeight * " + std::to_string(fraction) + ");";
+    webkit_web_view_evaluate_javascript(
+        WEBKIT_WEB_VIEW(webview_), js.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr
+    );
   }
 
+  static std::string escapeForJsTemplateLiteral(std::string_view input) {
+    std::string out;
+    out.reserve(input.size());
+
+    for (size_t i = 0; i < input.size(); ++i) {
+      char c = input[i];
+
+      if (c == '`') {
+        out += "\\`";  // escape backtick
+      } else if (c == '\\') {
+        out += "\\\\";  // escape backslash
+      } else if (c == '$' && i + 1 < input.size() && input[i + 1] == '{') {
+        out += "\\${";  // prevent template interpolation
+        ++i;            // skip '{'
+      } else if (c == '\n') {
+        out += "\\n";  // escape newline
+      } else if (c == '\r') {
+        out += "\\r";  // escape carriage return
+      } else {
+        out += c;  // normal char
+      }
+    }
+
+    return out;
+  }
+
+ private:
   WebKitSettings *webview_settings_ = nullptr;
   GtkWidget *webview_ = nullptr;
   WebKitWebContext *webview_context_ = nullptr;
   WebKitUserContentManager *webview_content_manager_ = nullptr;
 
   mutable double internal_scroll_fraction_ = 0.0;
-  gulong scroll_restore_handler_id_ = 0;
 };

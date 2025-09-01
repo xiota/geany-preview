@@ -32,6 +32,8 @@ class PreviewPane final {
       gtk_widget_show_all(webview_widget);
       gtk_notebook_set_current_page(GTK_NOTEBOOK(sidebar_notebook_), sidebar_page_number_);
     }
+    webview_.loadHtml("");  // load html template
+    update();
     return *this;
   }
 
@@ -87,11 +89,15 @@ class PreviewPane final {
     auto *converter = registrar_.getConverter(document);
 
     if (converter) {
+      auto file = document.fileName();
       auto html = converter->toHtml(document.textView());
-      webview_.loadHtml(html);
+      webview_.getScrollFraction([this, file, html](double frac) {
+        scroll_by_file_[file] = frac;
+        webview_.updateHtml(html, &scroll_by_file_[file]);
+      });
     } else {
-      auto text = document.filetypeName() + ", " + document.encodingName();
-      webview_.loadPlainText(text);
+      auto text = "<tt>" + document.filetypeName() + ", " + document.encodingName() + "</tt>";
+      webview_.updateHtml(text);
     }
     return *this;
   }
@@ -107,4 +113,6 @@ class PreviewPane final {
 
   bool update_pending_ = false;
   gint64 last_update_time_ = 0;
+
+  std::unordered_map<std::string, double> scroll_by_file_;
 };
