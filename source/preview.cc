@@ -48,6 +48,7 @@ gboolean previewInit(
   auto preview_config_path = std::filesystem::path(plugin->geany_data->app->configdir) /
                              "plugins" / "preview" / "preview.conf";
   preview_config = new PreviewConfig(preview_config_path);
+  preview_config->load();
 
   preview_pane =
       new PreviewPane(plugin->geany_data->main_widgets->sidebar_notebook, preview_config);
@@ -73,6 +74,8 @@ void previewCleanup(
     preview_pane = nullptr;
   }
   if (preview_config) {
+    preview_config->save();
+
     delete preview_config;
     preview_config = nullptr;
   }
