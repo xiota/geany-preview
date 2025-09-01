@@ -18,9 +18,7 @@ gboolean onEditorNotify(
     return FALSE;
   }
 
-  GeanyDocument *geany_document = editor ? editor->document : document_get_current();
-
-  preview_pane->update(geany_document);
+  preview_pane->scheduleUpdate();
   return FALSE;
 }
 
@@ -29,7 +27,7 @@ void onDocumentActivate(
     GeanyDocument *geany_document,
     gpointer /*user_data*/
 ) {
-  preview_pane->update(geany_document);
+  preview_pane->scheduleUpdate();
 }
 
 gboolean previewInit(
@@ -37,7 +35,7 @@ gboolean previewInit(
     gpointer /*user_data*/
 ) {
   preview_pane = new PreviewPane(plugin->geany_data->main_widgets->sidebar_notebook);
-  preview_pane->update();
+  preview_pane->scheduleUpdate();
 
   plugin_signal_connect(
       plugin, nullptr, "editor-notify", FALSE, G_CALLBACK(onEditorNotify), nullptr

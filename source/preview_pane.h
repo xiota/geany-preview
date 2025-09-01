@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <algorithm>
+
 #include <geanyplugin.h>
 #include <gtk/gtk.h>
 
@@ -42,12 +44,40 @@ class PreviewPane final {
     return *this;
   }
 
-  PreviewPane &update(GeanyDocument* geany_document = nullptr) {
-    if (!geany_document) {
-      geany_document = document_get_current();
+  PreviewPane &scheduleUpdate() {
+    // If an update is already running OR a timer is already scheduled, do nothing.
+    if (update_pending_) {
+      return *this;
     }
 
-    Document document(geany_document);
+    update_pending_ = true;  // Reserve the slot now.
+
+    gint64 now = g_get_monotonic_time() / 1000;  // ms
+    gint64 delay_ms = std::max(update_min_delay_, update_cooldown_ms_ - (now - last_update_time_));
+
+    g_timeout_add(
+        delay_ms,
+        [](gpointer data) -> gboolean {
+          auto *self = static_cast<PreviewPane *>(data);
+          self->triggerUpdate();
+          return G_SOURCE_REMOVE;
+        },
+        this
+    );
+
+    return *this;
+  }
+
+ private:
+  void triggerUpdate() {
+    // update_pending_ is true from scheduling.
+    update();
+    last_update_time_ = g_get_monotonic_time() / 1000;
+    update_pending_ = false;  // Free slot for next schedule.
+  }
+
+  PreviewPane &update() {
+    Document document(document_get_current());
     auto *converter = registrar_.getConverter(document);
 
     if (converter) {
@@ -66,4 +96,9 @@ class PreviewPane final {
 
   WebView webview_;
   ConverterRegistrar registrar_;
+
+  bool update_pending_ = false;
+  gint64 last_update_time_ = 0;
+  gint64 update_cooldown_ms_ = 65;
+  gint64 update_min_delay_ = 15;
 };
