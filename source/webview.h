@@ -77,10 +77,17 @@ class WebView final {
 
     std::string escaped = escapeForJsTemplateLiteral(body_content);
 
-    std::string js = "document.body.innerHTML = `" + escaped +
-                     "`;"
-                     "window.scrollTo(0, document.body.scrollHeight * " +
-                     std::to_string(fraction) + ");";
+    std::string js =
+        "if (!document.body) {"
+        "  document.write('<!DOCTYPE html><html><head><meta "
+        "charset=\"UTF-8\"></head><body></body></html>');"
+        "  document.close();"
+        "}"
+        "document.body.innerHTML = `" +
+        escaped +
+        "`;"
+        "window.scrollTo(0, document.body.scrollHeight * " +
+        std::to_string(fraction) + ");";
 
     webkit_web_view_evaluate_javascript(
         WEBKIT_WEB_VIEW(webview_), js.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr
