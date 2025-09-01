@@ -52,7 +52,6 @@ gboolean previewInit(
 
   preview_pane =
       new PreviewPane(plugin->geany_data->main_widgets->sidebar_notebook, preview_config);
-  preview_pane->scheduleUpdate();
 
   plugin_signal_connect(
       plugin, nullptr, "editor-notify", FALSE, G_CALLBACK(onEditorNotify), nullptr

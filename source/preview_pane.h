@@ -33,7 +33,17 @@ class PreviewPane final {
       gtk_notebook_set_current_page(GTK_NOTEBOOK(sidebar_notebook_), sidebar_page_number_);
     }
     webview_.loadHtml("");  // load html template
-    update();
+    g_signal_connect(
+        webview_.widget(),
+        "load-changed",
+        G_CALLBACK(+[](WebKitWebView *wv, WebKitLoadEvent e, gpointer user_data) {
+          if (e == WEBKIT_LOAD_FINISHED) {
+            auto *self = static_cast<PreviewPane *>(user_data);
+            self->scheduleUpdate();  // now safe to inject
+          }
+        }),
+        this
+    );
     return *this;
   }
 
