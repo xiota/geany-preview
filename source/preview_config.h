@@ -24,9 +24,26 @@ class PreviewConfig {
       {"update_cooldown",
        setting_value_t{65},
        "Time in milliseconds to wait between preview updates to prevent excessive refreshing."},
+
       {"update_min_delay",
        setting_value_t{15},
        "Time in milliseconds to wait before the first preview update after a change."         },
+
+      {"enable_auto_refresh",
+       setting_value_t{true},
+       "Whether the preview should update automatically when the document changes."           },
+
+      {"show_preview_on_startup",
+       setting_value_t{false},
+       "Show the preview pane automatically when the application starts."                     },
+
+      {"preview_theme",
+       setting_value_t{std::string{"system"}},
+       "Theme to use for the preview: 'light', 'dark', or 'system'."                          },
+
+      {"custom_css_path",
+       setting_value_t{std::string{""}},
+       "Optional path to a custom CSS file for styling the preview output."                   }
   };
 
   std::unordered_map<std::string, setting_value_t> settings_;

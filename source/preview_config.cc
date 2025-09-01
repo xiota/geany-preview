@@ -18,56 +18,64 @@ struct edit_ctx_t {
   GtkTreeView *tree_view;
 };
 
+// used by buildConfigWidget, onValueEdited, onBoolToggled
+enum {
+  COL_KEY,          // string
+  COL_TYPE,         // string
+  COL_VALUE_STR,    // string (for int/string types)
+  COL_VALUE_BOOL,   // bool (for bool types)
+  COL_HELP,         // string (tooltip)
+  COL_SHOW_TOGGLE,  // bool: show checkbox?
+  COL_SHOW_TEXT,    // bool: show text cell?
+  NUM_COLS
+};
+
 static void
 onValueEdited(GtkCellRendererText *, gchar *path_str, gchar *new_text, gpointer user_data) {
   auto *ctx = static_cast<edit_ctx_t *>(user_data);
-  PreviewConfig *self = ctx->self;
   GtkTreeModel *model = gtk_tree_view_get_model(ctx->tree_view);
 
-  enum { COL_KEY, COL_TYPE, COL_VALUE };
   GtkTreeIter iter;
   if (!gtk_tree_model_get_iter_from_string(model, &iter, path_str)) {
     return;
   }
 
-  gchar *key_c = nullptr, *type_c = nullptr;
+  gchar *key_c;
+  gchar *type_c;
   gtk_tree_model_get(model, &iter, COL_KEY, &key_c, COL_TYPE, &type_c, -1);
-  std::string key = key_c ? key_c : "";
-  std::string type = type_c ? type_c : "";
+
+  std::string key = key_c;
+  std::string type = type_c;
   g_free(key_c);
   g_free(type_c);
 
-  gtk_list_store_set(GTK_LIST_STORE(model), &iter, COL_VALUE, new_text, -1);
-
   if (type == "int") {
     try {
-      self->set<int>(key, std::stoi(new_text));
+      ctx->self->set<int>(key, std::stoi(new_text));
+      gtk_list_store_set(GTK_LIST_STORE(model), &iter, COL_VALUE_STR, new_text, -1);
     } catch (...) {
+      g_warning("Invalid integer: %s", new_text);
     }
-  } else if (type == "bool") {
-    std::string lower = new_text;
-    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+  } else if (type == "string") {
+    ctx->self->set<std::string>(key, new_text);
+    gtk_list_store_set(GTK_LIST_STORE(model), &iter, COL_VALUE_STR, new_text, -1);
+  }
+}
 
-    static const std::unordered_set<std::string> true_values = {
-        "true", "t", "yes", "y", "on", "1"
-    };
-    static const std::unordered_set<std::string> false_values = {
-        "false", "f", "no", "n", "off", "0"
-    };
+static void onBoolToggled(GtkCellRendererToggle *, gchar *path_str, gpointer user_data) {
+  auto *ctx = static_cast<edit_ctx_t *>(user_data);
+  GtkTreeModel *model = gtk_tree_view_get_model(ctx->tree_view);
 
-    bool parsed_value = false;
-    if (true_values.count(lower)) {
-      parsed_value = true;
-    } else if (false_values.count(lower)) {
-      parsed_value = false;
-    } else {
-      // revert UI cell to previous value or show an error
-      return;
-    }
+  GtkTreeIter iter;
+  if (gtk_tree_model_get_iter_from_string(model, &iter, path_str)) {
+    gboolean active;
+    gchar *key_c;
+    gtk_tree_model_get(model, &iter, COL_VALUE_BOOL, &active, COL_KEY, &key_c, -1);
 
-    self->set<bool>(key, parsed_value);
-  } else {
-    self->set<std::string>(key, new_text);
+    ctx->self->set<bool>(key_c, !active);
+    gtk_list_store_set(GTK_LIST_STORE(model), &iter, COL_VALUE_BOOL, !active, -1);
+
+    g_free(key_c);
   }
 }
 }  // namespace
@@ -150,38 +158,46 @@ void PreviewConfig::onDialogResponse(GtkDialog *dialog, gint response_id) {
 }
 
 GtkWidget *PreviewConfig::buildConfigWidget(GtkDialog *dialog) {
-  enum { COL_KEY, COL_TYPE, COL_VALUE, COL_HELP, NUM_COLS };
-  GtkListStore *store =
-      gtk_list_store_new(NUM_COLS, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
+  GtkListStore *store = gtk_list_store_new(
+      NUM_COLS,
+      G_TYPE_STRING,   // key
+      G_TYPE_STRING,   // type
+      G_TYPE_STRING,   // value as string (for int/string)
+      G_TYPE_BOOLEAN,  // value as bool (for bool type)
+      G_TYPE_STRING,   // help text (tooltip)
+      G_TYPE_BOOLEAN,  // show toggle?
+      G_TYPE_BOOLEAN   // show text?
+  );
 
-  // Iterate over setting_defs_ to preserve defined order
+  // Populate from setting_defs_ to preserve order
   for (const auto &def : setting_defs_) {
-    const std::string key = def.key;
-
-    // Look up current value in settings_
-    auto it = settings_.find(key);
+    auto it = settings_.find(def.key);
     if (it == settings_.end()) {
-      continue;  // shouldn't happen if constructor populated settings_
+      continue;
     }
 
     const auto &val = it->second;
-    std::string type, value;
+    std::string type, value_str;
+    gboolean value_bool = FALSE;
+
     std::visit(
         [&](auto &&v) {
           using T = std::decay_t<decltype(v)>;
           if constexpr (std::is_same_v<T, int>) {
             type = "int";
-            value = std::to_string(v);
+            value_str = std::to_string(v);
           } else if constexpr (std::is_same_v<T, bool>) {
             type = "bool";
-            value = v ? "true" : "false";
+            value_bool = v;
           } else {
             type = "string";
-            value = v;
+            value_str = v;
           }
         },
         val
     );
+
+    bool is_bool = (type == "bool");
 
     GtkTreeIter iter;
     gtk_list_store_append(store, &iter);
@@ -189,13 +205,19 @@ GtkWidget *PreviewConfig::buildConfigWidget(GtkDialog *dialog) {
         store,
         &iter,
         COL_KEY,
-        key.c_str(),
+        def.key,
         COL_TYPE,
         type.c_str(),
-        COL_VALUE,
-        value.c_str(),
+        COL_VALUE_STR,
+        value_str.c_str(),
+        COL_VALUE_BOOL,
+        value_bool,
         COL_HELP,
-        def.help,  // tooltip text from table
+        def.help,
+        COL_SHOW_TOGGLE,
+        is_bool,
+        COL_SHOW_TEXT,
+        !is_bool,
         -1
     );
   }
@@ -204,37 +226,64 @@ GtkWidget *PreviewConfig::buildConfigWidget(GtkDialog *dialog) {
   GtkTreeView *tree_view = GTK_TREE_VIEW(tree_view_widget);
   g_object_unref(store);
 
-  // Enable tooltips from the hidden help column
+  // Tooltips from hidden help column
   gtk_tree_view_set_tooltip_column(tree_view, COL_HELP);
 
   auto *ctx = g_new(edit_ctx_t, 1);
   ctx->self = this;
   ctx->tree_view = tree_view;
 
-  auto add_col = [&](const char *title, int col, bool editable, bool expand) {
+  // Column: Key (read-only text)
+  {
     GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
-    if (editable) {
-      g_object_set(renderer, "editable", TRUE, NULL);
-      g_signal_connect_data(
-          renderer,
-          "edited",
-          G_CALLBACK(onValueEdited),
-          ctx,
-          (GClosureNotify)g_free,
-          (GConnectFlags)0
-      );
-      ctx = nullptr;
-    }
     GtkTreeViewColumn *column =
-        gtk_tree_view_column_new_with_attributes(title, renderer, "text", col, NULL);
-    gtk_tree_view_column_set_expand(column, expand);
+        gtk_tree_view_column_new_with_attributes("Key", renderer, "text", COL_KEY, NULL);
+    gtk_tree_view_column_set_expand(column, TRUE);
     gtk_tree_view_column_set_resizable(column, TRUE);
     gtk_tree_view_append_column(tree_view, column);
-  };
+  }
 
-  add_col("Key", COL_KEY, false, true);
-  add_col("Value", COL_VALUE, true, true);
-  add_col("Type", COL_TYPE, false, false);
+  // Column: Value (toggle for bool, text for others)
+  {
+    GtkTreeViewColumn *value_column = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(value_column, "Value");
+
+    // Toggle renderer for bools
+    GtkCellRenderer *toggle_renderer = gtk_cell_renderer_toggle_new();
+    g_signal_connect(toggle_renderer, "toggled", G_CALLBACK(onBoolToggled), ctx);
+    gtk_tree_view_column_pack_start(value_column, toggle_renderer, FALSE);
+    gtk_tree_view_column_add_attribute(value_column, toggle_renderer, "active", COL_VALUE_BOOL);
+    gtk_tree_view_column_add_attribute(
+        value_column, toggle_renderer, "visible", COL_SHOW_TOGGLE
+    );
+
+    // Text renderer for int/string
+    GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new();
+    g_object_set(text_renderer, "editable", TRUE, NULL);
+    g_signal_connect_data(
+        text_renderer,
+        "edited",
+        G_CALLBACK(onValueEdited),
+        ctx,
+        (GClosureNotify)g_free,
+        (GConnectFlags)0
+    );
+    ctx = nullptr;  // ownership passed to signal
+    gtk_tree_view_column_pack_start(value_column, text_renderer, TRUE);
+    gtk_tree_view_column_add_attribute(value_column, text_renderer, "text", COL_VALUE_STR);
+    gtk_tree_view_column_add_attribute(value_column, text_renderer, "visible", COL_SHOW_TEXT);
+
+    gtk_tree_view_append_column(tree_view, value_column);
+  }
+
+  // Column: Type (read-only text)
+  {
+    GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+    GtkTreeViewColumn *column =
+        gtk_tree_view_column_new_with_attributes("Type", renderer, "text", COL_TYPE, NULL);
+    gtk_tree_view_column_set_resizable(column, TRUE);
+    gtk_tree_view_append_column(tree_view, column);
+  }
 
   GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
   gtk_container_add(GTK_CONTAINER(scrolled_window), GTK_WIDGET(tree_view));
