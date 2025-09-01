@@ -11,6 +11,7 @@ plugin_name  = project_name.startswith('geany-') ? project_name.substring(6) : p
 
 geany_dep = dependency('geany')
 cmark_dep = dependency('libcmark-gfm')
+tomlpp_dep = dependency('tomlplusplus')
 webkit_dep = dependency('webkit2gtk-4.1')
 
 pdf_export = get_option('pdf_export')
@@ -26,13 +27,14 @@ src_files = files(
   'source/converter_subprocess.cc',
   'source/document.cc',
   'source/preview.cc',
+  'source/preview_config.cc',
   'source/subprocess.cc',
 )
 
 shared_module(
   plugin_name,
   src_files,
-  dependencies: [geany_dep, cmark_dep, podofo_dep, webkit_dep],
+  dependencies: [geany_dep, cmark_dep, podofo_dep, tomlpp_dep, webkit_dep],
   name_prefix: '',
   install: true,
   install_dir: join_paths(geany_dep.get_variable(pkgconfig: 'libdir'), 'geany'),

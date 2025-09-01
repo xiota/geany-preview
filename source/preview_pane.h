@@ -9,11 +9,13 @@
 #include <gtk/gtk.h>
 
 #include "converter_registrar.h"
+#include "preview_config.h"
 #include "webview.h"
 
 class PreviewPane final {
  public:
-  PreviewPane(GtkWidget *notebook) : sidebar_notebook_(notebook) {
+  PreviewPane(GtkWidget *notebook, PreviewConfig *config)
+      : sidebar_notebook_(notebook), preview_config_(config) {
     attach();
   }
 
@@ -53,7 +55,11 @@ class PreviewPane final {
     update_pending_ = true;  // Reserve the slot now.
 
     gint64 now = g_get_monotonic_time() / 1000;  // ms
-    gint64 delay_ms = std::max(update_min_delay_, update_cooldown_ms_ - (now - last_update_time_));
+    gint64 update_cooldown_ms_ = preview_config_->get<int>("update_cooldown");
+    gint64 update_min_delay_ = preview_config_->get<int>("update_min_delay");
+
+    gint64 delay_ms =
+        std::max(update_min_delay_, update_cooldown_ms_ - (now - last_update_time_));
 
     g_timeout_add(
         delay_ms,
@@ -94,11 +100,11 @@ class PreviewPane final {
   GtkWidget *sidebar_notebook_;
   int sidebar_page_number_ = 0;
 
+  PreviewConfig *preview_config_;
+
   WebView webview_;
   ConverterRegistrar registrar_;
 
   bool update_pending_ = false;
   gint64 last_update_time_ = 0;
-  gint64 update_cooldown_ms_ = 65;
-  gint64 update_min_delay_ = 15;
 };

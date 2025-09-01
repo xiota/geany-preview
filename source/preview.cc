@@ -1,12 +1,15 @@
 // SPDX-FileCopyrightText: Copyright 2025 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include <filesystem>
+
 #include <geanyplugin.h>
 
 #include "preview_pane.h"
 
 namespace {
 PreviewPane *preview_pane;
+PreviewConfig *preview_config;
 
 gboolean onEditorNotify(
     GObject * /*object*/,
@@ -30,11 +33,24 @@ void onDocumentActivate(
   preview_pane->scheduleUpdate();
 }
 
+GtkWidget *previewConfigure(
+    GeanyPlugin * /*plugin*/,
+    GtkDialog *dialog,
+    gpointer /*user_data*/
+) {
+  return preview_config->buildConfigWidget(dialog);
+}
+
 gboolean previewInit(
     GeanyPlugin *plugin,
     gpointer /*user_data*/
 ) {
-  preview_pane = new PreviewPane(plugin->geany_data->main_widgets->sidebar_notebook);
+  auto preview_config_path = std::filesystem::path(plugin->geany_data->app->configdir) /
+                             "plugins" / "preview" / "preview.conf";
+  preview_config = new PreviewConfig(preview_config_path);
+
+  preview_pane =
+      new PreviewPane(plugin->geany_data->main_widgets->sidebar_notebook, preview_config);
   preview_pane->scheduleUpdate();
 
   plugin_signal_connect(
@@ -56,6 +72,10 @@ void previewCleanup(
     delete preview_pane;
     preview_pane = nullptr;
   }
+  if (preview_config) {
+    delete preview_config;
+    preview_config = nullptr;
+  }
 }
 }  // namespace
 
@@ -68,7 +88,7 @@ extern "C" G_MODULE_EXPORT void geany_load_module(GeanyPlugin *plugin) {
 
   plugin->funcs->init = previewInit;
   plugin->funcs->cleanup = previewCleanup;
-  plugin->funcs->configure = nullptr;
+  plugin->funcs->configure = previewConfigure;
   plugin->funcs->callbacks = nullptr;
   plugin->funcs->help = nullptr;
 
