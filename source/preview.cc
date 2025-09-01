@@ -2,14 +2,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <filesystem>
+#include <memory>
 
 #include <geanyplugin.h>
 
 #include "preview_pane.h"
+#include "preview_shortcuts.h"
 
 namespace {
-PreviewPane *preview_pane;
-PreviewConfig *preview_config;
+std::unique_ptr<PreviewPane> preview_pane;
+std::unique_ptr<PreviewConfig> preview_config;
+std::unique_ptr<PreviewShortcuts> preview_shortcuts;
 
 gboolean onEditorNotify(
     GObject * /*object*/,
@@ -47,11 +50,12 @@ gboolean previewInit(
 ) {
   auto preview_config_path = std::filesystem::path(plugin->geany_data->app->configdir) /
                              "plugins" / "preview" / "preview.conf";
-  preview_config = new PreviewConfig(preview_config_path);
+  preview_config = std::make_unique<PreviewConfig>(preview_config_path);
   preview_config->load();
 
-  preview_pane =
-      new PreviewPane(plugin->geany_data->main_widgets->sidebar_notebook, preview_config);
+  preview_pane = std::make_unique<PreviewPane>(
+      plugin->geany_data->main_widgets->sidebar_notebook, preview_config.get()
+  );
 
   plugin_signal_connect(
       plugin, nullptr, "editor-notify", FALSE, G_CALLBACK(onEditorNotify), nullptr
@@ -61,6 +65,11 @@ gboolean previewInit(
       plugin, nullptr, "document-activate", FALSE, G_CALLBACK(onDocumentActivate), nullptr
   );
 
+  // shortcuts
+  GeanyKeyGroup *group = plugin_set_key_group(plugin, "Preview", 1, nullptr);
+  preview_shortcuts = std::make_unique<PreviewShortcuts>(group);
+  preview_shortcuts->registerAll();
+
   return TRUE;
 }
 
@@ -68,16 +77,12 @@ void previewCleanup(
     GeanyPlugin *plugin,
     gpointer /*user_data*/
 ) {
-  if (preview_pane) {
-    delete preview_pane;
-    preview_pane = nullptr;
-  }
   if (preview_config) {
     preview_config->save();
-
-    delete preview_config;
-    preview_config = nullptr;
   }
+  preview_pane.reset();
+  preview_config.reset();
+  preview_shortcuts.reset();
 }
 }  // namespace
 
