@@ -21,6 +21,10 @@ class PreviewConfig {
   };
 
   inline static const setting_def_t setting_defs_[] = {
+      {"allow_update_fallback",
+       setting_value_t{false},
+       "Whether to use fallback rendering mode if DOM patch mode fails."                      },
+
       {"update_cooldown",
        setting_value_t{65},
        "Time in milliseconds to wait between preview updates to prevent excessive refreshing."},
@@ -28,14 +32,6 @@ class PreviewConfig {
       {"update_min_delay",
        setting_value_t{15},
        "Time in milliseconds to wait before the first preview update after a change."         },
-
-      {"enable_auto_refresh",
-       setting_value_t{true},
-       "Whether the preview should update automatically when the document changes."           },
-
-      {"show_preview_on_startup",
-       setting_value_t{false},
-       "Show the preview pane automatically when the application starts."                     },
 
       {"preview_theme",
        setting_value_t{std::string{"system"}},
