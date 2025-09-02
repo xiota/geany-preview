@@ -37,7 +37,7 @@ void onDocumentActivate(
     GeanyDocument *geany_document,
     gpointer /*user_data*/
 ) {
-  preview_pane->triggerUpdate();
+  preview_pane->scheduleUpdate();
 }
 
 GtkWidget *previewConfigure(
