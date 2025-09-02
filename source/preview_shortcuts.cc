@@ -18,12 +18,13 @@ PreviewContext *preview_context = nullptr;
 }  // namespace
 
 void PreviewShortcuts::onFocusPreview(guint /*key_id*/) {
-  if (!preview_context) {
+  if (!preview_context || !preview_context->preview_pane_) {
     return;
   }
-  if (auto *widget =
-          preview_context->preview_pane_ ? preview_context->preview_pane_->widget() : nullptr) {
-    GtkUtils::activateNotebookPageForWidget(widget);
+
+  GtkWidget *preview = preview_context->preview_pane_->widget();
+  if (preview) {
+    GtkUtils::activateNotebookPageForWidget(preview);
   }
 }
 
@@ -45,19 +46,16 @@ void PreviewShortcuts::onFocusPreviewEditor(guint /*key_id*/) {
     return;
   }
 
-  if (in_editor) {
-    if (preview) {
-      GtkUtils::activateNotebookPageForWidget(preview);
-    }
+  if (in_editor && preview) {
+    GtkUtils::activateNotebookPageForWidget(preview);
     return;
   }
 
-  // in_preview
   keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
 }
 
 void PreviewShortcuts::onFocusSidebarEditor(guint /*key_id*/) {
-  if (!preview_context || !preview_context->geany_plugin_) {
+  if (!preview_context || !preview_context->geany_sidebar_) {
     keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
     return;
   }
@@ -65,28 +63,20 @@ void PreviewShortcuts::onFocusSidebarEditor(guint /*key_id*/) {
   GeanyDocument *doc = document_get_current();
   GtkWidget *sci = (doc && doc->editor) ? GTK_WIDGET(doc->editor->sci) : nullptr;
 
-  GtkWidget *sidebar = nullptr;
-  if (preview_context->geany_plugin_->geany_data &&
-      preview_context->geany_plugin_->geany_data->main_widgets) {
-    sidebar = preview_context->geany_plugin_->geany_data->main_widgets->sidebar_notebook;
-  }
-
   const bool in_editor = sci && gtk_widget_has_focus(sci);
-  const bool in_sidebar = sidebar && gtk_widget_has_focus(sidebar);
+  const bool in_sidebar =
+      preview_context->geany_sidebar_ && gtk_widget_has_focus(preview_context->geany_sidebar_);
 
   if (!in_editor && !in_sidebar) {
     keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
     return;
   }
 
-  if (in_editor) {
-    if (sidebar) {
-      GtkUtils::activateNotebookPageForWidget(sidebar);
-    }
+  if (in_editor && preview_context->geany_sidebar_) {
+    GtkUtils::activateNotebookPageForWidget(preview_context->geany_sidebar_);
     return;
   }
 
-  // in_sidebar
   keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
 }
 
@@ -96,7 +86,7 @@ void PreviewShortcuts::registerAll() {
 
   for (gsize i = 0; i < std::size(shortcut_defs_); ++i) {
     keybindings_set_item(
-        group_,
+        key_group_,
         i,
         shortcut_defs_[i].callback,
         0,  // no default key

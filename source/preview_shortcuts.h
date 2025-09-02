@@ -11,8 +11,8 @@
 
 class PreviewShortcuts {
  public:
-  explicit PreviewShortcuts(GeanyKeyGroup *group, PreviewContext *context)
-      : group_(group), context_(context) {}
+  explicit PreviewShortcuts(PreviewContext *context)
+      : context_(context), key_group_(context_->geany_key_group_) {}
 
   void registerAll();
 
@@ -21,8 +21,8 @@ class PreviewShortcuts {
   }
 
  private:
-  GeanyKeyGroup *group_;
   PreviewContext *context_;
+  GeanyKeyGroup *key_group_;
 
   static void onFocusPreview(guint key_id);
   static void onFocusPreviewEditor(guint key_id);
@@ -35,11 +35,11 @@ class PreviewShortcuts {
   };
 
   inline static const ShortcutDef shortcut_defs_[] = {
-      {"Focus Preview",           "Focus on preview", onFocusPreview      },
+      {"Focus Preview",           "Focus on Preview", onFocusPreview      },
 
       {"Focus Preview or Editor",
-       "Toggle focus between preview and editor",     onFocusPreviewEditor},
+       "Toggle focus between Preview and Editor",     onFocusPreviewEditor},
       {"Focus Sidebar or Editor",
-       "Toggle focus between sidebar and editor",     onFocusSidebarEditor}
+       "Toggle focus between Sidebar and Editor",     onFocusSidebarEditor}
   };
 };

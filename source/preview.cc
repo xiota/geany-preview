@@ -52,19 +52,21 @@ gboolean previewInit(
     GeanyPlugin *plugin,
     gpointer /*user_data*/
 ) {
+  // config
   auto preview_config_path = std::filesystem::path(plugin->geany_data->app->configdir) /
                              "plugins" / "preview" / "preview.conf";
   preview_config = std::make_unique<PreviewConfig>(preview_config_path);
   preview_config->load();
 
-  preview_pane = std::make_unique<PreviewPane>(
-      plugin->geany_data->main_widgets->sidebar_notebook, preview_config.get()
-  );
-
   // context
   preview_context.geany_plugin_ = plugin;
-  preview_context.preview_pane_ = preview_pane.get();
+  preview_context.geany_data_ = plugin->geany_data;
+  preview_context.geany_sidebar_ = plugin->geany_data->main_widgets->sidebar_notebook;
   preview_context.preview_config_ = preview_config.get();
+
+  // preview pane
+  preview_pane = std::make_unique<PreviewPane>(&preview_context);
+  preview_context.preview_pane_ = preview_pane.get();
 
   // signals
   plugin_signal_connect(
@@ -76,9 +78,9 @@ gboolean previewInit(
   );
 
   // shortcuts
-  GeanyKeyGroup *geany_key_group =
+  preview_context.geany_key_group_ =
       plugin_set_key_group(plugin, "Preview", PreviewShortcuts::shortcutCount(), nullptr);
-  preview_shortcuts = std::make_unique<PreviewShortcuts>(geany_key_group, &preview_context);
+  preview_shortcuts = std::make_unique<PreviewShortcuts>(&preview_context);
   preview_shortcuts->registerAll();
 
   return TRUE;

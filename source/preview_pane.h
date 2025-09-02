@@ -9,12 +9,16 @@
 
 #include "converter_registrar.h"
 #include "preview_config.h"
+#include "preview_context.h"
 #include "webview.h"
 
 class PreviewPane final {
  public:
-  PreviewPane(GtkWidget *notebook, PreviewConfig *config)
-      : sidebar_notebook_(notebook), preview_config_(config) {
+  explicit PreviewPane(PreviewContext *context)
+      : context_(context),
+        sidebar_notebook_(context_->geany_sidebar_),
+        preview_config_(context_->preview_config_) {
+    context_->webview_ = &webview_;
     attach();
   }
 
@@ -23,7 +27,7 @@ class PreviewPane final {
   }
 
   PreviewPane &attach() {
-    auto *webview_widget = webview_.widget();
+    GtkWidget *webview_widget = webview_.widget();
     if (webview_widget && GTK_IS_NOTEBOOK(sidebar_notebook_)) {
       sidebar_page_number_ = gtk_notebook_append_page(
           GTK_NOTEBOOK(sidebar_notebook_), webview_widget, gtk_label_new("Preview")
@@ -47,7 +51,8 @@ class PreviewPane final {
   }
 
   PreviewPane &detach() {
-    auto *webview_widget = webview_.widget();
+    GtkWidget *webview_widget = webview_.widget();
+
     if (webview_widget && GTK_IS_NOTEBOOK(sidebar_notebook_)) {
       int idx = gtk_notebook_page_num(GTK_NOTEBOOK(sidebar_notebook_), webview_widget);
       if (idx >= 0) {
@@ -116,6 +121,7 @@ class PreviewPane final {
   }
 
  private:
+  PreviewContext *context_;
   GtkWidget *sidebar_notebook_;
   int sidebar_page_number_ = 0;
 
