@@ -99,4 +99,19 @@ GtkWidget *activateNotebookPageForWidget(GtkWidget *widget) {
   return target;
 }
 
+bool isWidgetOnVisibleNotebookPage(GtkNotebook *notebook, GtkWidget *widget) {
+  if (!GTK_IS_NOTEBOOK(notebook) || !GTK_IS_WIDGET(widget)) {
+    return false;
+  }
+
+  // Find the page number for this widget
+  int page_num = gtk_notebook_page_num(notebook, widget);
+  if (page_num < 0) {
+    return false;  // widget not found in this notebook
+  }
+
+  // Compare with the currently visible page
+  return gtk_notebook_get_current_page(notebook) == page_num;
+}
+
 }  // namespace GtkUtils
