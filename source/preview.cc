@@ -6,6 +6,8 @@
 
 #include <geanyplugin.h>
 
+#include "preview_config.h"
+#include "preview_context.h"
 #include "preview_pane.h"
 #include "preview_shortcuts.h"
 
@@ -13,6 +15,8 @@ namespace {
 std::unique_ptr<PreviewPane> preview_pane;
 std::unique_ptr<PreviewConfig> preview_config;
 std::unique_ptr<PreviewShortcuts> preview_shortcuts;
+
+PreviewContext preview_context;
 
 gboolean onEditorNotify(
     GObject * /*object*/,
@@ -57,6 +61,11 @@ gboolean previewInit(
       plugin->geany_data->main_widgets->sidebar_notebook, preview_config.get()
   );
 
+  // context
+  preview_context.preview_pane_ = preview_pane.get();
+  preview_context.preview_config_ = preview_config.get();
+
+  // signals
   plugin_signal_connect(
       plugin, nullptr, "editor-notify", FALSE, G_CALLBACK(onEditorNotify), nullptr
   );
@@ -66,8 +75,9 @@ gboolean previewInit(
   );
 
   // shortcuts
-  GeanyKeyGroup *group = plugin_set_key_group(plugin, "Preview", 1, nullptr);
-  preview_shortcuts = std::make_unique<PreviewShortcuts>(group);
+  GeanyKeyGroup *geany_key_group =
+      plugin_set_key_group(plugin, "Preview", PreviewShortcuts::shortcutCount(), nullptr);
+  preview_shortcuts = std::make_unique<PreviewShortcuts>(geany_key_group, &preview_context);
   preview_shortcuts->registerAll();
 
   return TRUE;

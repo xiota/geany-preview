@@ -5,7 +5,6 @@
 
 #include <algorithm>
 
-#include <geanyplugin.h>
 #include <gtk/gtk.h>
 
 #include "converter_registrar.h"
@@ -56,6 +55,10 @@ class PreviewPane final {
       }
     }
     return *this;
+  }
+
+  GtkWidget *widget() const {
+    return webview_.widget();
   }
 
   PreviewPane &scheduleUpdate() {
