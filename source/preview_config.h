@@ -33,6 +33,11 @@ class PreviewConfig {
        setting_value_t{15},
        "Time in milliseconds to wait before the first preview update after a change."         },
 
+      {"terminal_command",
+       setting_value_t{std::string{"xdg-terminal-exec --working-directory=%d"}},
+       "Command to launch a terminal. Supports XDG field codes: "
+       "%d = directory of current document."                                                  },
+
       {"preview_theme",
        setting_value_t{std::string{"system"}},
        "Theme to use for the preview: 'light', 'dark', or 'system'."                          },

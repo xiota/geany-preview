@@ -24,9 +24,10 @@ class PreviewShortcuts {
   PreviewContext *context_;
   GeanyKeyGroup *key_group_;
 
-  static void onFocusPreview(guint key_id);
-  static void onFocusPreviewEditor(guint key_id);
-  static void onFocusSidebarEditor(guint key_id);
+  static void onFocusPreview(guint /*key_id*/);
+  static void onFocusPreviewEditor(guint /*key_id*/);
+  static void onFocusSidebarEditor(guint /*key_id*/);
+  static void onOpenTerminal(guint /*key_id*/);
 
   struct ShortcutDef {
     const char *label;
@@ -35,11 +36,12 @@ class PreviewShortcuts {
   };
 
   inline static const ShortcutDef shortcut_defs_[] = {
-      {"Focus Preview",           "Focus on Preview", onFocusPreview      },
+      {"Focus Preview",           "Focus on Preview",               onFocusPreview      },
 
       {"Focus Preview or Editor",
-       "Toggle focus between Preview and Editor",     onFocusPreviewEditor},
+       "Toggle focus between Preview and Editor",                   onFocusPreviewEditor},
       {"Focus Sidebar or Editor",
-       "Toggle focus between Sidebar and Editor",     onFocusSidebarEditor}
+       "Toggle focus between Sidebar and Editor",                   onFocusSidebarEditor},
+      {"Open Terminal",           "Open Terminal at document path", onOpenTerminal      }
   };
 };

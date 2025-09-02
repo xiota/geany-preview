@@ -77,6 +77,10 @@ gboolean previewInit(
       plugin, nullptr, "document-activate", FALSE, G_CALLBACK(onDocumentActivate), nullptr
   );
 
+  plugin_signal_connect(
+      plugin, nullptr, "document-save", FALSE, G_CALLBACK(onDocumentActivate), nullptr
+  );
+
   // shortcuts
   preview_context.geany_key_group_ =
       plugin_set_key_group(plugin, "Preview", PreviewShortcuts::shortcutCount(), nullptr);
