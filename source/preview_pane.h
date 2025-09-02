@@ -10,6 +10,7 @@
 #include "converter_registrar.h"
 #include "preview_config.h"
 #include "preview_context.h"
+#include "util/gtk_helpers.h"
 #include "webview.h"
 
 class PreviewPane final {
@@ -36,6 +37,7 @@ class PreviewPane final {
       gtk_notebook_set_current_page(GTK_NOTEBOOK(sidebar_notebook_), sidebar_page_number_);
     }
     webview_.loadHtml("");  // load html template
+
     g_signal_connect(
         webview_.widget(),
         "load-changed",
@@ -47,6 +49,19 @@ class PreviewPane final {
         }),
         this
     );
+
+    sidebar_switch_page_handler_id_ = g_signal_connect(
+        sidebar_notebook_,
+        "switch-page",
+        G_CALLBACK(
+            +[](GtkNotebook *notebook, GtkWidget *page, guint page_num, gpointer user_data) {
+              auto *self = static_cast<PreviewPane *>(user_data);
+              self->triggerUpdate();
+            }
+        ),
+        this
+    );
+
     return *this;
   }
 
@@ -59,6 +74,12 @@ class PreviewPane final {
         gtk_notebook_remove_page(GTK_NOTEBOOK(sidebar_notebook_), idx);
       }
     }
+
+    if (sidebar_switch_page_handler_id_) {
+      g_signal_handler_disconnect(sidebar_notebook_, sidebar_switch_page_handler_id_);
+      sidebar_switch_page_handler_id_ = 0;
+    }
+
     return *this;
   }
 
@@ -67,7 +88,12 @@ class PreviewPane final {
   }
 
   PreviewPane &scheduleUpdate() {
-    // If an update is already running OR a timer is already scheduled, do nothing.
+    // Skip if preview tab is not visible
+    if (!GtkUtils::isWidgetOnVisibleNotebookPage(GTK_NOTEBOOK(sidebar_notebook_), widget())) {
+      return *this;
+    }
+
+    // Skip if update already running or scheuled
     if (update_pending_) {
       return *this;
     }
@@ -94,7 +120,6 @@ class PreviewPane final {
     return *this;
   }
 
- private:
   void triggerUpdate() {
     // update_pending_ is true from scheduling.
     update();
@@ -102,6 +127,7 @@ class PreviewPane final {
     update_pending_ = false;  // Free slot for next schedule.
   }
 
+ private:
   PreviewPane &update() {
     Document document(document_get_current());
     auto *converter = registrar_.getConverter(document);
@@ -124,6 +150,7 @@ class PreviewPane final {
   PreviewContext *context_;
   GtkWidget *sidebar_notebook_;
   int sidebar_page_number_ = 0;
+  gulong sidebar_switch_page_handler_id_ = 0;
 
   PreviewConfig *preview_config_;
 
