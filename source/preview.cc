@@ -62,6 +62,7 @@ gboolean previewInit(
   );
 
   // context
+  preview_context.geany_plugin_ = plugin;
   preview_context.preview_pane_ = preview_pane.get();
   preview_context.preview_config_ = preview_config.get();
 

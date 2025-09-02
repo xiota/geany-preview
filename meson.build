@@ -30,6 +30,7 @@ src_files = files(
   'source/preview_config.cc',
   'source/preview_shortcuts.cc',
   'source/subprocess.cc',
+  'source/util/gtk_helpers.cc',
 )
 
 shared_module(

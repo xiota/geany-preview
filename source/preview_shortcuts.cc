@@ -5,10 +5,13 @@
 
 #include <cstddef>  // std::size
 
-#include <gtk/gtk.h>      // gtk_widget_grab_focus()
-#include <keybindings.h>  // Geany keybinding API
+#include <gtk/gtk.h>  // gtk_widget_grab_focus()
+#include <keybindings.h>
+#include <plugindata.h>
+#include <ui_utils.h>
 
 #include "preview_pane.h"
+#include "util/gtk_helpers.h"
 
 namespace {
 PreviewContext *preview_context = nullptr;
@@ -20,25 +23,71 @@ void PreviewShortcuts::onFocusPreview(guint /*key_id*/) {
   }
   if (auto *widget =
           preview_context->preview_pane_ ? preview_context->preview_pane_->widget() : nullptr) {
-    gtk_widget_grab_focus(widget);
+    GtkUtils::activateNotebookPageForWidget(widget);
   }
 }
 
-void PreviewShortcuts::onToggleFocus(guint /*key_id*/) {
+void PreviewShortcuts::onFocusPreviewEditor(guint /*key_id*/) {
   if (!preview_context || !preview_context->preview_pane_) {
-    return;
-  }
-
-  GtkWidget *preview = preview_context->preview_pane_->widget();
-  if (!preview) {
-    return;
-  }
-
-  if (gtk_widget_has_focus(preview)) {
     keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
-  } else {
-    gtk_widget_grab_focus(preview);
+    return;
   }
+
+  GeanyDocument *doc = document_get_current();
+  GtkWidget *sci = (doc && doc->editor) ? GTK_WIDGET(doc->editor->sci) : nullptr;
+  GtkWidget *preview = preview_context->preview_pane_->widget();
+
+  const bool in_editor = sci && gtk_widget_has_focus(sci);
+  const bool in_preview = preview && gtk_widget_has_focus(preview);
+
+  if (!in_editor && !in_preview) {
+    keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
+    return;
+  }
+
+  if (in_editor) {
+    if (preview) {
+      GtkUtils::activateNotebookPageForWidget(preview);
+    }
+    return;
+  }
+
+  // in_preview
+  keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
+}
+
+void PreviewShortcuts::onFocusSidebarEditor(guint /*key_id*/) {
+  if (!preview_context || !preview_context->geany_plugin_) {
+    keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
+    return;
+  }
+
+  GeanyDocument *doc = document_get_current();
+  GtkWidget *sci = (doc && doc->editor) ? GTK_WIDGET(doc->editor->sci) : nullptr;
+
+  GtkWidget *sidebar = nullptr;
+  if (preview_context->geany_plugin_->geany_data &&
+      preview_context->geany_plugin_->geany_data->main_widgets) {
+    sidebar = preview_context->geany_plugin_->geany_data->main_widgets->sidebar_notebook;
+  }
+
+  const bool in_editor = sci && gtk_widget_has_focus(sci);
+  const bool in_sidebar = sidebar && gtk_widget_has_focus(sidebar);
+
+  if (!in_editor && !in_sidebar) {
+    keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
+    return;
+  }
+
+  if (in_editor) {
+    if (sidebar) {
+      GtkUtils::activateNotebookPageForWidget(sidebar);
+    }
+    return;
+  }
+
+  // in_sidebar
+  keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
 }
 
 void PreviewShortcuts::registerAll() {

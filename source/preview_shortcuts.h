@@ -25,7 +25,8 @@ class PreviewShortcuts {
   PreviewContext *context_;
 
   static void onFocusPreview(guint key_id);
-  static void onToggleFocus(guint key_id);
+  static void onFocusPreviewEditor(guint key_id);
+  static void onFocusSidebarEditor(guint key_id);
 
   struct ShortcutDef {
     const char *label;
@@ -34,7 +35,11 @@ class PreviewShortcuts {
   };
 
   inline static const ShortcutDef shortcut_defs_[] = {
-      {"Focus Preview Pane", "Move focus to preview",             onFocusPreview},
-      {"Toggle Focus",       "Switch between preview and editor", onToggleFocus }
+      {"Focus Preview",           "Focus on preview", onFocusPreview      },
+
+      {"Focus Preview or Editor",
+       "Toggle focus between preview and editor",     onFocusPreviewEditor},
+      {"Focus Sidebar or Editor",
+       "Toggle focus between sidebar and editor",     onFocusSidebarEditor}
   };
 };

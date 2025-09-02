@@ -7,10 +7,14 @@
  * @brief Lightweight struct holding non-owning pointers to core plugin components.
  */
 
+#include <plugindata.h>
+#include <ui_utils.h>
+
 class PreviewPane;
 class PreviewConfig;
 
 struct PreviewContext {
+  GeanyPlugin *geany_plugin_ = nullptr;
   PreviewPane *preview_pane_ = nullptr;
   PreviewConfig *preview_config_ = nullptr;
 };
