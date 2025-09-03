@@ -42,16 +42,30 @@ static void onBoolToggled(GtkCellRendererToggle *, gchar *path_str, gpointer use
   GtkTreeModel *model = gtk_tree_view_get_model(ctx->tree_view);
 
   GtkTreeIter iter;
-  if (gtk_tree_model_get_iter_from_string(model, &iter, path_str)) {
-    gboolean active;
-    gchar *key_c;
-    gtk_tree_model_get(model, &iter, COL_VALUE_BOOL, &active, COL_KEY, &key_c, -1);
-
-    ctx->self->set<bool>(key_c, !active);
-    gtk_list_store_set(GTK_LIST_STORE(model), &iter, COL_VALUE_BOOL, !active, -1);
-
-    g_free(key_c);
+  if (!gtk_tree_model_get_iter_from_string(model, &iter, path_str)) {
+    return;
   }
+
+  // Resolve to underlying store if model is a filter
+  GtkTreeModel *store_model = model;
+  GtkTreeIter store_iter;
+  if (GTK_IS_TREE_MODEL_FILTER(model)) {
+    store_model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model));
+    gtk_tree_model_filter_convert_iter_to_child_iter(
+        GTK_TREE_MODEL_FILTER(model), &store_iter, &iter
+    );
+  } else {
+    store_iter = iter;
+  }
+
+  gboolean active;
+  gchar *key_c;
+  gtk_tree_model_get(store_model, &store_iter, COL_VALUE_BOOL, &active, COL_KEY, &key_c, -1);
+
+  ctx->self->set<bool>(key_c, !active);
+  gtk_list_store_set(GTK_LIST_STORE(store_model), &store_iter, COL_VALUE_BOOL, !active, -1);
+
+  g_free(key_c);
 }
 
 static std::string joinForDisplay(const std::vector<int> &v) {
@@ -116,9 +130,21 @@ onValueEdited(GtkCellRendererText *, gchar *path_str, gchar *new_text, gpointer 
     return;
   }
 
+  // Resolve to underlying store if model is a filter
+  GtkTreeModel *store_model = model;
+  GtkTreeIter store_iter;
+  if (GTK_IS_TREE_MODEL_FILTER(model)) {
+    store_model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model));
+    gtk_tree_model_filter_convert_iter_to_child_iter(
+        GTK_TREE_MODEL_FILTER(model), &store_iter, &iter
+    );
+  } else {
+    store_iter = iter;
+  }
+
   gchar *key_c;
   gchar *type_c;
-  gtk_tree_model_get(model, &iter, COL_KEY, &key_c, COL_TYPE, &type_c, -1);
+  gtk_tree_model_get(store_model, &store_iter, COL_KEY, &key_c, COL_TYPE, &type_c, -1);
 
   std::string key = key_c;
   std::string type = type_c;
@@ -128,19 +154,19 @@ onValueEdited(GtkCellRendererText *, gchar *path_str, gchar *new_text, gpointer 
   if (type == "int") {
     try {
       ctx->self->set<int>(key, std::stoi(new_text));
-      gtk_list_store_set(GTK_LIST_STORE(model), &iter, COL_VALUE_STR, new_text, -1);
+      gtk_list_store_set(GTK_LIST_STORE(store_model), &store_iter, COL_VALUE_STR, new_text, -1);
     } catch (...) {
       g_warning("Invalid integer: %s", new_text);
     }
   } else if (type == "string") {
     ctx->self->set<std::string>(key, new_text);
-    gtk_list_store_set(GTK_LIST_STORE(model), &iter, COL_VALUE_STR, new_text, -1);
+    gtk_list_store_set(GTK_LIST_STORE(store_model), &store_iter, COL_VALUE_STR, new_text, -1);
   } else if (type == "vector<int>") {
     ctx->self->set<std::vector<int>>(key, parseIntsFlexible(new_text));
-    gtk_list_store_set(GTK_LIST_STORE(model), &iter, COL_VALUE_STR, new_text, -1);
+    gtk_list_store_set(GTK_LIST_STORE(store_model), &store_iter, COL_VALUE_STR, new_text, -1);
   } else if (type == "vector<string>") {
     ctx->self->set<std::vector<std::string>>(key, splitFlexible(new_text));
-    gtk_list_store_set(GTK_LIST_STORE(model), &iter, COL_VALUE_STR, new_text, -1);
+    gtk_list_store_set(GTK_LIST_STORE(store_model), &store_iter, COL_VALUE_STR, new_text, -1);
   }
 }
 
