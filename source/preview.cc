@@ -10,11 +10,13 @@
 #include "preview_context.h"
 #include "preview_pane.h"
 #include "preview_shortcuts.h"
+#include "tweakui_unchange_document.h"
 
 namespace {
 std::unique_ptr<PreviewPane> preview_pane;
 std::unique_ptr<PreviewConfig> preview_config;
 std::unique_ptr<PreviewShortcuts> preview_shortcuts;
+std::unique_ptr<TweakUiUnchangeDocument> tweakui_unchange_document;
 
 PreviewContext preview_context;
 
@@ -81,6 +83,9 @@ gboolean previewInit(
       plugin, nullptr, "document-save", FALSE, G_CALLBACK(onDocumentActivate), nullptr
   );
 
+  // tweaks
+  tweakui_unchange_document = std::make_unique<TweakUiUnchangeDocument>(&preview_context);
+
   // shortcuts
   preview_context.geany_key_group_ =
       plugin_set_key_group(plugin, "Preview", PreviewShortcuts::shortcutCount(), nullptr);
@@ -100,6 +105,7 @@ void previewCleanup(
   preview_pane.reset();
   preview_config.reset();
   preview_shortcuts.reset();
+  tweakui_unchange_document.reset();
 }
 }  // namespace
 

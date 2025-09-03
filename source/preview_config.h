@@ -38,6 +38,10 @@ class PreviewConfig {
        "Command to launch a terminal. Supports XDG field codes: "
        "%d = directory of current document."                                                  },
 
+      {"unchange_document",
+       setting_value_t{false},
+       "Mark new, unsaved, empty documents as unchanged."                                     },
+
       {"preview_theme",
        setting_value_t{std::string{"system"}},
        "Theme to use for the preview: 'light', 'dark', or 'system'."                          },
