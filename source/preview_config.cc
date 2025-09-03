@@ -14,9 +14,15 @@
 namespace {
 
 // Context for edited callback
-struct edit_ctx_t {
+struct EditContext {
   PreviewConfig *self;
   GtkTreeView *tree_view;
+};
+
+// Context for search/filter callbacks
+struct SearchContext {
+  std::string search_text;
+  GtkTreeModelFilter *filter_model = nullptr;
 };
 
 // used by buildConfigWidget, onValueEdited, onBoolToggled
@@ -32,7 +38,7 @@ enum {
 };
 
 static void onBoolToggled(GtkCellRendererToggle *, gchar *path_str, gpointer user_data) {
-  auto *ctx = static_cast<edit_ctx_t *>(user_data);
+  auto *ctx = static_cast<EditContext *>(user_data);
   GtkTreeModel *model = gtk_tree_view_get_model(ctx->tree_view);
 
   GtkTreeIter iter;
@@ -102,7 +108,7 @@ static std::vector<int> parseIntsFlexible(const std::string &input) {
 
 static void
 onValueEdited(GtkCellRendererText *, gchar *path_str, gchar *new_text, gpointer user_data) {
-  auto *ctx = static_cast<edit_ctx_t *>(user_data);
+  auto *ctx = static_cast<EditContext *>(user_data);
   GtkTreeModel *model = gtk_tree_view_get_model(ctx->tree_view);
 
   GtkTreeIter iter;
@@ -136,6 +142,43 @@ onValueEdited(GtkCellRendererText *, gchar *path_str, gchar *new_text, gpointer 
     ctx->self->set<std::vector<std::string>>(key, splitFlexible(new_text));
     gtk_list_store_set(GTK_LIST_STORE(model), &iter, COL_VALUE_STR, new_text, -1);
   }
+}
+
+static gboolean filterVisibleFunc(GtkTreeModel *model, GtkTreeIter *iter, gpointer data) {
+  auto *ctx = static_cast<SearchContext *>(data);
+
+  if (ctx->search_text.empty()) {
+    return TRUE;  // show all
+  }
+
+  gchar *key_c = nullptr;
+  gchar *help_c = nullptr;
+  gtk_tree_model_get(model, iter, COL_KEY, &key_c, COL_HELP, &help_c, -1);
+
+  std::string key = key_c ? key_c : "";
+  std::string help = help_c ? help_c : "";
+  g_free(key_c);
+  g_free(help_c);
+
+  auto toLower = [](std::string s) {
+    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) {
+      return std::tolower(c);
+    });
+    return s;
+  };
+
+  std::string search = toLower(ctx->search_text);
+  key = toLower(key);
+  help = toLower(help);
+
+  return (key.find(search) != std::string::npos) || (help.find(search) != std::string::npos);
+}
+
+static void onSearchEntryChanged(GtkEditable *editable, gpointer user_data) {
+  auto *ctx = static_cast<SearchContext *>(user_data);
+  const char *text = gtk_entry_get_text(GTK_ENTRY(editable));
+  ctx->search_text = text ? text : "";
+  gtk_tree_model_filter_refilter(ctx->filter_model);
 }
 
 }  // namespace
@@ -389,7 +432,7 @@ GtkTreeView *PreviewConfig::createConfigTreeView(GtkListStore *store) {
 
 // Connects signals for editing and dialog responses
 void PreviewConfig::connectConfigSignals(GtkTreeView *tree_view, GtkDialog *dialog) {
-  auto *ctx = g_new(edit_ctx_t, 1);
+  auto *ctx = g_new(EditContext, 1);
   ctx->self = this;
   ctx->tree_view = tree_view;
 
@@ -426,17 +469,40 @@ void PreviewConfig::connectConfigSignals(GtkTreeView *tree_view, GtkDialog *dial
 
 GtkWidget *PreviewConfig::buildConfigWidget(GtkDialog *dialog) {
   GtkListStore *store = createConfigModel();
-  GtkTreeView *tree_view = createConfigTreeView(store);
-  g_object_unref(store);
 
+  // Allocate search context
+  auto *ctx = g_new0(SearchContext, 1);
+
+  // Wrap store in filter model
+  ctx->filter_model =
+      GTK_TREE_MODEL_FILTER(gtk_tree_model_filter_new(GTK_TREE_MODEL(store), nullptr));
+  g_object_unref(store);  // filter holds a ref
+
+  gtk_tree_model_filter_set_visible_func(ctx->filter_model, filterVisibleFunc, ctx, nullptr);
+
+  GtkTreeView *tree_view = createConfigTreeView(GTK_LIST_STORE(ctx->filter_model));
   connectConfigSignals(tree_view, dialog);
 
-  GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+  // Scrolled window for tree view
+  GtkWidget *scrolled_window = gtk_scrolled_window_new(nullptr, nullptr);
   gtk_container_add(GTK_CONTAINER(scrolled_window), GTK_WIDGET(tree_view));
   gtk_scrolled_window_set_policy(
       GTK_SCROLLED_WINDOW(scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC
   );
   gtk_widget_set_size_request(scrolled_window, 500, 250);
 
-  return scrolled_window;
+  // Search entry at bottom
+  GtkWidget *search_entry = gtk_entry_new();
+  gtk_entry_set_placeholder_text(GTK_ENTRY(search_entry), "Search...");
+  g_signal_connect(search_entry, "changed", G_CALLBACK(onSearchEntryChanged), ctx);
+
+  // Pack into vertical box
+  GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+  gtk_box_pack_start(GTK_BOX(vbox), scrolled_window, TRUE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(vbox), search_entry, FALSE, FALSE, 0);
+
+  // Free context when dialog is destroyed
+  g_signal_connect_swapped(dialog, "destroy", G_CALLBACK(g_free), ctx);
+
+  return vbox;
 }
