@@ -73,6 +73,37 @@ class PreviewConfig {
       setting_value_type{ false},
       "Re-detect file type when a document is reloaded. Geany normally auto-detects file type only on open and save." },
 
+    { "sidebar_auto_resize",
+      setting_value_type{ false },
+      "Enable or disable automatic resizing of the sidebar based on window state "
+      "(normal, maximized, fullscreen)." },
+
+    { "sidebar_resize_delay",
+      setting_value_type{ 50 },
+      "Delay in milliseconds before applying the automatic sidebar resize after a window "
+      "state or size change. A small delay helps avoid race conditions with GTK/Geany's "
+      "own layout adjustments. Set to 0 to apply immediately." },
+
+    { "sidebar_columns_fullscreen",
+      setting_value_type{ 94 },
+      "Number of editor columns to keep visible when the window is in fullscreen mode. "
+      "The sidebar width will be adjusted accordingly." },
+
+    { "sidebar_columns_maximized",
+      setting_value_type{ 94 },
+      "Number of editor columns to keep visible when the window is maximized. "
+      "The sidebar width will be adjusted accordingly." },
+
+    { "sidebar_columns_normal",
+      setting_value_type{ 82 },
+      "Number of editor columns to keep visible when the window is in normal (non-maximized) state. "
+      "The sidebar width will be adjusted accordingly." },
+
+    { "sidebar_size_min",
+      setting_value_type{ 150 },
+      "Minimum width of the sidebar in pixels. "
+      "Prevents automatic resizing from shrinking the sidebar too far." },
+
     { "terminal_command",
       setting_value_type{ std::string{ "xdg-terminal-exec --working-directory=%d" }},
       "Command to launch a terminal. Supports XDG field codes: %d = directory of current document." },
