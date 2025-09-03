@@ -6,6 +6,7 @@ AllowShortFunctionsOnASingleLine: Empty
 BinPackArguments: false
 BinPackParameters: false
 ColumnLimit: 96
+CommentPragmas: '^SPDX'
 DerivePointerAlignment: false
 IncludeBlocks: Preserve
 IncludeCategories:
