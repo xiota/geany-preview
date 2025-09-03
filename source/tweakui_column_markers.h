@@ -16,6 +16,14 @@
 class TweakUiColumnMarkers {
  public:
   explicit TweakUiColumnMarkers(PreviewContext *ctx) : context_(ctx) {
+    auto *docs = context_->geany_data_->documents_array;
+    for (guint i = 0; i < docs->len; ++i) {
+      auto *doc = static_cast<GeanyDocument *>(g_ptr_array_index(docs, i));
+      if (DOC_VALID(doc)) {
+        show(doc);
+      }
+    }
+
     plugin_signal_connect(
         context_->geany_plugin_,
         nullptr,
@@ -47,6 +55,7 @@ class TweakUiColumnMarkers {
 
   void show(GeanyDocument *doc = nullptr) {
     if (!context_->preview_config_->get<bool>("column_markers", false)) {
+      clear();
       return;
     }
 
@@ -84,6 +93,16 @@ class TweakUiColumnMarkers {
           doc->editor->sci, SCI_MULTIEDGEADDLINE, cols[i], parseColorString(colors[i])
       );
     }
+  }
+
+  void clear(GeanyDocument *doc = nullptr) {
+    if (!DOC_VALID(doc)) {
+      doc = document_get_current();
+      g_return_if_fail(DOC_VALID(doc));
+    }
+
+    scintilla_send_message(doc->editor->sci, SCI_SETEDGEMODE, EDGE_NONE, 0);
+    scintilla_send_message(doc->editor->sci, SCI_MULTIEDGECLEARALL, 0, 0);
   }
 
  private:
