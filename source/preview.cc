@@ -40,11 +40,11 @@ gboolean onEditorNotify(
     gpointer /*user_data*/
 ) {
   if (!notification || notification->nmhdr.code != SCN_MODIFIED) {
-    return FALSE;
+    return false;
   }
 
   preview_pane->scheduleUpdate();
-  return FALSE;
+  return false;
 }
 
 void onDocumentActivate(
@@ -85,15 +85,15 @@ gboolean previewInit(
 
   // signals
   plugin_signal_connect(
-      plugin, nullptr, "editor-notify", FALSE, G_CALLBACK(onEditorNotify), nullptr
+      plugin, nullptr, "editor-notify", false, G_CALLBACK(onEditorNotify), nullptr
   );
 
   plugin_signal_connect(
-      plugin, nullptr, "document-activate", FALSE, G_CALLBACK(onDocumentActivate), nullptr
+      plugin, nullptr, "document-activate", false, G_CALLBACK(onDocumentActivate), nullptr
   );
 
   plugin_signal_connect(
-      plugin, nullptr, "document-save", FALSE, G_CALLBACK(onDocumentActivate), nullptr
+      plugin, nullptr, "document-save", false, G_CALLBACK(onDocumentActivate), nullptr
   );
 
   // tweaks
@@ -111,7 +111,7 @@ gboolean previewInit(
   preview_shortcuts = std::make_unique<PreviewShortcuts>(&preview_context);
   preview_shortcuts->registerAll();
 
-  return TRUE;
+  return true;
 }
 
 void previewCleanup(

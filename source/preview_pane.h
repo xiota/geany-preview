@@ -35,7 +35,7 @@ class PreviewPane final {
     gtk_widget_show(offscreen_);
 
     if (GTK_IS_NOTEBOOK(sidebar_notebook_)) {
-      gtk_box_pack_start(GTK_BOX(page_box_), webview_.widget(), TRUE, TRUE, 0);
+      gtk_box_pack_start(GTK_BOX(page_box_), webview_.widget(), true, true, 0);
 
       sidebar_page_number_ = gtk_notebook_append_page(
           GTK_NOTEBOOK(sidebar_notebook_), page_box_, gtk_label_new("Preview")
@@ -178,7 +178,7 @@ class PreviewPane final {
     }
 
     if (pack_into_box && GTK_IS_BOX(new_parent)) {
-      gtk_box_pack_start(GTK_BOX(new_parent), wv, TRUE, TRUE, 0);
+      gtk_box_pack_start(GTK_BOX(new_parent), wv, true, true, 0);
     } else {
       gtk_container_add(GTK_CONTAINER(new_parent), wv);
     }

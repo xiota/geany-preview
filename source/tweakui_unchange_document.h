@@ -24,7 +24,7 @@ class TweakUiUnchangeDocument {
   editorNotify(GObject *, GeanyEditor *editor, SCNotification *, gpointer user_data) {
     auto *self = static_cast<TweakUiUnchangeDocument *>(user_data);
     self->unchange(editor->document);
-    return FALSE;  // let Geany continue processing
+    return false;  // let Geany continue processing
   }
 
   void unchange(GeanyDocument *doc) {

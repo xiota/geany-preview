@@ -80,13 +80,13 @@ static void cleanupProcess(AsyncContext *ctx) {
 gboolean readChannel(GIOChannel *source, GIOCondition condition, gpointer user_data) noexcept {
   auto *ctx = static_cast<AsyncContext *>(user_data);
   if (ctx->cancelled) {
-    return FALSE;  // stop if cancelled
+    return false;  // stop if cancelled
   }
 
   if (condition & (G_IO_HUP | G_IO_ERR)) {
     --ctx->streams_remaining;
     cleanupProcess(ctx);
-    return FALSE;  // stop watching this channel
+    return false;  // stop watching this channel
   }
 
   char buf[kIoBufSize];
@@ -99,7 +99,7 @@ gboolean readChannel(GIOChannel *source, GIOCondition condition, gpointer user_d
       ctx->errbuf << "[I/O error] " << err->message << "\n";
       g_error_free(err);
     }
-    return TRUE;
+    return true;
   }
   if (bytes_read > 0) {
     if (source == ctx->out_ch) {
@@ -108,7 +108,7 @@ gboolean readChannel(GIOChannel *source, GIOCondition condition, gpointer user_d
       ctx->errbuf.write(buf, bytes_read);
     }
   }
-  return TRUE;
+  return true;
 }
 
 void onChildExit(GPid pid, gint status, gpointer user_data) noexcept {
@@ -247,10 +247,10 @@ bool Subprocess::run(
   ctx->err_ch = g_io_channel_unix_new(stderr_fd);
   g_io_channel_set_encoding(ctx->out_ch, nullptr, nullptr);
   g_io_channel_set_encoding(ctx->err_ch, nullptr, nullptr);
-  g_io_channel_set_buffered(ctx->out_ch, FALSE);
-  g_io_channel_set_buffered(ctx->err_ch, FALSE);
-  g_io_channel_set_close_on_unref(ctx->out_ch, TRUE);
-  g_io_channel_set_close_on_unref(ctx->err_ch, TRUE);
+  g_io_channel_set_buffered(ctx->out_ch, false);
+  g_io_channel_set_buffered(ctx->err_ch, false);
+  g_io_channel_set_close_on_unref(ctx->out_ch, true);
+  g_io_channel_set_close_on_unref(ctx->err_ch, true);
 
   ctx->out_watch_id = g_io_add_watch(
       ctx->out_ch, GIOCondition(G_IO_IN | G_IO_HUP | G_IO_ERR), readChannel, ctx

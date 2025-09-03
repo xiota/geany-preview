@@ -170,13 +170,13 @@ class TweakUiColorTip {
     auto *self = static_cast<TweakUiColorTip *>(user_data);
     if (event->button == 1 && event->type == GDK_2BUTTON_PRESS) {
       if (!self->colorChooserEnabled()) {
-        return FALSE;
+        return false;
       }
       if (getColorValueAtCurrentDocPosition() != -1) {
         keybindings_send_command(GEANY_KEY_GROUP_TOOLS, GEANY_KEYS_TOOLS_OPENCOLORCHOOSER);
       }
     }
-    return FALSE;
+    return false;
   }
 
   void connectDocumentButtonPressSignalHandler(GeanyDocument *doc) {

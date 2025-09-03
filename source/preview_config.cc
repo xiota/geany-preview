@@ -148,7 +148,7 @@ static gboolean filterVisibleFunc(GtkTreeModel *model, GtkTreeIter *iter, gpoint
   auto *ctx = static_cast<SearchContext *>(data);
 
   if (ctx->search_text.empty()) {
-    return TRUE;  // show all
+    return true;  // show all
   }
 
   gchar *key_c = nullptr;
@@ -321,7 +321,7 @@ GtkListStore *PreviewConfig::createConfigModel() {
 
     const auto &val = it->second;
     std::string type, value_str;
-    gboolean value_bool = FALSE;
+    gboolean value_bool = false;
 
     std::visit(
         [&](auto &&v) {
@@ -387,8 +387,8 @@ GtkTreeView *PreviewConfig::createConfigTreeView(GtkListStore *store) {
     GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
     GtkTreeViewColumn *column =
         gtk_tree_view_column_new_with_attributes("Key", renderer, "text", COL_KEY, NULL);
-    gtk_tree_view_column_set_expand(column, TRUE);
-    gtk_tree_view_column_set_resizable(column, TRUE);
+    gtk_tree_view_column_set_expand(column, true);
+    gtk_tree_view_column_set_resizable(column, true);
     gtk_tree_view_append_column(tree_view, column);
   }
 
@@ -400,7 +400,7 @@ GtkTreeView *PreviewConfig::createConfigTreeView(GtkListStore *store) {
     // Toggle renderer for bools
     GtkCellRenderer *toggle_renderer = gtk_cell_renderer_toggle_new();
     g_object_set(toggle_renderer, "xalign", 0.0f, NULL);
-    gtk_tree_view_column_pack_start(value_column, toggle_renderer, FALSE);
+    gtk_tree_view_column_pack_start(value_column, toggle_renderer, false);
     gtk_tree_view_column_add_attribute(value_column, toggle_renderer, "active", COL_VALUE_BOOL);
     gtk_tree_view_column_add_attribute(
         value_column, toggle_renderer, "visible", COL_SHOW_TOGGLE
@@ -408,13 +408,13 @@ GtkTreeView *PreviewConfig::createConfigTreeView(GtkListStore *store) {
 
     // Text renderer for others
     GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new();
-    g_object_set(text_renderer, "editable", TRUE, NULL);
-    gtk_tree_view_column_pack_start(value_column, text_renderer, TRUE);
+    g_object_set(text_renderer, "editable", true, NULL);
+    gtk_tree_view_column_pack_start(value_column, text_renderer, true);
     gtk_tree_view_column_add_attribute(value_column, text_renderer, "text", COL_VALUE_STR);
     gtk_tree_view_column_add_attribute(value_column, text_renderer, "visible", COL_SHOW_TEXT);
 
-    gtk_tree_view_column_set_expand(value_column, TRUE);
-    gtk_tree_view_column_set_resizable(value_column, TRUE);
+    gtk_tree_view_column_set_expand(value_column, true);
+    gtk_tree_view_column_set_resizable(value_column, true);
     gtk_tree_view_append_column(tree_view, value_column);
   }
 
@@ -423,7 +423,7 @@ GtkTreeView *PreviewConfig::createConfigTreeView(GtkListStore *store) {
     GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
     GtkTreeViewColumn *column =
         gtk_tree_view_column_new_with_attributes("Type", renderer, "text", COL_TYPE, NULL);
-    gtk_tree_view_column_set_resizable(column, TRUE);
+    gtk_tree_view_column_set_resizable(column, true);
     gtk_tree_view_append_column(tree_view, column);
   }
 
@@ -498,8 +498,8 @@ GtkWidget *PreviewConfig::buildConfigWidget(GtkDialog *dialog) {
 
   // Pack into vertical box
   GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
-  gtk_box_pack_start(GTK_BOX(vbox), scrolled_window, TRUE, TRUE, 0);
-  gtk_box_pack_start(GTK_BOX(vbox), search_entry, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(vbox), scrolled_window, true, true, 0);
+  gtk_box_pack_start(GTK_BOX(vbox), search_entry, false, false, 0);
 
   // Free context when dialog is destroyed
   g_signal_connect_swapped(dialog, "destroy", G_CALLBACK(g_free), ctx);

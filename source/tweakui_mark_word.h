@@ -78,7 +78,7 @@ class TweakUiMarkWord {
     auto *self = static_cast<TweakUiMarkWord *>(user_data);
     keybindings_send_command(GEANY_KEY_GROUP_SEARCH, GEANY_KEYS_SEARCH_MARKALL);
     self->double_click_timer_id_ = 0;
-    return FALSE;
+    return false;
   }
 
   static gboolean
@@ -86,7 +86,7 @@ class TweakUiMarkWord {
     auto *self = static_cast<TweakUiMarkWord *>(user_data);
     if (event->button == 1) {
       if (!self->isEnabled()) {
-        return FALSE;
+        return false;
       }
       if (event->type == GDK_BUTTON_PRESS) {
         if (self->singleClickDeselect()) {
@@ -105,7 +105,7 @@ class TweakUiMarkWord {
         }
       }
     }
-    return FALSE;
+    return false;
   }
 
   void connectDocumentButtonPressSignalHandler(GeanyDocument *doc) {

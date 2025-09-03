@@ -19,7 +19,7 @@ std::vector<std::string> ConverterSubprocess::buildCommandArgs() const {
 }
 
 std::string_view ConverterSubprocess::toHtml(std::string_view source) {
-  GMainLoop *loop = g_main_loop_new(nullptr, FALSE);
+  GMainLoop *loop = g_main_loop_new(nullptr, false);
 
   Subprocess runner;
   Subprocess::Result result;
