@@ -10,12 +10,15 @@
 #include "preview_context.h"
 #include "preview_pane.h"
 #include "preview_shortcuts.h"
+#include "tweakui_column_markers.h"
 #include "tweakui_unchange_document.h"
 
 namespace {
 std::unique_ptr<PreviewPane> preview_pane;
 std::unique_ptr<PreviewConfig> preview_config;
 std::unique_ptr<PreviewShortcuts> preview_shortcuts;
+
+std::unique_ptr<TweakUiColumnMarkers> tweakui_column_markers;
 std::unique_ptr<TweakUiUnchangeDocument> tweakui_unchange_document;
 
 PreviewContext preview_context;
@@ -84,6 +87,7 @@ gboolean previewInit(
   );
 
   // tweaks
+  tweakui_column_markers = std::make_unique<TweakUiColumnMarkers>(&preview_context);
   tweakui_unchange_document = std::make_unique<TweakUiUnchangeDocument>(&preview_context);
 
   // shortcuts
@@ -105,6 +109,8 @@ void previewCleanup(
   preview_pane.reset();
   preview_config.reset();
   preview_shortcuts.reset();
+
+  tweakui_column_markers.reset();
   tweakui_unchange_document.reset();
 }
 }  // namespace
