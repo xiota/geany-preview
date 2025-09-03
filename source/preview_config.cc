@@ -357,6 +357,7 @@ GtkWidget *PreviewConfig::buildConfigWidget(GtkDialog *dialog) {
     // Toggle renderer for bools
     GtkCellRenderer *toggle_renderer = gtk_cell_renderer_toggle_new();
     g_signal_connect(toggle_renderer, "toggled", G_CALLBACK(onBoolToggled), ctx);
+    g_object_set(toggle_renderer, "xalign", 0.0f, NULL);
     gtk_tree_view_column_pack_start(value_column, toggle_renderer, FALSE);
     gtk_tree_view_column_add_attribute(value_column, toggle_renderer, "active", COL_VALUE_BOOL);
     gtk_tree_view_column_add_attribute(
@@ -379,6 +380,8 @@ GtkWidget *PreviewConfig::buildConfigWidget(GtkDialog *dialog) {
     gtk_tree_view_column_add_attribute(value_column, text_renderer, "text", COL_VALUE_STR);
     gtk_tree_view_column_add_attribute(value_column, text_renderer, "visible", COL_SHOW_TEXT);
 
+    gtk_tree_view_column_set_expand(value_column, TRUE);
+    gtk_tree_view_column_set_resizable(value_column, TRUE);
     gtk_tree_view_append_column(tree_view, value_column);
   }
 
