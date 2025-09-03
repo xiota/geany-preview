@@ -69,15 +69,7 @@ class TweakUiColumnMarkers {
     );
     auto colors = context_->preview_config_->get<std::vector<std::string>>(
         "column_markers_colors",
-        {"#e5e5e5",
-         "#b0d0ff",
-         "#ffc0ff",
-         "#e5e5e5",
-         "#ffb0a0",
-         "#e5e5e5",
-         "#e5e5e5",
-         "#e5e5e5",
-         "#e5e5e5"}
+        {"#ccc", "#bdf", "#fcf", "#ccc", "#fba", "#ccc", "#ccc", "#ccc", "#ccc"}
     );
 
     const auto count = std::min(cols.size(), colors.size());

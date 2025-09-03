@@ -54,15 +54,15 @@ class PreviewConfig {
 
       {"column_markers_colors",
        setting_value_t{std::vector<std::string>{
-           "#e5e5e5",
-           "#b0d0ff",
-           "#ffc0ff",
-           "#e5e5e5",
-           "#ffb0a0",
-           "#e5e5e5",
-           "#e5e5e5",
-           "#e5e5e5",
-           "#e5e5e5"
+           "#ccc",
+           "#bdf",
+           "#fcf",
+           "#ccc",
+           "#fba",
+           "#ccc",
+           "#ccc",
+           "#ccc",
+           "#ccc"
        }},
        "Colors for each column marker, in #RRGGBB or #RGB format, matching the order of "
        "'column_markers_columns'."                                                            },
