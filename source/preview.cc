@@ -14,6 +14,7 @@
 #include "tweakui_color_tip.h"
 #include "tweakui_column_markers.h"
 #include "tweakui_mark_word.h"
+#include "tweakui_redetect_filetype.h"
 #include "tweakui_unchange_document.h"
 
 namespace {
@@ -25,6 +26,7 @@ std::unique_ptr<TweakUiAutoSetReadOnly> tweakui_auto_set_read_only;
 std::unique_ptr<TweakUiColorTip> tweakui_color_tip;
 std::unique_ptr<TweakUiColumnMarkers> tweakui_column_markers;
 std::unique_ptr<TweakUiMarkWord> tweakui_mark_word;
+std::unique_ptr<TweakUiRedetectFileType> tweakui_redetect_filetype;
 std::unique_ptr<TweakUiUnchangeDocument> tweakui_unchange_document;
 
 PreviewContext preview_context;
@@ -97,6 +99,7 @@ gboolean previewInit(
   tweakui_color_tip = std::make_unique<TweakUiColorTip>(&preview_context);
   tweakui_column_markers = std::make_unique<TweakUiColumnMarkers>(&preview_context);
   tweakui_mark_word = std::make_unique<TweakUiMarkWord>(&preview_context);
+  tweakui_redetect_filetype = std::make_unique<TweakUiRedetectFileType>(&preview_context);
   tweakui_unchange_document = std::make_unique<TweakUiUnchangeDocument>(&preview_context);
 
   // shortcuts
@@ -123,6 +126,7 @@ void previewCleanup(
   tweakui_color_tip.reset();
   tweakui_column_markers.reset();
   tweakui_mark_word.reset();
+  tweakui_redetect_filetype.reset();
   tweakui_unchange_document.reset();
 }
 }  // namespace

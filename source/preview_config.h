@@ -79,6 +79,11 @@ class PreviewConfig {
        setting_value_t{true},
        "Deselect the previous highlight by single click."                                     },
 
+      {"redetect_filetype_on_reload",
+       setting_value_t{false},
+       "Re-detect file type when a document is reloaded. "
+       "Geany normally auto-detects file type only on open and save."                         },
+
       {"update_cooldown",
        setting_value_t{65},
        "Time in milliseconds to wait between preview updates to prevent excessive refreshing."},
