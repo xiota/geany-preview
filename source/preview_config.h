@@ -55,6 +55,18 @@ class PreviewConfig {
        "Colors for each column marker, in #RRGGBB or #RGB format, matching the order of "
        "'column_markers_columns'."                                                            },
 
+      {"mark_word",
+       setting_value_t{false},
+       "Mark all occurrences of a word when double-clicking it."                              },
+
+      {"mark_word_double_click_delay",
+       setting_value_t{50},
+       "Delay in milliseconds before marking all occurrences after a double-click."           },
+
+      {"mark_word_single_click_deselect",
+       setting_value_t{true},
+       "Deselect the previous highlight by single click."                                     },
+
       {"update_cooldown",
        setting_value_t{65},
        "Time in milliseconds to wait between preview updates to prevent excessive refreshing."},
