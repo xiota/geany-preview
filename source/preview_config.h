@@ -84,14 +84,6 @@ class PreviewConfig {
        "Re-detect file type when a document is reloaded. "
        "Geany normally auto-detects file type only on open and save."                         },
 
-      {"update_cooldown",
-       setting_value_t{65},
-       "Time in milliseconds to wait between preview updates to prevent excessive refreshing."},
-
-      {"update_min_delay",
-       setting_value_t{15},
-       "Time in milliseconds to wait before the first preview update after a change."         },
-
       {"terminal_command",
        setting_value_t{std::string{"xdg-terminal-exec --working-directory=%d"}},
        "Command to launch a terminal. Supports XDG field codes: "
@@ -100,6 +92,14 @@ class PreviewConfig {
       {"unchange_document",
        setting_value_t{false},
        "Mark new, unsaved, empty documents as unchanged."                                     },
+
+      {"update_cooldown",
+       setting_value_t{65},
+       "Time in milliseconds to wait between preview updates to prevent excessive refreshing."},
+
+      {"update_min_delay",
+       setting_value_t{15},
+       "Time in milliseconds to wait before the first preview update after a change."         },
 
       {"preview_theme",
        setting_value_t{std::string{"system"}},
