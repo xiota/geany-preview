@@ -12,6 +12,7 @@
 #include <toml++/toml.h>
 
 namespace {
+
 // Context for edited callback
 struct edit_ctx_t {
   PreviewConfig *self;
@@ -29,6 +30,75 @@ enum {
   COL_SHOW_TEXT,    // bool: show text cell?
   NUM_COLS
 };
+
+static void onBoolToggled(GtkCellRendererToggle *, gchar *path_str, gpointer user_data) {
+  auto *ctx = static_cast<edit_ctx_t *>(user_data);
+  GtkTreeModel *model = gtk_tree_view_get_model(ctx->tree_view);
+
+  GtkTreeIter iter;
+  if (gtk_tree_model_get_iter_from_string(model, &iter, path_str)) {
+    gboolean active;
+    gchar *key_c;
+    gtk_tree_model_get(model, &iter, COL_VALUE_BOOL, &active, COL_KEY, &key_c, -1);
+
+    ctx->self->set<bool>(key_c, !active);
+    gtk_list_store_set(GTK_LIST_STORE(model), &iter, COL_VALUE_BOOL, !active, -1);
+
+    g_free(key_c);
+  }
+}
+
+static std::string joinForDisplay(const std::vector<int> &v) {
+  std::string out;
+  for (size_t i = 0; i < v.size(); ++i) {
+    if (i) {
+      out += ", ";
+    }
+    out += std::to_string(v[i]);
+  }
+  return out;
+}
+
+static std::string joinForDisplay(const std::vector<std::string> &v) {
+  std::string out;
+  for (size_t i = 0; i < v.size(); ++i) {
+    if (i) {
+      out += ", ";
+    }
+    out += v[i];
+  }
+  return out;
+}
+
+static std::vector<std::string> splitFlexible(const std::string &input) {
+  std::vector<std::string> result;
+  std::string token;
+  for (char ch : input) {
+    if (ch == ',' || ch == ';' || ch == ':') {
+      if (!token.empty()) {
+        result.push_back(token);
+        token.clear();
+      }
+    } else if (!std::isspace(static_cast<unsigned char>(ch))) {
+      token.push_back(ch);
+    }
+  }
+  if (!token.empty()) {
+    result.push_back(token);
+  }
+  return result;
+}
+
+static std::vector<int> parseIntsFlexible(const std::string &input) {
+  std::vector<int> out;
+  for (auto &tok : splitFlexible(input)) {
+    try {
+      out.push_back(std::stoi(tok));
+    } catch (...) { /* ignore invalid */
+    }
+  }
+  return out;
+}
 
 static void
 onValueEdited(GtkCellRendererText *, gchar *path_str, gchar *new_text, gpointer user_data) {
@@ -59,25 +129,15 @@ onValueEdited(GtkCellRendererText *, gchar *path_str, gchar *new_text, gpointer 
   } else if (type == "string") {
     ctx->self->set<std::string>(key, new_text);
     gtk_list_store_set(GTK_LIST_STORE(model), &iter, COL_VALUE_STR, new_text, -1);
+  } else if (type == "vector<int>") {
+    ctx->self->set<std::vector<int>>(key, parseIntsFlexible(new_text));
+    gtk_list_store_set(GTK_LIST_STORE(model), &iter, COL_VALUE_STR, new_text, -1);
+  } else if (type == "vector<string>") {
+    ctx->self->set<std::vector<std::string>>(key, splitFlexible(new_text));
+    gtk_list_store_set(GTK_LIST_STORE(model), &iter, COL_VALUE_STR, new_text, -1);
   }
 }
 
-static void onBoolToggled(GtkCellRendererToggle *, gchar *path_str, gpointer user_data) {
-  auto *ctx = static_cast<edit_ctx_t *>(user_data);
-  GtkTreeModel *model = gtk_tree_view_get_model(ctx->tree_view);
-
-  GtkTreeIter iter;
-  if (gtk_tree_model_get_iter_from_string(model, &iter, path_str)) {
-    gboolean active;
-    gchar *key_c;
-    gtk_tree_model_get(model, &iter, COL_VALUE_BOOL, &active, COL_KEY, &key_c, -1);
-
-    ctx->self->set<bool>(key_c, !active);
-    gtk_list_store_set(GTK_LIST_STORE(model), &iter, COL_VALUE_BOOL, !active, -1);
-
-    g_free(key_c);
-  }
-}
 }  // namespace
 
 PreviewConfig::PreviewConfig(const std::filesystem::path &full_path) {
@@ -105,8 +165,34 @@ bool PreviewConfig::load() {
         std::visit(
             [&](auto &current) {
               using T = std::decay_t<decltype(current)>;
-              if (auto v = node.value<T>()) {
-                current = *v;
+
+              if constexpr (std::is_same_v<T, int> || std::is_same_v<T, bool> ||
+                            std::is_same_v<T, std::string>) {
+                if (auto v = node.value<T>()) {
+                  current = *v;
+                }
+              } else if constexpr (std::is_same_v<T, std::vector<int>>) {
+                if (auto arr = node.as_array()) {
+                  std::vector<int> tmp;
+                  tmp.reserve(arr->size());
+                  for (auto &el : *arr) {
+                    if (auto iv = el.value<int>()) {
+                      tmp.push_back(*iv);
+                    }
+                  }
+                  current = std::move(tmp);
+                }
+              } else if constexpr (std::is_same_v<T, std::vector<std::string>>) {
+                if (auto arr = node.as_array()) {
+                  std::vector<std::string> tmp;
+                  tmp.reserve(arr->size());
+                  for (auto &el : *arr) {
+                    if (auto sv = el.value<std::string>()) {
+                      tmp.push_back(*sv);
+                    }
+                  }
+                  current = std::move(tmp);
+                }
               }
             },
             value
@@ -125,7 +211,21 @@ bool PreviewConfig::save() const {
   toml::table preview_tbl;
   for (const auto &[key, value] : settings_) {
     std::visit(
-        [&](auto &&current) { preview_tbl.insert_or_assign(key, toml::value{current}); }, value
+        [&](auto &&current) {
+          using T = std::decay_t<decltype(current)>;
+          if constexpr (std::is_same_v<T, int> || std::is_same_v<T, bool> ||
+                        std::is_same_v<T, std::string>) {
+            preview_tbl.insert_or_assign(key, current);
+          } else if constexpr (std::is_same_v<T, std::vector<int>> ||
+                               std::is_same_v<T, std::vector<std::string>>) {
+            toml::array arr;
+            for (const auto &elem : current) {
+              arr.push_back(elem);
+            }
+            preview_tbl.insert_or_assign(key, std::move(arr));
+          }
+        },
+        value
     );
   }
   toml::table root;
@@ -189,6 +289,12 @@ GtkWidget *PreviewConfig::buildConfigWidget(GtkDialog *dialog) {
           } else if constexpr (std::is_same_v<T, bool>) {
             type = "bool";
             value_bool = v;
+          } else if constexpr (std::is_same_v<T, std::vector<int>>) {
+            type = "vector<int>";
+            value_str = joinForDisplay(v);
+          } else if constexpr (std::is_same_v<T, std::vector<std::string>>) {
+            type = "vector<string>";
+            value_str = joinForDisplay(v);
           } else {
             type = "string";
             value_str = v;

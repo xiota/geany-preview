@@ -7,12 +7,15 @@
 #include <string>
 #include <unordered_map>
 #include <variant>
+#include <vector>
 
 #include <gtk/gtk.h>
 
 class PreviewConfig {
  public:
-  using setting_value_t = std::variant<int, bool, std::string>;
+  // Expanded to support vectors of ints and strings
+  using setting_value_t =
+      std::variant<int, bool, std::string, std::vector<int>, std::vector<std::string> >;
 
   struct setting_def_t {
     const char *key;
@@ -24,6 +27,29 @@ class PreviewConfig {
       {"allow_update_fallback",
        setting_value_t{false},
        "Whether to use fallback rendering mode if DOM patch mode fails."                      },
+
+      {"column_markers",
+       setting_value_t{false},
+       "Enable or disable visual column markers in the editor."                               },
+
+      {"column_markers_columns",
+       setting_value_t{std::vector<int>{60, 72, 80, 88, 96, 104, 112, 120, 128}},
+       "List of column positions (in characters) where vertical guide lines will be drawn."   },
+
+      {"column_markers_colors",
+       setting_value_t{std::vector<std::string>{
+           "#e5e5e5",
+           "#b0d0ff",
+           "#ffc0ff",
+           "#e5e5e5",
+           "#ffb0a0",
+           "#e5e5e5",
+           "#e5e5e5",
+           "#e5e5e5",
+           "#e5e5e5"
+       }},
+       "Colors for each column marker, in #RRGGBB or #RGB format, matching the order of "
+       "'column_markers_columns'."                                                            },
 
       {"update_cooldown",
        setting_value_t{65},
