@@ -32,6 +32,18 @@ class PreviewConfig {
        setting_value_t{false},
        "Automatically set documents to read-only mode when they are not writable."            },
 
+      {"color_tooltip",
+       setting_value_t{false},
+       "Show hex colors in tooltips when the mouse hovers over them."                         },
+
+      {"color_tooltip_size",
+       setting_value_t{"small"},
+       "Tooltip size: small, medium, or large. The first letter is significant."              },
+
+      {"color_chooser",
+       setting_value_t{false},
+       "Open the color chooser when double-clicking a color value."                           },
+
       {"column_markers",
        setting_value_t{false},
        "Enable or disable visual column markers in the editor."                               },
