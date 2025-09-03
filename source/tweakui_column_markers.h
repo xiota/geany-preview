@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
-#include <scintilla/Scintilla.h>
 #include <pluginutils.h>  // for plugin_signal_connect()
+#include <scintilla/Scintilla.h>
 
 #include "preview_config.h"
 #include "preview_context.h"

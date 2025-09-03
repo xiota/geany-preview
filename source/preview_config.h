@@ -28,6 +28,10 @@ class PreviewConfig {
        setting_value_t{false},
        "Whether to use fallback rendering mode if DOM patch mode fails."                      },
 
+      {"auto_set_read_only",
+       setting_value_t{false},
+       "Automatically set documents to read-only mode when they are not writable."            },
+
       {"column_markers",
        setting_value_t{false},
        "Enable or disable visual column markers in the editor."                               },
