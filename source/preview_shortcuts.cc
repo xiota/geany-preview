@@ -20,7 +20,7 @@
 
 namespace {
 
-PreviewContext *previewContext = nullptr;
+PreviewContext *preview_context = nullptr;
 
 bool commandExists(const std::string &cmd) {
   if (cmd.empty()) {
@@ -75,25 +75,25 @@ void replaceAll(std::string &s, const std::string &from, const std::string &to) 
 }  // namespace
 
 void PreviewShortcuts::onFocusPreview(guint /*key_id*/) {
-  if (!previewContext || !previewContext->preview_pane_) {
+  if (!preview_context || !preview_context->preview_pane_) {
     return;
   }
 
-  GtkWidget *preview = previewContext->preview_pane_->widget();
+  GtkWidget *preview = preview_context->preview_pane_->widget();
   if (preview) {
     GtkUtils::activateNotebookPageForWidget(preview);
   }
 }
 
 void PreviewShortcuts::onFocusPreviewEditor(guint /*key_id*/) {
-  if (!previewContext || !previewContext->preview_pane_) {
+  if (!preview_context || !preview_context->preview_pane_) {
     keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
     return;
   }
 
   GeanyDocument *doc = document_get_current();
   GtkWidget *sci = (doc && doc->editor) ? GTK_WIDGET(doc->editor->sci) : nullptr;
-  GtkWidget *preview = previewContext->preview_pane_->widget();
+  GtkWidget *preview = preview_context->preview_pane_->widget();
 
   const bool inEditor = sci && gtk_widget_has_focus(sci);
   const bool inPreview = preview && gtk_widget_has_focus(preview);
@@ -112,7 +112,7 @@ void PreviewShortcuts::onFocusPreviewEditor(guint /*key_id*/) {
 }
 
 void PreviewShortcuts::onFocusSidebarEditor(guint /*key_id*/) {
-  if (!previewContext || !previewContext->geany_sidebar_) {
+  if (!preview_context || !preview_context->geany_sidebar_) {
     keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
     return;
   }
@@ -122,15 +122,15 @@ void PreviewShortcuts::onFocusSidebarEditor(guint /*key_id*/) {
 
   const bool inEditor = sci && gtk_widget_has_focus(sci);
   const bool inSidebar =
-      previewContext->geany_sidebar_ && gtk_widget_has_focus(previewContext->geany_sidebar_);
+      preview_context->geany_sidebar_ && gtk_widget_has_focus(preview_context->geany_sidebar_);
 
   if (!inEditor && !inSidebar) {
     keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
     return;
   }
 
-  if (inEditor && previewContext->geany_sidebar_) {
-    GtkUtils::activateNotebookPageForWidget(previewContext->geany_sidebar_);
+  if (inEditor && preview_context->geany_sidebar_) {
+    GtkUtils::activateNotebookPageForWidget(preview_context->geany_sidebar_);
     return;
   }
 
@@ -145,7 +145,7 @@ void PreviewShortcuts::onOpenTerminal(guint /*key_id*/) {
 
   auto dirPath = std::filesystem::path(doc->real_path).parent_path();
 
-  std::string cmd = previewContext->preview_config_->get<std::string>("terminal_command");
+  std::string cmd = preview_context->preview_config_->get<std::string>("terminal_command");
 
   if (!commandExists(cmd)) {
     if (commandExists("xdg-terminal-exec")) {
@@ -172,7 +172,7 @@ void PreviewShortcuts::onOpenTerminal(guint /*key_id*/) {
 
 void PreviewShortcuts::registerAll() {
   // Stash context for callbacks
-  previewContext = context_;
+  preview_context = context_;
 
   for (gsize i = 0; i < std::size(shortcut_defs_); ++i) {
     keybindings_set_item(
