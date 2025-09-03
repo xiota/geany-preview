@@ -145,6 +145,9 @@ class PreviewConfig {
 
  private:
   void onDialogResponse(GtkDialog *dialog, gint response_id);
+  GtkListStore *createConfigModel();
+  GtkTreeView *createConfigTreeView(GtkListStore *store);
+  void connectConfigSignals(GtkTreeView *tree_view, GtkDialog *dialog);
 
   std::string config_path_;
 };

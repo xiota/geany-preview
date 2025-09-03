@@ -257,7 +257,8 @@ void PreviewConfig::onDialogResponse(GtkDialog *dialog, gint response_id) {
   }
 }
 
-GtkWidget *PreviewConfig::buildConfigWidget(GtkDialog *dialog) {
+// Builds and returns a populated GtkListStore from settings_
+GtkListStore *PreviewConfig::createConfigModel() {
   GtkListStore *store = gtk_list_store_new(
       NUM_COLS,
       G_TYPE_STRING,   // key
@@ -269,7 +270,6 @@ GtkWidget *PreviewConfig::buildConfigWidget(GtkDialog *dialog) {
       G_TYPE_BOOLEAN   // show text?
   );
 
-  // Populate from setting_defs_ to preserve order
   for (const auto &def : setting_defs_) {
     auto it = settings_.find(def.key);
     if (it == settings_.end()) {
@@ -328,18 +328,18 @@ GtkWidget *PreviewConfig::buildConfigWidget(GtkDialog *dialog) {
     );
   }
 
+  return store;
+}
+
+// Creates the GtkTreeView and its columns (no signals yet)
+GtkTreeView *PreviewConfig::createConfigTreeView(GtkListStore *store) {
   GtkWidget *tree_view_widget = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
   GtkTreeView *tree_view = GTK_TREE_VIEW(tree_view_widget);
-  g_object_unref(store);
 
   // Tooltips from hidden help column
   gtk_tree_view_set_tooltip_column(tree_view, COL_HELP);
 
-  auto *ctx = g_new(edit_ctx_t, 1);
-  ctx->self = this;
-  ctx->tree_view = tree_view;
-
-  // Column: Key (read-only text)
+  // Column: Key
   {
     GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
     GtkTreeViewColumn *column =
@@ -349,14 +349,13 @@ GtkWidget *PreviewConfig::buildConfigWidget(GtkDialog *dialog) {
     gtk_tree_view_append_column(tree_view, column);
   }
 
-  // Column: Value (toggle for bool, text for others)
+  // Column: Value (toggle + text)
   {
     GtkTreeViewColumn *value_column = gtk_tree_view_column_new();
     gtk_tree_view_column_set_title(value_column, "Value");
 
     // Toggle renderer for bools
     GtkCellRenderer *toggle_renderer = gtk_cell_renderer_toggle_new();
-    g_signal_connect(toggle_renderer, "toggled", G_CALLBACK(onBoolToggled), ctx);
     g_object_set(toggle_renderer, "xalign", 0.0f, NULL);
     gtk_tree_view_column_pack_start(value_column, toggle_renderer, FALSE);
     gtk_tree_view_column_add_attribute(value_column, toggle_renderer, "active", COL_VALUE_BOOL);
@@ -364,18 +363,9 @@ GtkWidget *PreviewConfig::buildConfigWidget(GtkDialog *dialog) {
         value_column, toggle_renderer, "visible", COL_SHOW_TOGGLE
     );
 
-    // Text renderer for int/string
+    // Text renderer for others
     GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new();
     g_object_set(text_renderer, "editable", TRUE, NULL);
-    g_signal_connect_data(
-        text_renderer,
-        "edited",
-        G_CALLBACK(onValueEdited),
-        ctx,
-        (GClosureNotify)g_free,
-        (GConnectFlags)0
-    );
-    ctx = nullptr;  // ownership passed to signal
     gtk_tree_view_column_pack_start(value_column, text_renderer, TRUE);
     gtk_tree_view_column_add_attribute(value_column, text_renderer, "text", COL_VALUE_STR);
     gtk_tree_view_column_add_attribute(value_column, text_renderer, "visible", COL_SHOW_TEXT);
@@ -385,7 +375,7 @@ GtkWidget *PreviewConfig::buildConfigWidget(GtkDialog *dialog) {
     gtk_tree_view_append_column(tree_view, value_column);
   }
 
-  // Column: Type (read-only text)
+  // Column: Type
   {
     GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
     GtkTreeViewColumn *column =
@@ -394,12 +384,35 @@ GtkWidget *PreviewConfig::buildConfigWidget(GtkDialog *dialog) {
     gtk_tree_view_append_column(tree_view, column);
   }
 
-  GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
-  gtk_container_add(GTK_CONTAINER(scrolled_window), GTK_WIDGET(tree_view));
-  gtk_scrolled_window_set_policy(
-      GTK_SCROLLED_WINDOW(scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC
+  return tree_view;
+}
+
+// Connects signals for editing and dialog responses
+void PreviewConfig::connectConfigSignals(GtkTreeView *tree_view, GtkDialog *dialog) {
+  auto *ctx = g_new(edit_ctx_t, 1);
+  ctx->self = this;
+  ctx->tree_view = tree_view;
+
+  // Find the value column (second column in our setup)
+  GList *columns = gtk_tree_view_get_columns(tree_view);
+  GtkTreeViewColumn *value_column = GTK_TREE_VIEW_COLUMN(g_list_nth_data(columns, 1));
+  g_list_free(columns);
+
+  // Get renderers from value column
+  GList *renderers = gtk_cell_layout_get_cells(GTK_CELL_LAYOUT(value_column));
+  GtkCellRenderer *toggle_renderer = GTK_CELL_RENDERER(g_list_nth_data(renderers, 0));
+  GtkCellRenderer *text_renderer = GTK_CELL_RENDERER(g_list_nth_data(renderers, 1));
+  g_list_free(renderers);
+
+  g_signal_connect(toggle_renderer, "toggled", G_CALLBACK(onBoolToggled), ctx);
+  g_signal_connect_data(
+      text_renderer,
+      "edited",
+      G_CALLBACK(onValueEdited),
+      ctx,
+      (GClosureNotify)g_free,
+      (GConnectFlags)0
   );
-  gtk_widget_set_size_request(scrolled_window, 500, 250);
 
   g_signal_connect(
       dialog,
@@ -409,6 +422,21 @@ GtkWidget *PreviewConfig::buildConfigWidget(GtkDialog *dialog) {
       }),
       this
   );
+}
+
+GtkWidget *PreviewConfig::buildConfigWidget(GtkDialog *dialog) {
+  GtkListStore *store = createConfigModel();
+  GtkTreeView *tree_view = createConfigTreeView(store);
+  g_object_unref(store);
+
+  connectConfigSignals(tree_view, dialog);
+
+  GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+  gtk_container_add(GTK_CONTAINER(scrolled_window), GTK_WIDGET(tree_view));
+  gtk_scrolled_window_set_policy(
+      GTK_SCROLLED_WINDOW(scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC
+  );
+  gtk_widget_set_size_request(scrolled_window, 500, 250);
 
   return scrolled_window;
 }
