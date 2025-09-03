@@ -1,12 +1,13 @@
 BasedOnStyle: Google
 AlignAfterOpenBracket: BlockIndent
-AlignArrayOfStructures: Left
+AlignArrayOfStructures: None
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortFunctionsOnASingleLine: Empty
 BinPackArguments: false
 BinPackParameters: false
 ColumnLimit: 96
 CommentPragmas: '^SPDX'
+Cpp11BracedListStyle: false
 DerivePointerAlignment: false
 IncludeBlocks: Preserve
 IncludeCategories:

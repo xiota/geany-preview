@@ -25,17 +25,17 @@ constexpr int kNumStreams = 2;
 
 struct AsyncContext {
   GPid pid{};
-  GIOChannel *out_ch{nullptr};
-  GIOChannel *err_ch{nullptr};
+  GIOChannel *out_ch{ nullptr };
+  GIOChannel *err_ch{ nullptr };
   std::ostringstream outbuf;
   std::ostringstream errbuf;
   Subprocess::CompletionHandler handler;
-  int exit_status{-1};
-  int streams_remaining{kNumStreams};  // stdout + stderr still open
-  guint out_watch_id{0};
-  guint err_watch_id{0};
-  guint child_watch_id{0};
-  bool cancelled{false};
+  int exit_status{ -1 };
+  int streams_remaining{ kNumStreams };  // stdout + stderr still open
+  guint out_watch_id{ 0 };
+  guint err_watch_id{ 0 };
+  guint child_watch_id{ 0 };
+  bool cancelled{ false };
 };
 static std::set<AsyncContext *> active_contexts;
 
@@ -64,7 +64,7 @@ bool writeAll(int fd, std::string_view data) noexcept {
 
 static void cleanupProcess(AsyncContext *ctx) {
   if (ctx->streams_remaining == 0 && ctx->exit_status != -1) {
-    Subprocess::Result res{ctx->outbuf.str(), ctx->errbuf.str(), ctx->exit_status};
+    Subprocess::Result res{ ctx->outbuf.str(), ctx->errbuf.str(), ctx->exit_status };
     ctx->handler(res);
     if (ctx->out_ch) {
       g_io_channel_unref(ctx->out_ch);

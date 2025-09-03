@@ -35,13 +35,23 @@ class PreviewShortcuts {
     GeanyKeyCallback callback;
   };
 
+  // clang-format off
   inline static const ShortcutDef shortcut_defs_[] = {
-      {"Focus Preview",           "Focus on Preview",               onFocusPreview      },
+    { "Focus Preview",
+      "Focus on Preview",
+      onFocusPreview },
 
-      {"Focus Preview or Editor",
-       "Toggle focus between Preview and Editor",                   onFocusPreviewEditor},
-      {"Focus Sidebar or Editor",
-       "Toggle focus between Sidebar and Editor",                   onFocusSidebarEditor},
-      {"Open Terminal",           "Open Terminal at document path", onOpenTerminal      }
+    { "Focus Preview or Editor",
+      "Toggle focus between Preview and Editor",
+      onFocusPreviewEditor },
+
+    { "Focus Sidebar or Editor",
+      "Toggle focus between Sidebar and Editor",
+      onFocusSidebarEditor },
+
+    { "Open Terminal",
+      "Open Terminal at document path",
+      onOpenTerminal }
   };
+  // clang-format on
 };

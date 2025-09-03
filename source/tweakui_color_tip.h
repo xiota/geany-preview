@@ -253,11 +253,11 @@ class TweakUiColorTip {
       return {};
     }
     auto last = sv.find_last_not_of(chars);
-    return std::string{sv.substr(first, last - first + 1)};
+    return std::string{ sv.substr(first, last - first + 1) };
   }
 
   static std::string to_lower(std::string_view sv) {
-    std::string out{sv};
+    std::string out{ sv };
     std::transform(out.begin(), out.end(), out.begin(), [](unsigned char c) {
       return static_cast<char>(std::tolower(c));
     });
@@ -265,6 +265,6 @@ class TweakUiColorTip {
   }
 
   PreviewContext *context_ = nullptr;
-  std::string color_tooltip_size_{"small"};
-  std::string colortip_template_{"    "};
+  std::string color_tooltip_size_{ "small" };
+  std::string colortip_template_{ "    " };
 };

@@ -40,9 +40,9 @@ class Subprocess {
   static std::chrono::seconds nextCooldown(std::chrono::seconds current) noexcept;
 
   struct CacheEntry {
-    bool found{false};
+    bool found{ false };
     std::chrono::steady_clock::time_point last_check{};
-    std::chrono::seconds cooldown{std::chrono::seconds(1)};
+    std::chrono::seconds cooldown{ std::chrono::seconds(1) };
   };
 
   static std::unordered_map<std::string, CacheEntry> binary_cache_;

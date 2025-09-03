@@ -9,7 +9,7 @@
 
 class ConverterAsciidoctor final : public ConverterSubprocess {
  public:
-  ConverterAsciidoctor() : ConverterSubprocess({"asciidoctor", "-o", "-", "-"}) {}
+  ConverterAsciidoctor() : ConverterSubprocess({ "asciidoctor", "-o", "-", "-" }) {}
 
   std::string_view id() const noexcept override {
     return "asciidoctor";

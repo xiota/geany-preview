@@ -44,31 +44,31 @@ void ConverterRegistrar::registerBuiltins() {
 
 void ConverterRegistrar::registerDefaultMappings() {
   // Native
-  registerFormatAliases("html", "HTML", {".htm", ".html", ".shtml", ".xhtml"});
-  registerFormatAliases("markdown", "Markdown", {".md", ".markdown", ".txt"});
+  registerFormatAliases("html", "HTML", { ".htm", ".html", ".shtml", ".xhtml" });
+  registerFormatAliases("markdown", "Markdown", { ".md", ".markdown", ".txt" });
 
   // Subprocess
-  registerFormatAliases("asciidoc", "Asciidoc", {".asciidoc", ".adoc", ".asc"});
+  registerFormatAliases("asciidoc", "Asciidoc", { ".asciidoc", ".adoc", ".asc" });
 
   // Pandoc
-  registerFormatAliases("creole", "Creole Wiki", {".creole"});            // extension based
-  registerFormatAliases("docbook", "DocBook", {".dbk"});                  // extension based
-  registerFormatAliases("dokuwiki", "DokuWiki", {".dokuwiki", ".wiki"});  // extension based
-  registerFormatAliases("latex", "LaTeX", {".tex", ".latex"});
-  registerFormatAliases("man", "Unix Manpage", {".man"});           // extension based
-  registerFormatAliases("mediawiki", "MediaWiki", {".mediawiki"});  // extension based
-  registerFormatAliases("org", "Org mode", {".org"});
-  registerFormatAliases("rst", "reStructuredText", {".rst"});
-  registerFormatAliases("rtf", "Rich Text Format", {".rtf"});  // extension based
-  registerFormatAliases("t2t", "Txt2tags", {".t2t"});
-  registerFormatAliases("textile", "Textile", {".textile"});              // extension based
-  registerFormatAliases("tikiwiki", "TikiWiki", {".tiki", ".tikiwiki"});  // extension based
-  registerFormatAliases("twiki", "TWiki", {".twiki"});                    // extension based
-  registerFormatAliases("vimwiki", "Vimwiki", {".vw", ".vimwiki"});       // extension based
+  registerFormatAliases("creole", "Creole Wiki", { ".creole" });            // extension based
+  registerFormatAliases("docbook", "DocBook", { ".dbk" });                  // extension based
+  registerFormatAliases("dokuwiki", "DokuWiki", { ".dokuwiki", ".wiki" });  // extension based
+  registerFormatAliases("latex", "LaTeX", { ".tex", ".latex" });
+  registerFormatAliases("man", "Unix Manpage", { ".man" });           // extension based
+  registerFormatAliases("mediawiki", "MediaWiki", { ".mediawiki" });  // extension based
+  registerFormatAliases("org", "Org mode", { ".org" });
+  registerFormatAliases("rst", "reStructuredText", { ".rst" });
+  registerFormatAliases("rtf", "Rich Text Format", { ".rtf" });  // extension based
+  registerFormatAliases("t2t", "Txt2tags", { ".t2t" });
+  registerFormatAliases("textile", "Textile", { ".textile" });              // extension based
+  registerFormatAliases("tikiwiki", "TikiWiki", { ".tiki", ".tikiwiki" });  // extension based
+  registerFormatAliases("twiki", "TWiki", { ".twiki" });                    // extension based
+  registerFormatAliases("vimwiki", "Vimwiki", { ".vw", ".vimwiki" });       // extension based
 }
 
 void ConverterRegistrar::registerConverter(std::unique_ptr<Converter> c) {
-  auto key = std::string{c->id()};
+  auto key = std::string{ c->id() };
   converters_[key] = std::move(c);
 }
 

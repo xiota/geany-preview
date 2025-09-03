@@ -22,7 +22,7 @@ class Document final {
   // Owning copy of the current text
   std::string text() const {
     auto view = textView();
-    return std::string{view};
+    return std::string{ view };
   }
 
   const std::string &fileName() const {

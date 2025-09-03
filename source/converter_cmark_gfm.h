@@ -20,6 +20,6 @@ class ConverterCmarkGfm final : public Converter {
 
  private:
   // Keeps the buffer alive until the next toHtml() call
-  mutable std::unique_ptr<char, decltype(&free)> html_owner_{nullptr, &free};
+  mutable std::unique_ptr<char, decltype(&free)> html_owner_{ nullptr, &free };
   mutable std::string_view html_view_;
 };
