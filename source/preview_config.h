@@ -109,6 +109,10 @@ class PreviewConfig {
       setting_value_type{ std::string{ "xdg-terminal-exec --working-directory=%d" }},
       "Command to launch a terminal. Supports XDG field codes: %d = directory of current document." },
 
+    { "theme_mode",
+      setting_value_type{ std::string{ "system" }},
+      "Theme to use for the preview: 'light', 'dark', or 'system'." },
+
     { "unchange_document",
       setting_value_type{ false},
       "Mark new, unsaved, empty documents as unchanged." },
@@ -120,14 +124,6 @@ class PreviewConfig {
     { "update_min_delay",
       setting_value_type{ 15},
       "Time in milliseconds to wait before the first preview update after a change." },
-
-    { "preview_theme",
-      setting_value_type{ std::string{ "system" }},
-      "Theme to use for the preview: 'light', 'dark', or 'system'." },
-
-    { "custom_css_path",
-      setting_value_type{ std::string{ "" }},
-      "Optional path to a custom CSS file for styling the preview output." }
   };
   // clang-format on
 

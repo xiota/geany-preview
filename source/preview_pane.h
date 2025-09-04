@@ -53,10 +53,18 @@ class PreviewPane final {
         this
     );
 
-    addWatchIfNeeded(preview_config_->configDir() / "preview.css");
-
     webview_.clearInjectedCss();
+
+    addWatchIfNeeded(preview_config_->configDir() / "preview.css");
     webview_.injectCssFromFile(preview_config_->configDir() / "preview.css");
+
+    auto theme = preview_config_->get<std::string>("theme_mode", "system");
+    if (theme == "light") {
+      webview_.injectCssFromString("html { color-scheme: light; }");
+    } else if (theme == "dark") {
+      webview_.injectCssFromString("html { color-scheme: dark; }");
+    }
+
     webview_.loadHtml("");
 
     sidebar_switch_page_handler_id_ = g_signal_connect(
@@ -196,15 +204,27 @@ class PreviewPane final {
     }
 
     // load new css on document type change
+    bool changed = false;
     auto key = registrar_.getConverterKey(document);
     if (key != previous_key_) {
       addWatchIfNeeded(preview_config_->configDir() / "preview.css");
       addWatchIfNeeded(preview_config_->configDir() / std::string{ key + ".css" });
-
       webview_.clearInjectedCss();
       webview_.injectCssFromFile(preview_config_->configDir() / "preview.css");
       webview_.injectCssFromFile(preview_config_->configDir() / std::string{ key + ".css" });
       previous_key_ = key;
+      changed = true;
+    }
+
+    auto theme = preview_config_->get<std::string>("theme_mode", "system");
+    if (changed || theme != previous_theme_) {
+      if (theme == "light") {
+        webview_.injectCssFromString("html { color-scheme: light; }");
+      } else if (theme == "dark") {
+        webview_.injectCssFromString("html { color-scheme: dark; }");
+      } else {
+        webview_.injectCssFromString("html { color-scheme: light dark; }");
+      }
     }
 
     auto file = document.fileName();
@@ -227,14 +247,27 @@ class PreviewPane final {
     auto [it, inserted] = watches_.emplace(path, FileUtils::FileWatchHandle{});
 
     FileUtils::watchFile(it->second, path, [this, path]() {
+      bool changed = false;
       if (path == preview_config_->configDir() / (previous_key_ + ".css")) {
         webview_.clearInjectedCss();
         webview_.injectCssFromFile(preview_config_->configDir() / "preview.css");
         webview_.injectCssFromFile(path);
+        changed = true;
       } else if (path == preview_config_->configDir() / "preview.css") {
         webview_.clearInjectedCss();
         webview_.injectCssFromFile(path);
         webview_.injectCssFromFile(preview_config_->configDir() / (previous_key_ + ".css"));
+        changed = true;
+      }
+      if (changed) {
+        auto theme = preview_config_->get<std::string>("theme_mode", "system");
+        if (theme == "light") {
+          webview_.injectCssFromString("html { color-scheme: light; }");
+        } else if (theme == "dark") {
+          webview_.injectCssFromString("html { color-scheme: dark; }");
+        } else {
+          webview_.injectCssFromString("html { color-scheme: light dark; }");
+        }
       }
     });
   }
@@ -266,6 +299,7 @@ class PreviewPane final {
 
   std::unordered_map<std::string, double> scroll_by_file_;
   std::string previous_key_;
+  std::string previous_theme_;
 
   std::unordered_map<std::filesystem::path, FileUtils::FileWatchHandle> watches_;
 };
