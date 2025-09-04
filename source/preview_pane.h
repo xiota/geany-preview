@@ -12,7 +12,7 @@
 #include "converter_registrar.h"
 #include "preview_config.h"
 #include "preview_context.h"
-#include "util/gtk_helpers.h"
+#include "util/gtk_utils.h"
 #include "webview.h"
 
 class PreviewPane final {

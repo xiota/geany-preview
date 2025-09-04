@@ -16,7 +16,7 @@
 #include <ui_utils.h>
 
 #include "preview_pane.h"
-#include "util/gtk_helpers.h"
+#include "util/gtk_utils.h"
 
 namespace {
 

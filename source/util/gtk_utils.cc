@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2025 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "gtk_helpers.h"
+#include "gtk_utils.h"
 
 #include <gtk/gtk.h>
 
