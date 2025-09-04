@@ -67,6 +67,18 @@ class WebView final {
     webview_context_ = webkit_web_view_get_context(WEBKIT_WEB_VIEW(webview_));
     webview_content_manager_ =
         webkit_web_view_get_user_content_manager(WEBKIT_WEB_VIEW(webview_));
+
+    // Hook load-changed to inject patcher after the new page finishes loading
+    g_signal_connect(
+        webview_,
+        "load-changed",
+        G_CALLBACK(+[](WebKitWebView *view, WebKitLoadEvent load_event, gpointer user_data) {
+          if (load_event == WEBKIT_LOAD_FINISHED) {
+            static_cast<WebView *>(user_data)->injectPatcher();
+          }
+        }),
+        this
+    );
   }
 
   ~WebView() noexcept {
@@ -103,6 +115,8 @@ class WebView final {
   ) {
     double fraction = scroll_fraction_ptr ? *scroll_fraction_ptr : internal_scroll_fraction_;
     fraction = std::clamp(fraction, 0.0, 1.0);
+
+    injectBaseUri(base_uri);
 
     std::string html =
         "<!DOCTYPE html><html><head>"
@@ -234,7 +248,7 @@ class WebView final {
     out.reserve(input.size());
 
     for (size_t i = 0; i < input.size(); ++i) {
-      char c = input[i];
+      unsigned char c = input[i];
       if (c == '`') {
         out += "\\`";
       } else if (c == '\\') {
@@ -246,6 +260,12 @@ class WebView final {
         out += "\\n";
       } else if (c == '\r') {
         out += "\\r";
+      } else if (c == 0xE2 && i + 2 < input.size() &&
+                 static_cast<unsigned char>(input[i + 1]) == 0x80 &&
+                 (static_cast<unsigned char>(input[i + 2]) == 0xA8 ||   // U+2028
+                  static_cast<unsigned char>(input[i + 2]) == 0xA9)) {  // U+2029
+        out += (input[i + 2] == char(0xA8)) ? "\\u2028" : "\\u2029";
+        i += 2;
       } else {
         out += c;
       }
@@ -259,7 +279,6 @@ class WebView final {
     }
 
     std::string escaped_uri = escapeForJsTemplateLiteral(base_uri);
-
     std::string js =
         "var baseEl = document.querySelector('base') || document.createElement('base');"
         "baseEl.href = '" +

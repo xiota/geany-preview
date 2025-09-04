@@ -39,13 +39,15 @@ class PreviewPane final {
       gtk_notebook_set_current_page(GTK_NOTEBOOK(sidebar_notebook_), sidebar_page_number_);
     }
 
+    initWebView();
+
     init_handler_id_ = g_signal_connect(
         webview_.widget(),
         "load-changed",
         G_CALLBACK(+[](WebKitWebView *, WebKitLoadEvent e, gpointer user_data) {
           auto *self = static_cast<PreviewPane *>(user_data);
           if (e == WEBKIT_LOAD_FINISHED) {
-            self->triggerUpdate();
+            self->scheduleUpdate();
             g_signal_handler_disconnect(self->webview_.widget(), self->init_handler_id_);
             self->init_handler_id_ = 0;
           }
@@ -53,19 +55,17 @@ class PreviewPane final {
         this
     );
 
-    webview_.clearInjectedCss();
-
-    addWatchIfNeeded(preview_config_->configDir() / "preview.css");
-    webview_.injectCssFromFile(preview_config_->configDir() / "preview.css");
-
-    auto theme = preview_config_->get<std::string>("theme_mode", "system");
-    if (theme == "light") {
-      webview_.injectCssFromString("html { color-scheme: light; }");
-    } else if (theme == "dark") {
-      webview_.injectCssFromString("html { color-scheme: dark; }");
-    }
-
-    webview_.loadHtml("");
+    g_signal_connect(
+        webview_.widget(),
+        "load-changed",
+        G_CALLBACK(+[](WebKitWebView *, WebKitLoadEvent e, gpointer user_data) {
+          auto *self = static_cast<PreviewPane *>(user_data);
+          if (e == WEBKIT_LOAD_FINISHED) {
+            self->checkHealth();
+          }
+        }),
+        this
+    );
 
     sidebar_switch_page_handler_id_ = g_signal_connect(
         sidebar_notebook_,
@@ -129,6 +129,69 @@ class PreviewPane final {
     return page_box_ ? page_box_ : webview_.widget();
   }
 
+  void initWebView() {
+    previous_base_uri_ = std::filesystem::path{};
+    previous_key_.clear();
+    previous_theme_.clear();
+
+    webview_.loadHtml("");
+
+    webview_.clearInjectedCss();
+    addWatchIfNeeded(preview_config_->configDir() / "preview.css");
+    webview_.injectCssFromFile(preview_config_->configDir() / "preview.css");
+
+    auto theme = preview_config_->get<std::string>("theme_mode", "system");
+    if (theme == "light") {
+      webview_.injectCssFromString("html { color-scheme: light; }");
+    } else if (theme == "dark") {
+      webview_.injectCssFromString("html { color-scheme: dark; }");
+    }
+
+    triggerUpdate();
+  }
+
+  PreviewPane &checkHealth() {
+    const char *js = R"JS(
+!(
+  document.documentElement &&
+  document.head &&
+  document.body &&
+  document.getElementById('root')
+)
+)JS";
+
+    webkit_web_view_evaluate_javascript(
+        WEBKIT_WEB_VIEW(webview_.widget()),
+        js,
+        -1,
+        nullptr,
+        nullptr,
+        nullptr,
+        [](GObject *source, GAsyncResult *res, gpointer user_data) {
+          GError *err = nullptr;
+          JSCValue *val =
+              webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(source), res, &err);
+          bool needs_reinit = false;
+          if (!err && jsc_value_is_boolean(val)) {
+            needs_reinit = jsc_value_to_boolean(val);
+          }
+          if (val) {
+            g_object_unref(val);
+          }
+          if (err) {
+            g_error_free(err);
+          }
+
+          if (needs_reinit) {
+            auto *self = static_cast<PreviewPane *>(user_data);
+            self->initWebView();
+          }
+        },
+        this
+    );
+    return *this;
+  }
+
   PreviewPane &scheduleUpdate() {
     if (update_pending_) {
       return *this;
@@ -152,7 +215,6 @@ class PreviewPane final {
         },
         this
     );
-
     return *this;
   }
 
