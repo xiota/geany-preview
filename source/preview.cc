@@ -68,9 +68,9 @@ gboolean previewInit(
     gpointer /*user_data*/
 ) {
   // config
-  auto preview_config_path = std::filesystem::path(plugin->geany_data->app->configdir) /
-                             "plugins" / "preview" / "preview.conf";
-  preview_config = std::make_unique<PreviewConfig>(preview_config_path);
+  auto preview_config_path =
+      std::filesystem::path(plugin->geany_data->app->configdir) / "plugins" / "preview";
+  preview_config = std::make_unique<PreviewConfig>(preview_config_path, "preview.conf");
   preview_config->load();
 
   // context

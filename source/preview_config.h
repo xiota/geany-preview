@@ -5,6 +5,7 @@
 
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <variant>
 #include <vector>
@@ -133,7 +134,10 @@ class PreviewConfig {
   std::unordered_map<std::string, setting_value_type> settings_;
   std::unordered_map<std::string, std::string> help_texts_;
 
-  explicit PreviewConfig(const std::filesystem::path &full_path);
+  explicit PreviewConfig(
+      const std::filesystem::path &config_path,
+      std::string_view config_file
+  );
 
   bool load();
   bool save() const;
@@ -163,11 +167,16 @@ class PreviewConfig {
     return {};
   }
 
+  const std::filesystem::path &configDir() const noexcept {
+    return config_path_;
+  }
+
  private:
   void onDialogResponse(GtkDialog *dialog, gint response_id);
   GtkListStore *createConfigModel();
   GtkTreeView *createConfigTreeView(GtkListStore *store);
   void connectConfigSignals(GtkTreeView *tree_view, GtkDialog *dialog);
 
-  std::string config_path_;
+  std::filesystem::path config_path_;
+  std::string config_file_;
 };

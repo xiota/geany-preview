@@ -209,9 +209,13 @@ static void onSearchEntryChanged(GtkEditable *editable, gpointer user_data) {
 
 }  // namespace
 
-PreviewConfig::PreviewConfig(const std::filesystem::path &full_path) {
-  std::filesystem::create_directories(full_path.parent_path());
-  config_path_ = full_path.string();
+PreviewConfig::PreviewConfig(
+    const std::filesystem::path &config_path,
+    std::string_view config_file
+)
+    : config_path_(std::filesystem::weakly_canonical(config_path)), config_file_(config_file) {
+  auto full_path = config_path_ / config_file_;
+  std::filesystem::create_directories(config_path_);
 
   // Populate settings_ and help_texts_ from the master table
   for (const auto &def : setting_defs_) {
@@ -221,13 +225,13 @@ PreviewConfig::PreviewConfig(const std::filesystem::path &full_path) {
 }
 
 bool PreviewConfig::load() {
-  namespace fs = std::filesystem;
-  if (!fs::exists(config_path_)) {
+  auto full_path = config_path_ / config_file_;
+  if (!std::filesystem::exists(full_path)) {
     return false;
   }
 
   try {
-    auto tbl = toml::parse_file(config_path_);
+    auto tbl = toml::parse_file(full_path.string());
     if (auto preview_tbl = tbl["Preview"].as_table()) {
       for (auto &[key, value] : settings_) {
         auto node = (*preview_tbl)[key];
@@ -300,12 +304,13 @@ bool PreviewConfig::save() const {
   toml::table root;
   root.insert_or_assign("Preview", std::move(preview_tbl));
 
+  auto full_path = config_path_ / config_file_;
   try {
-    std::ofstream out(config_path_, std::ios::trunc);
+    std::ofstream out(full_path, std::ios::trunc);
     out << root;
     return true;
   } catch (...) {
-    g_warning("Failed to save config to %s", config_path_.c_str());
+    g_warning("Failed to save config to %s", full_path.string().c_str());
     return false;
   }
 }
