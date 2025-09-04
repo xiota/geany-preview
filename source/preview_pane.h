@@ -13,6 +13,7 @@
 #include "converter_registrar.h"
 #include "preview_config.h"
 #include "preview_context.h"
+#include "util/file_utils.h"
 #include "util/gtk_utils.h"
 #include "webview.h"
 
@@ -51,6 +52,8 @@ class PreviewPane final {
         }),
         this
     );
+
+    addWatchIfNeeded(preview_config_->configDir() / "preview.css");
 
     webview_.clearInjectedCss();
     webview_.injectCssFromFile(preview_config_->configDir() / "preview.css");
@@ -110,6 +113,8 @@ class PreviewPane final {
       gtk_widget_destroy(page_box_);
       page_box_ = nullptr;
     }
+
+    stopAllWatches();
   }
 
   GtkWidget *widget() const {
@@ -193,6 +198,9 @@ class PreviewPane final {
     // load new css on document type change
     auto key = registrar_.getConverterKey(document);
     if (key != previous_key_) {
+      addWatchIfNeeded(preview_config_->configDir() / "preview.css");
+      addWatchIfNeeded(preview_config_->configDir() / std::string{ key + ".css" });
+
       webview_.clearInjectedCss();
       webview_.injectCssFromFile(preview_config_->configDir() / "preview.css");
       webview_.injectCssFromFile(preview_config_->configDir() / std::string{ key + ".css" });
@@ -208,6 +216,34 @@ class PreviewPane final {
     });
 
     return *this;
+  }
+
+  void addWatchIfNeeded(const std::filesystem::path &path) {
+    if (watches_.find(path) != watches_.end()) {
+      return;
+    }
+
+    // Construct the handle in-place in the map
+    auto [it, inserted] = watches_.emplace(path, FileUtils::FileWatchHandle{});
+
+    FileUtils::watchFile(it->second, path, [this, path]() {
+      if (path == preview_config_->configDir() / (previous_key_ + ".css")) {
+        webview_.clearInjectedCss();
+        webview_.injectCssFromFile(preview_config_->configDir() / "preview.css");
+        webview_.injectCssFromFile(path);
+      } else if (path == preview_config_->configDir() / "preview.css") {
+        webview_.clearInjectedCss();
+        webview_.injectCssFromFile(path);
+        webview_.injectCssFromFile(preview_config_->configDir() / (previous_key_ + ".css"));
+      }
+    });
+  }
+
+  void stopAllWatches() {
+    for (auto &[path, handle] : watches_) {
+      FileUtils::stopWatching(handle);
+    }
+    watches_.clear();
   }
 
  private:
@@ -230,4 +266,6 @@ class PreviewPane final {
 
   std::unordered_map<std::string, double> scroll_by_file_;
   std::string previous_key_;
+
+  std::unordered_map<std::filesystem::path, FileUtils::FileWatchHandle> watches_;
 };
