@@ -4,6 +4,7 @@
 #pragma once
 
 #include <algorithm>
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 
@@ -58,6 +59,8 @@ class PreviewPane final {
         this
     );
 
+    webview_.clearInjectedCss();
+    webview_.injectCssFromFile(preview_config_->configDir() / "preview.css");
     webview_.loadHtml("");
 
     sidebar_switch_page_handler_id_ = g_signal_connect(
