@@ -56,13 +56,18 @@ function applyPatch(newHtml) {
 
 class WebView final {
  public:
-  WebView() noexcept
-      : webview_settings_(webkit_settings_new()),
-        webview_(webkit_web_view_new_with_settings(webview_settings_)),
-        webview_context_(webkit_web_view_get_context(WEBKIT_WEB_VIEW(webview_))),
-        webview_content_manager_(
-            webkit_web_view_get_user_content_manager(WEBKIT_WEB_VIEW(webview_))
-        ) {}
+  WebView() noexcept : webview_settings_(webkit_settings_new()) {
+    // Allow file:// to load file:// resources
+    webkit_settings_set_allow_file_access_from_file_urls(webview_settings_, true);
+
+    // Allow file:// to load remote resources
+    webkit_settings_set_allow_universal_access_from_file_urls(webview_settings_, true);
+
+    webview_ = webkit_web_view_new_with_settings(webview_settings_);
+    webview_context_ = webkit_web_view_get_context(WEBKIT_WEB_VIEW(webview_));
+    webview_content_manager_ =
+        webkit_web_view_get_user_content_manager(WEBKIT_WEB_VIEW(webview_));
+  }
 
   ~WebView() noexcept {
     if (webview_settings_) {
@@ -77,7 +82,7 @@ class WebView final {
     return webview_;
   }
 
-  void injectPatcher() {
+  WebView &injectPatcher() {
     webkit_web_view_evaluate_javascript(
         WEBKIT_WEB_VIEW(webview_),
         kApplyPatchJS,
@@ -88,6 +93,7 @@ class WebView final {
         nullptr,
         nullptr
     );
+    return *this;
   }
 
   WebView &loadHtml(
@@ -100,6 +106,9 @@ class WebView final {
 
     std::string html =
         "<!DOCTYPE html><html><head>"
+        "<base href=\"" +
+        escapeForJsTemplateLiteral(base_uri) +
+        "\">"
         "<meta charset=\"UTF-8\">"
         "<title>Preview</title>"
         "<style></style>"
@@ -112,11 +121,7 @@ class WebView final {
     // Actually load the HTML into the WebView
     GBytes *bytes = g_bytes_new_static(html.data(), html.size());
     webkit_web_view_load_bytes(
-        WEBKIT_WEB_VIEW(webview_),
-        bytes,
-        "text/html",
-        "UTF-8",
-        base_uri.empty() ? nullptr : base_uri.c_str()
+        WEBKIT_WEB_VIEW(webview_), bytes, "text/html", "UTF-8", "file:///example/example.html"
     );
     g_bytes_unref(bytes);
 
@@ -140,6 +145,7 @@ class WebView final {
 
   WebView &updateHtml(
       std::string_view body_content,
+      const std::string &base_uri = "",
       double *scroll_fraction_ptr = nullptr,
       bool allow_fallback = false
   ) {
@@ -171,6 +177,8 @@ class WebView final {
            "window.scrollTo(0, document.body.scrollHeight * " +
            std::to_string(fraction) + ");";
     }
+
+    injectBaseUri(base_uri);
 
     webkit_web_view_evaluate_javascript(
         WEBKIT_WEB_VIEW(webview_), js.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr
@@ -211,13 +219,14 @@ class WebView final {
     );
   }
 
-  void setScrollFraction(double fraction) {
+  WebView &setScrollFraction(double fraction) {
     fraction = std::clamp(fraction, 0.0, 1.0);
     std::string js =
         "window.scrollTo(0, document.body.scrollHeight * " + std::to_string(fraction) + ");";
     webkit_web_view_evaluate_javascript(
         WEBKIT_WEB_VIEW(webview_), js.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr
     );
+    return *this;
   }
 
   static std::string escapeForJsTemplateLiteral(std::string_view input) {
@@ -244,11 +253,32 @@ class WebView final {
     return out;
   }
 
-  void clearInjectedCss() {
-    webkit_user_content_manager_remove_all_style_sheets(webview_content_manager_);
+  WebView &injectBaseUri(const std::string &base_uri) {
+    if (base_uri.empty()) {
+      return *this;
+    }
+
+    std::string escaped_uri = escapeForJsTemplateLiteral(base_uri);
+
+    std::string js =
+        "var baseEl = document.querySelector('base') || document.createElement('base');"
+        "baseEl.href = '" +
+        escaped_uri +
+        "';"
+        "if (document.head && !baseEl.parentNode) { document.head.prepend(baseEl); };";
+
+    webkit_web_view_evaluate_javascript(
+        WEBKIT_WEB_VIEW(webview_), js.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr
+    );
+    return *this;
   }
 
-  void injectCssFromString(const std::string &css) {
+  WebView &clearInjectedCss() {
+    webkit_user_content_manager_remove_all_style_sheets(webview_content_manager_);
+    return *this;
+  }
+
+  WebView &injectCssFromString(const std::string &css) {
     WebKitUserStyleSheet *sheet = webkit_user_style_sheet_new(
         css.c_str(),
         WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES,
@@ -258,15 +288,17 @@ class WebView final {
     );
     webkit_user_content_manager_add_style_sheet(webview_content_manager_, sheet);
     g_object_unref(sheet);
+    return *this;
   }
 
-  void injectCssFromFile(const std::filesystem::path &file) {
+  WebView &injectCssFromFile(const std::filesystem::path &file) {
     try {
       auto css = FileUtils::readFileToString(file);
       injectCssFromString(css);
     } catch (...) {
       // Silently ignore any failure (missing file, read error, etc.)
     }
+    return *this;
   }
 
  private:

@@ -225,14 +225,27 @@ class PreviewPane final {
       } else {
         webview_.injectCssFromString("html { color-scheme: light dark; }");
       }
+      previous_theme_ = theme;
     }
 
+    // base URI
     auto file = document.fileName();
-    bool allow_fallback = preview_config_->get<bool>("allow_update_fallback", false);
+    auto file_path = std::filesystem::path(file);
+    auto current_dir = file_path.parent_path().lexically_normal();
 
-    webview_.getScrollFraction([this, file, html, allow_fallback](double frac) {
+    std::string base_uri_str;
+    if (current_dir != previous_base_uri_) {
+      if (!current_dir.empty()) {
+        base_uri_str = "file://" + current_dir.string() + "/";
+      }
+      previous_base_uri_ = current_dir;
+    }
+
+    // inject HTML
+    bool allow_fallback = preview_config_->get<bool>("allow_update_fallback", false);
+    webview_.getScrollFraction([this, file, base_uri_str, html, allow_fallback](double frac) {
       scroll_by_file_[file] = frac;
-      webview_.updateHtml(html, &scroll_by_file_[file], allow_fallback);
+      webview_.updateHtml(html, base_uri_str, &scroll_by_file_[file], allow_fallback);
     });
 
     return *this;
@@ -302,4 +315,5 @@ class PreviewPane final {
   std::string previous_theme_;
 
   std::unordered_map<std::filesystem::path, FileUtils::FileWatchHandle> watches_;
+  std::filesystem::path previous_base_uri_;
 };
