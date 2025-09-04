@@ -23,14 +23,7 @@ class PreviewPane final {
         sidebar_notebook_(context_->geany_sidebar_),
         preview_config_(context_->preview_config_) {
     context_->webview_ = &webview_;
-    attach();
-  }
 
-  ~PreviewPane() noexcept {
-    detach();
-  }
-
-  PreviewPane &attach() {
     page_box_ = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     offscreen_ = gtk_offscreen_window_new();
     gtk_widget_show(offscreen_);
@@ -86,11 +79,9 @@ class PreviewPane final {
         }),
         this
     );
-
-    return *this;
   }
 
-  PreviewPane &detach() {
+  ~PreviewPane() noexcept {
     if (page_box_ && GTK_IS_NOTEBOOK(sidebar_notebook_)) {
       int idx = gtk_notebook_page_num(GTK_NOTEBOOK(sidebar_notebook_), page_box_);
       if (idx >= 0) {
@@ -119,8 +110,6 @@ class PreviewPane final {
       gtk_widget_destroy(page_box_);
       page_box_ = nullptr;
     }
-
-    return *this;
   }
 
   GtkWidget *widget() const {
