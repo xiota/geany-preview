@@ -23,6 +23,9 @@ class ConverterRegistrar final {
   Converter *getConverter(const std::string &key) const;
   Converter *getConverter(const Document &document) const;
 
+  std::string getConverterKey(const Document &document) const;
+  std::string getConverterKeyForFiletype(const std::string &geany_filetype_name) const;
+
  private:
   struct ConverterDef {
     std::string key;
@@ -58,8 +61,6 @@ class ConverterRegistrar final {
   };
   // clang-format on
 
-  std::string resolveConverterKey(const Document &document) const;
-  std::string keyForFiletype(const std::string &geany_filetype_name) const;
   static std::string normalizeExtension(const std::string &ext);
 
   std::unordered_map<std::string, std::unique_ptr<Converter>> converters_;

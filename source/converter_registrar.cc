@@ -23,11 +23,11 @@ Converter *ConverterRegistrar::getConverter(const std::string &key) const {
 }
 
 Converter *ConverterRegistrar::getConverter(const Document &document) const {
-  auto key = resolveConverterKey(document);
+  auto key = getConverterKey(document);
   return getConverter(key);
 }
 
-std::string ConverterRegistrar::resolveConverterKey(const Document &document) const {
+std::string ConverterRegistrar::getConverterKey(const Document &document) const {
   std::string name = document.filetypeName();
   auto it = type_to_converter_.find(name);
   if (it != type_to_converter_.end()) {
@@ -45,7 +45,9 @@ std::string ConverterRegistrar::resolveConverterKey(const Document &document) co
   return {};
 }
 
-std::string ConverterRegistrar::keyForFiletype(const std::string &geany_filetype_name) const {
+std::string ConverterRegistrar::getConverterKeyForFiletype(
+    const std::string &geany_filetype_name
+) const {
   auto it = type_to_converter_.find(geany_filetype_name);
   return it != type_to_converter_.end() ? it->second : "";
 }

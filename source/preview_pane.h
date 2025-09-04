@@ -193,7 +193,6 @@ class PreviewPane final {
   PreviewPane &update() {
     Document document(document_get_current());
     auto *converter = registrar_.getConverter(document);
-    auto file = document.fileName();
 
     std::string html;
     if (converter) {
@@ -202,6 +201,16 @@ class PreviewPane final {
       html = "<tt>" + document.filetypeName() + ", " + document.encodingName() + "</tt>";
     }
 
+    // load new css on document type change
+    auto key = registrar_.getConverterKey(document);
+    if (key != previous_key_) {
+      webview_.clearInjectedCss();
+      webview_.injectCssFromFile(preview_config_->configDir() / "preview.css");
+      webview_.injectCssFromFile(preview_config_->configDir() / std::string{ key + ".css" });
+      previous_key_ = key;
+    }
+
+    auto file = document.fileName();
     bool allow_fallback = preview_config_->get<bool>("allow_update_fallback", false);
 
     webview_.getScrollFraction([this, file, html, allow_fallback](double frac) {
@@ -231,4 +240,5 @@ class PreviewPane final {
   gint64 last_update_time_ = 0;
 
   std::unordered_map<std::string, double> scroll_by_file_;
+  std::string previous_key_;
 };
