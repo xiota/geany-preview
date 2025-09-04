@@ -4,6 +4,7 @@
 #pragma once
 
 #include <algorithm>
+#include <filesystem>
 #include <functional>
 #include <string>
 #include <string_view>
@@ -11,6 +12,8 @@
 #include <glib.h>
 #include <gtk/gtk.h>
 #include <webkit2/webkit2.h>
+
+#include "util/file_utils.h"  // for readFileToString
 
 namespace {
 // Embedded patcher JS (actual code, not a preprocessor directive)
@@ -96,12 +99,10 @@ class WebView final {
     fraction = std::clamp(fraction, 0.0, 1.0);
 
     std::string html =
-        "<!DOCTYPE html><html lang=\"en\"><head>"
+        "<!DOCTYPE html><html><head>"
         "<meta charset=\"UTF-8\">"
         "<title>Preview</title>"
-        "<style>"
-        "body { margin:0; padding:1rem; font-family:sans-serif; background:#fff; color:#000; }"
-        "</style>"
+        "<style></style>"
         "<script>" +
         std::string(kApplyPatchJS) +
         "</script>"
@@ -241,6 +242,31 @@ class WebView final {
       }
     }
     return out;
+  }
+
+  void clearInjectedCss() {
+    webkit_user_content_manager_remove_all_style_sheets(webview_content_manager_);
+  }
+
+  void injectCssFromString(const std::string &css) {
+    WebKitUserStyleSheet *sheet = webkit_user_style_sheet_new(
+        css.c_str(),
+        WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES,
+        WEBKIT_USER_STYLE_LEVEL_USER,
+        nullptr,
+        nullptr
+    );
+    webkit_user_content_manager_add_style_sheet(webview_content_manager_, sheet);
+    g_object_unref(sheet);
+  }
+
+  void injectCssFromFile(const std::filesystem::path &file) {
+    try {
+      auto css = FileUtils::readFileToString(file);
+      injectCssFromString(css);
+    } catch (...) {
+      // Silently ignore any failure (missing file, read error, etc.)
+    }
   }
 
  private:
