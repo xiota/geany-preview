@@ -37,6 +37,12 @@ class PreviewPane final {
       );
       gtk_widget_show_all(page_box_);
       gtk_notebook_set_current_page(GTK_NOTEBOOK(sidebar_notebook_), sidebar_page_number_);
+
+      // for styling with geany.css
+      gtk_widget_set_name(GTK_WIDGET(page_box_), "geany-preview-sidebar-page");
+
+      // simulated :focus-within tracking for CSS styling
+      GtkUtils::enableFocusWithinTracking(page_box_);
     }
 
     initWebView();
