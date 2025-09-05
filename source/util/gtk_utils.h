@@ -24,4 +24,8 @@ GtkWidget *activateNotebookPageForWidget(GtkWidget *widget);
 // Returns true if `widget` is on the currently visible page of `notebook`.
 bool isWidgetOnVisibleNotebookPage(GtkNotebook *notebook, GtkWidget *widget);
 
+// Enables automatic "focus-within" CSS styling for a container when any descendant widget has
+// focus.
+void enableFocusWithinTracking(GtkWidget *page);
+
 }  // namespace GtkUtils

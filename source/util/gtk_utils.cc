@@ -114,4 +114,60 @@ bool isWidgetOnVisibleNotebookPage(GtkNotebook *notebook, GtkWidget *widget) {
   return gtk_notebook_get_current_page(notebook) == page_num;
 }
 
+namespace {  // for enableFocusWithinTracking
+
+void addFocusWithin(GtkWidget *page) {
+  GtkStyleContext *ctx = gtk_widget_get_style_context(page);
+  if (!gtk_style_context_has_class(ctx, "focus-within")) {
+    gtk_style_context_add_class(ctx, "focus-within");
+  }
+}
+
+void removeFocusWithin(GtkWidget *page) {
+  GtkStyleContext *ctx = gtk_widget_get_style_context(page);
+  gtk_style_context_remove_class(ctx, "focus-within");
+}
+
+gboolean onFocusIn(GtkWidget *child, GdkEventFocus * /*event*/, gpointer page) {
+  addFocusWithin(static_cast<GtkWidget *>(page));
+  return FALSE;  // propagate
+}
+
+gboolean onFocusOut(GtkWidget *child, GdkEventFocus * /*event*/, gpointer page) {
+  GtkWidget *toplevel = gtk_widget_get_toplevel(static_cast<GtkWidget *>(page));
+  if (GTK_IS_WINDOW(toplevel)) {
+    GtkWidget *focusWidget = gtk_window_get_focus(GTK_WINDOW(toplevel));
+    if (!focusWidget || !gtk_widget_is_ancestor(focusWidget, static_cast<GtkWidget *>(page))) {
+      removeFocusWithin(static_cast<GtkWidget *>(page));
+    }
+  }
+  return FALSE;
+}
+
+void trackFocusForDescendants(GtkWidget *widget, GtkWidget *page) {
+  if (gtk_widget_get_can_focus(widget)) {
+    g_signal_connect(widget, "focus-in-event", G_CALLBACK(onFocusIn), page);
+    g_signal_connect(widget, "focus-out-event", G_CALLBACK(onFocusOut), page);
+  }
+
+  if (GTK_IS_CONTAINER(widget)) {
+    GList *children = gtk_container_get_children(GTK_CONTAINER(widget));
+    for (GList *l = children; l != nullptr; l = l->next) {
+      trackFocusForDescendants(static_cast<GtkWidget *>(l->data), page);
+    }
+    g_list_free(children);
+  }
+}
+
+void onChildAdded(GtkContainer * /*container*/, GtkWidget *child, gpointer page) {
+  trackFocusForDescendants(child, static_cast<GtkWidget *>(page));
+}
+
+}  // namespace
+
+void enableFocusWithinTracking(GtkWidget *page) {
+  trackFocusForDescendants(page, page);
+  g_signal_connect(page, "add", G_CALLBACK(onChildAdded), page);
+}
+
 }  // namespace GtkUtils
