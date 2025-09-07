@@ -27,51 +27,51 @@ class PreviewConfig {
   // clang-format off
   inline static const SettingDef setting_defs_[] = {
     { "allow_update_fallback",
-      setting_value_type{ false},
+      setting_value_type{ false },
       "Whether to use fallback rendering mode if DOM patch mode fails." },
 
     { "auto_set_read_only",
-      setting_value_type{ false},
+      setting_value_type{ false },
       "Automatically set documents to read-only mode when they are not writable." },
 
     { "color_tooltip",
-      setting_value_type{ false},
+      setting_value_type{ false },
       "Show hex colors in tooltips when the mouse hovers over them." },
 
     { "color_tooltip_size",
-      setting_value_type{ "small"},
+      setting_value_type{ "small" },
       "Tooltip size: small, medium, or large. The first letter is significant." },
 
     { "color_chooser",
-      setting_value_type{ false},
+      setting_value_type{ false },
       "Open the color chooser when double-clicking a color value." },
 
     { "column_markers",
-      setting_value_type{ false},
+      setting_value_type{ false },
       "Enable or disable visual column markers in the editor." },
 
     { "column_markers_columns",
-      setting_value_type{ std::vector<int>{ 60, 72, 80, 88, 96, 104, 112, 120, 128 }},
+      setting_value_type{ std::vector<int>{ 60, 72, 80, 88, 96, 104, 112, 120, 128 } },
       "List of column positions (in characters) where vertical guide lines will be drawn." },
 
     { "column_markers_colors",
-      setting_value_type{ std::vector<std::string>{ "#ccc", "#bdf", "#fcf", "#ccc", "#fba", "#ccc", "#ccc", "#ccc", "#ccc" }},
+      setting_value_type{ std::vector<std::string>{ "#ccc", "#bdf", "#fcf", "#ccc", "#fba", "#ccc", "#ccc", "#ccc", "#ccc" } },
       "Colors for each column marker, in #RRGGBB or #RGB format, matching the order of 'column_markers_columns'." },
 
     { "mark_word",
-      setting_value_type{ false},
+      setting_value_type{ false },
       "Mark all occurrences of a word when double-clicking it." },
 
     { "mark_word_double_click_delay",
-      setting_value_type{ 50},
+      setting_value_type{ 50 },
       "Delay in milliseconds before marking all occurrences after a double-click." },
 
     { "mark_word_single_click_deselect",
-      setting_value_type{ true},
+      setting_value_type{ true },
       "Deselect the previous highlight by single click." },
 
     { "redetect_filetype_on_reload",
-      setting_value_type{ false},
+      setting_value_type{ false },
       "Re-detect file type when a document is reloaded. Geany normally auto-detects file type only on open and save." },
 
     { "sidebar_auto_resize",
@@ -106,23 +106,23 @@ class PreviewConfig {
       "Prevents automatic resizing from shrinking the sidebar too far." },
 
     { "terminal_command",
-      setting_value_type{ std::string{ "xdg-terminal-exec --working-directory=%d" }},
+      setting_value_type{ std::string{ "xdg-terminal-exec --working-directory=%d" } },
       "Command to launch a terminal. Supports XDG field codes: %d = directory of current document." },
 
     { "theme_mode",
-      setting_value_type{ std::string{ "system" }},
+      setting_value_type{ std::string{ "system" } },
       "Theme to use for the preview: 'light', 'dark', or 'system'." },
 
     { "unchange_document",
-      setting_value_type{ false},
+      setting_value_type{ false },
       "Mark new, unsaved, empty documents as unchanged." },
 
     { "update_cooldown",
-      setting_value_type{ 65},
+      setting_value_type{ 65 },
       "Time in milliseconds to wait between preview updates to prevent excessive refreshing." },
 
     { "update_min_delay",
-      setting_value_type{ 15},
+      setting_value_type{ 15 },
       "Time in milliseconds to wait before the first preview update after a change." },
   };
   // clang-format on
