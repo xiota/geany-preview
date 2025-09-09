@@ -322,11 +322,9 @@ void PreviewConfig::onDialogResponse(GtkDialog *dialog, gint response_id) {
       break;
     case GTK_RESPONSE_OK:
       save();
-      gtk_widget_destroy(GTK_WIDGET(dialog));
       break;
     case GTK_RESPONSE_CANCEL:
     case GTK_RESPONSE_CLOSE:
-      gtk_widget_destroy(GTK_WIDGET(dialog));
       break;
   }
 }

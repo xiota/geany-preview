@@ -119,13 +119,9 @@ class PreviewPane final {
       sidebar_switch_page_handler_id_ = 0;
     }
 
-    if (offscreen_) {
+    if (GTK_IS_WIDGET(offscreen_)) {
       gtk_widget_destroy(offscreen_);
       offscreen_ = nullptr;
-    }
-    if (page_box_) {
-      gtk_widget_destroy(page_box_);
-      page_box_ = nullptr;
     }
 
     stopAllWatches();
@@ -181,7 +177,7 @@ class PreviewPane final {
           if (!err && jsc_value_is_boolean(val)) {
             needs_reinit = jsc_value_to_boolean(val);
           }
-          if (val) {
+          if (G_IS_OBJECT(val)) {
             g_object_unref(val);
           }
           if (err) {

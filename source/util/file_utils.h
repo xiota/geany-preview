@@ -83,11 +83,11 @@ inline void stopWatching(FileWatchHandle &handle) {
     g_source_remove(handle.timerId);
     handle.timerId = 0;
   }
-  if (handle.monitor) {
+  if (G_IS_OBJECT(handle.monitor)) {
     g_object_unref(handle.monitor);
     handle.monitor = nullptr;
   }
-  if (handle.file) {
+  if (G_IS_OBJECT(handle.file)) {
     g_object_unref(handle.file);
     handle.file = nullptr;
   }

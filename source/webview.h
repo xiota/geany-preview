@@ -82,11 +82,8 @@ class WebView final {
   }
 
   ~WebView() noexcept {
-    if (webview_settings_) {
+    if (G_IS_OBJECT(webview_settings_)) {
       g_object_unref(webview_settings_);
-    }
-    if (webview_) {
-      g_object_unref(webview_);
     }
   }
 
@@ -220,7 +217,7 @@ class WebView final {
           if (!err && jsc_value_is_number(val)) {
             fraction = jsc_value_to_double(val);
           }
-          if (val) {
+          if (G_IS_OBJECT(val)) {
             g_object_unref(val);
           }
           if (err) {
@@ -306,7 +303,6 @@ class WebView final {
         nullptr
     );
     webkit_user_content_manager_add_style_sheet(webview_content_manager_, sheet);
-    g_object_unref(sheet);
     return *this;
   }
 
