@@ -26,41 +26,107 @@ class ConverterRegistrar final {
   Converter *getConverter(const std::string &key) const;
   Converter *getConverter(const Document &document) const;
 
+  std::string getConverterKey(const std::string &alias) const;
   std::string getConverterKey(const Document &document) const;
-  std::string getConverterKeyForFiletype(const std::string &geany_filetype_name) const;
 
  private:
   struct ConverterDef {
     std::string key;
-    std::function<std::unique_ptr<Converter>()> factory;
     std::string filetype_name;
+    std::function<std::unique_ptr<Converter>()> factory;
     std::vector<std::string> extensions;
+    std::vector<std::string> mime_types;
   };
 
   // clang-format off
   inline static const ConverterDef converter_defs_[] = {
     // native
-    { "html", [] { return std::make_unique<ConverterPassthrough>(); }, "HTML", {".htm", ".html", ".shtml", ".xhtml"} },
-    { "markdown", [] { return std::make_unique<ConverterCmarkGfm>(); }, "Markdown", {".md", ".markdown", ".txt"} },
+    { "html", "HTML",
+      [] { return std::make_unique<ConverterPassthrough>(); },
+      { ".htm", ".html", ".shtml", ".xhtml" },
+      { "text/html", "application/xhtml+xml" } },
+
+    { "markdown", "Markdown",
+      [] { return std::make_unique<ConverterCmarkGfm>(); },
+      { ".md", ".markdown", ".txt" },
+      { "text/markdown", "text/x-markdown" } },
 
     // subprocess
-    { "asciidoc", [] { return std::make_unique<ConverterAsciidoctor>(); }, "Asciidoc", {".asciidoc", ".adoc", ".asc"} },
+    { "asciidoc", "Asciidoc",
+      [] { return std::make_unique<ConverterAsciidoctor>(); },
+      { ".asciidoc", ".adoc", ".asc" },
+      { "text/asciidoc", "application/x-asciidoc" } },
 
     // pandoc
-    { "creole", [] { return std::make_unique<ConverterPandoc>("creole");} , "Creole Wiki", {".creole"} },
-    { "docbook", [] { return std::make_unique<ConverterPandoc>("docbook"); }, "DocBook", {".dbk"} },
-    { "dokuwiki", [] { return std::make_unique<ConverterPandoc>("dokuwiki"); }, "DokuWiki", {".dokuwiki", ".wiki"} },
-    { "latex", [] { return std::make_unique<ConverterPandoc>("latex"); }, "LaTeX", {".tex", ".latex"} },
-    { "man", [] { return std::make_unique<ConverterPandoc>("man"); }, "Unix Manpage", {".man"} },
-    { "mediawiki", [] { return std::make_unique<ConverterPandoc>("mediawiki"); }, "MediaWiki", {".mediawiki"} },
-    { "org", [] { return std::make_unique<ConverterPandoc>("org"); }, "Org mode", {".org"} },
-    { "rst", [] { return std::make_unique<ConverterPandoc>("rst"); }, "reStructuredText", {".rst"} },
-    { "rtf", [] { return std::make_unique<ConverterPandoc>("rtf"); }, "Rich Text Format", {".rtf"} },
-    { "t2t", [] { return std::make_unique<ConverterPandoc>("t2t"); }, "Txt2tags", {".t2t"} },
-    { "textile", [] { return std::make_unique<ConverterPandoc>("textile"); }, "Textile", {".textile"} },
-    { "tikiwiki", [] { return std::make_unique<ConverterPandoc>("tikiwiki"); }, "TikiWiki", {".tiki", ".tikiwiki"} },
-    { "twiki", [] { return std::make_unique<ConverterPandoc>("twiki"); }, "TWiki", {".twiki"} },
-    { "vimwiki", [] { return std::make_unique<ConverterPandoc>("vimwiki"); }, "Vimwiki", {".vw", ".vimwiki"}}
+    { "creole", "Creole Wiki",
+      [] { return std::make_unique<ConverterPandoc>("creole"); },
+      { ".creole" },
+      { "text/x-creole" } },
+
+    { "docbook", "DocBook",
+      [] { return std::make_unique<ConverterPandoc>("docbook"); },
+      { ".dbk" },
+      { "application/docbook+xml" } },
+
+    { "dokuwiki", "DokuWiki",
+      [] { return std::make_unique<ConverterPandoc>("dokuwiki"); },
+      { ".dokuwiki", ".wiki" },
+      { "text/x-dokuwiki" } },
+
+    { "latex", "LaTeX",
+      [] { return std::make_unique<ConverterPandoc>("latex"); },
+      { ".tex", ".latex" },
+      { "application/x-latex" } },
+
+    { "man", "Unix Manpage",
+      [] { return std::make_unique<ConverterPandoc>("man"); },
+      { ".man" },
+      { "text/troff", "application/x-troff-man" } },
+
+    { "mediawiki", "MediaWiki",
+      [] { return std::make_unique<ConverterPandoc>("mediawiki"); },
+      { ".mediawiki" },
+      { "text/mediawiki" } },
+
+    { "org", "Org mode",
+      [] { return std::make_unique<ConverterPandoc>("org"); },
+      { ".org" },
+      { "text/x-org" } },
+
+    { "rst", "reStructuredText",
+      [] { return std::make_unique<ConverterPandoc>("rst"); },
+      { ".rst" },
+      { "text/x-rst" } },
+
+    { "rtf", "Rich Text Format",
+      [] { return std::make_unique<ConverterPandoc>("rtf"); },
+      { ".rtf" },
+      { "application/rtf", "text/rtf" } },
+
+    { "t2t", "Txt2tags",
+      [] { return std::make_unique<ConverterPandoc>("t2t"); },
+      { ".t2t" },
+      { "text/x-txt2tags" } },
+
+    { "textile", "Textile",
+      [] { return std::make_unique<ConverterPandoc>("textile"); },
+      { ".textile" },
+      { "text/textile" } },
+
+    { "tikiwiki", "TikiWiki",
+      [] { return std::make_unique<ConverterPandoc>("tikiwiki"); },
+      { ".tiki", ".tikiwiki" },
+      { "text/x-tikiwiki" } },
+
+    { "twiki", "TWiki",
+      [] { return std::make_unique<ConverterPandoc>("twiki"); },
+      { ".twiki" },
+      { "text/x-twiki" } },
+
+    { "vimwiki", "Vimwiki",
+      [] { return std::make_unique<ConverterPandoc>("vimwiki"); },
+      { ".vw", ".vimwiki" },
+      { "text/x-vimwiki" } }
   };
   // clang-format on
 

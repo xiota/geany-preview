@@ -16,6 +16,7 @@
 #include "preview_context.h"
 #include "util/file_utils.h"
 #include "util/gtk_utils.h"
+#include "util/string_utils.h"
 #include "webview.h"
 
 class PreviewPane final {
@@ -272,14 +273,27 @@ class PreviewPane final {
     }
 
     std::string html;
+    auto normalizedType = [](std::string_view t) {
+      auto s = StringUtils::trimWhitespace(t);
+      s = StringUtils::toLower(s);
+      auto semi = s.find(';');
+      if (semi != std::string::npos) {
+        s = StringUtils::trimWhitespace(s.substr(0, semi));
+      }
+      return std::string{ s };
+    };
+
     if (converter) {
       // Convert only the body text
       html = pre.headersToHtml();
       html += converter->toHtml(pre.body());
     } else {
-      html = "<tt>" + document.filetypeName() + ", " + document.encodingName() + "</tt>";
+      html = "<tt>" + document.filetypeName() + ", " + document.encodingName();
+      if (!pre.type().empty()) {
+        html += ", " + normalizedType(pre.type());
+      }
+      html += "</tt>";
     }
-
     // load new css on document type change
     bool changed = false;
     auto key = registrar_.getConverterKey(document);
