@@ -15,6 +15,7 @@
 #include "converter_pandoc.h"
 #include "converter_passthrough.h"
 #include "document.h"
+#include "util/string_utils.h"
 
 class ConverterRegistrar final {
  public:
@@ -61,9 +62,18 @@ class ConverterRegistrar final {
   };
   // clang-format on
 
-  static std::string normalizeExtension(const std::string &ext);
-
+ private:
+  std::unordered_map<std::string, std::string> alias_to_key_;
   std::unordered_map<std::string, std::unique_ptr<Converter>> converters_;
-  std::unordered_map<std::string, std::string> type_to_converter_;
-  std::unordered_map<std::string, std::string> ext_to_converter_;
+
+  static std::string normalizeAlias(std::string_view s) {
+    return StringUtils::toLower(s);
+  }
+
+  static std::string normalizeExtension(std::string_view ext) {
+    if (!ext.empty() && ext.front() == '.') {
+      ext.remove_prefix(1);
+    }
+    return StringUtils::toLower(ext);
+  }
 };

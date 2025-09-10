@@ -7,12 +7,31 @@
 #include <filesystem>
 
 ConverterRegistrar::ConverterRegistrar() {
+  // prevent rehashing
+  alias_to_key_.reserve(std::size(converter_defs_) * 4);
+
   for (const auto &def : converter_defs_) {
+    // Eager creation for now
     converters_[def.key] = def.factory();
-    type_to_converter_[def.filetype_name] = def.key;
+
+    // Canonical key
+    auto alias = normalizeAlias(def.key);
+    if (!alias_to_key_.contains(alias)) {
+      alias_to_key_[alias] = def.key;
+    }
+
+    // Geany filetype name
+    alias = normalizeAlias(def.filetype_name);
+    if (!alias_to_key_.contains(alias)) {
+      alias_to_key_[alias] = def.key;
+    }
+
+    // Extensions
     for (const auto &ext : def.extensions) {
-      std::string normalized = normalizeExtension(ext);
-      ext_to_converter_[normalized] = def.key;
+      alias = normalizeExtension(ext);
+      if (!alias_to_key_.contains(alias)) {
+        alias_to_key_[alias] = def.key;
+      }
     }
   }
 }
@@ -28,17 +47,17 @@ Converter *ConverterRegistrar::getConverter(const Document &document) const {
 }
 
 std::string ConverterRegistrar::getConverterKey(const Document &document) const {
-  std::string name = document.filetypeName();
-  auto it = type_to_converter_.find(name);
-  if (it != type_to_converter_.end()) {
+  // Try filetype name
+  auto it = alias_to_key_.find(normalizeAlias(document.filetypeName()));
+  if (it != alias_to_key_.end()) {
     return it->second;
   }
 
+  // Try extension
   namespace fs = std::filesystem;
   std::string ext = fs::path(document.fileName()).extension().string();
-  std::string normalized = normalizeExtension(ext);
-  auto eit = ext_to_converter_.find(normalized);
-  if (eit != ext_to_converter_.end()) {
+  auto eit = alias_to_key_.find(normalizeExtension(ext));
+  if (eit != alias_to_key_.end()) {
     return eit->second;
   }
 
@@ -48,14 +67,6 @@ std::string ConverterRegistrar::getConverterKey(const Document &document) const 
 std::string ConverterRegistrar::getConverterKeyForFiletype(
     const std::string &geany_filetype_name
 ) const {
-  auto it = type_to_converter_.find(geany_filetype_name);
-  return it != type_to_converter_.end() ? it->second : "";
-}
-
-std::string ConverterRegistrar::normalizeExtension(const std::string &ext) {
-  std::string result = ext;
-  std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c) {
-    return std::tolower(c);
-  });
-  return result;
+  auto it = alias_to_key_.find(normalizeAlias(geany_filetype_name));
+  return it != alias_to_key_.end() ? it->second : "";
 }
