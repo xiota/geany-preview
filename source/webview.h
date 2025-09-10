@@ -316,6 +316,17 @@ class WebView final {
     return *this;
   }
 
+  WebView &print(GtkWindow *parent = nullptr) {
+    WebKitPrintOperation *op = webkit_print_operation_new(WEBKIT_WEB_VIEW(webview_));
+    if (parent) {
+      webkit_print_operation_run_dialog(op, parent);
+    } else {
+      webkit_print_operation_print(op);
+    }
+    g_object_unref(op);
+    return *this;
+  }
+
  private:
   WebKitSettings *webview_settings_ = nullptr;
   GtkWidget *webview_ = nullptr;
