@@ -37,6 +37,10 @@ class ConverterPreprocessor {
   }
 
   std::string headersToHtml() const {
+    if (headers_.empty()) {
+      return {};
+    }
+
     std::string html;
     html += "<div class=\"headers\">\n";
     for (auto &[key, value] : headers_) {
