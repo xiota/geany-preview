@@ -18,4 +18,14 @@ inline std::string toLower(std::string_view sv) {
   return s;
 }
 
+inline std::string trimWhitespace(std::string_view sv) {
+  const char *ws = " \t\r\n";
+  auto b = sv.find_first_not_of(ws);
+  if (b == std::string_view::npos) {
+    return {};
+  }
+  auto e = sv.find_last_not_of(ws);
+  return std::string(sv.substr(b, e - b + 1));
+}
+
 }  // namespace StringUtils
