@@ -58,6 +58,10 @@ class PreviewConfig {
       setting_value_type{ std::vector<std::string>{ "#ccc", "#bdf", "#fcf", "#ccc", "#fba", "#ccc", "#ccc", "#ccc", "#ccc" } },
       "Colors for each column marker, in #RRGGBB or #RGB format, matching the order of 'column_markers_columns'." },
 
+    { "headers_incomplete_max",
+      setting_value_type{ 3 },
+      "Max number of incomplete header lines before treating all as body." },
+
     { "mark_word",
       setting_value_type{ false },
       "Mark all occurrences of a word when double-clicking it." },

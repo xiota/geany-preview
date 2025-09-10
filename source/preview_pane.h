@@ -10,6 +10,7 @@
 
 #include <gtk/gtk.h>
 
+#include "converter_preprocessor.h"
 #include "converter_registrar.h"
 #include "preview_config.h"
 #include "preview_context.h"
@@ -258,11 +259,23 @@ class PreviewPane final {
 
   PreviewPane &update() {
     Document document(document_get_current());
-    auto *converter = registrar_.getConverter(document);
+
+    // Preprocess into headers + body (string_view)
+    ConverterPreprocessor pre(document, preview_config_->get<int>("headers_incomplete_max"));
+
+    Converter *converter = nullptr;
+    if (!pre.type().empty()) {
+      converter = registrar_.getConverter(pre.type());
+    }
+    if (!converter) {
+      converter = registrar_.getConverter(document);
+    }
 
     std::string html;
     if (converter) {
-      html = converter->toHtml(document.textView());  // implicit string_view→string
+      // Convert only the body text
+      html = pre.headersToHtml();
+      html += converter->toHtml(pre.body());
     } else {
       html = "<tt>" + document.filetypeName() + ", " + document.encodingName() + "</tt>";
     }
