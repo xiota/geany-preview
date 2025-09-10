@@ -17,6 +17,8 @@
 #include "document.h"
 #include "util/string_utils.h"
 
+using ConverterFactory = std::function<std::unique_ptr<Converter>()>;
+
 class ConverterRegistrar final {
  public:
   ConverterRegistrar();
@@ -64,7 +66,8 @@ class ConverterRegistrar final {
 
  private:
   std::unordered_map<std::string, std::string> alias_to_key_;
-  std::unordered_map<std::string, std::unique_ptr<Converter>> converters_;
+  std::unordered_map<std::string, ConverterFactory> factories_;
+  mutable std::unordered_map<std::string, std::unique_ptr<Converter>> instances_;
 
   static std::string normalizeAlias(std::string_view s) {
     return StringUtils::toLower(s);

@@ -11,8 +11,8 @@ ConverterRegistrar::ConverterRegistrar() {
   alias_to_key_.reserve(std::size(converter_defs_) * 4);
 
   for (const auto &def : converter_defs_) {
-    // Eager creation for now
-    converters_[def.key] = def.factory();
+    // Store factory for later use
+    factories_[def.key] = def.factory;
 
     // Canonical key
     auto alias = normalizeAlias(def.key);
@@ -37,8 +37,22 @@ ConverterRegistrar::ConverterRegistrar() {
 }
 
 Converter *ConverterRegistrar::getConverter(const std::string &key) const {
-  auto it = converters_.find(key);
-  return it != converters_.end() ? it->second.get() : nullptr;
+  // Check if instance already exists
+  auto it = instances_.find(key);
+  if (it != instances_.end()) {
+    return it->second.get();
+  }
+
+  // Create new instance if factory exists
+  auto fit = factories_.find(key);
+  if (fit != factories_.end()) {
+    auto instance = fit->second();
+    auto *ptr = instance.get();
+    instances_[key] = std::move(instance);
+    return ptr;
+  }
+
+  return nullptr;
 }
 
 Converter *ConverterRegistrar::getConverter(const Document &document) const {
