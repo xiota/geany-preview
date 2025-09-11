@@ -170,7 +170,8 @@ void PreviewShortcuts::onOpenTerminal(guint /*key_id*/) {
   std::ignore = std::system(cmd.c_str());
 }
 
-void PreviewShortcuts::registerAll() {
+PreviewShortcuts::PreviewShortcuts(PreviewContext *context)
+    : context_(context), key_group_(context_->geany_key_group_) {
   // Stash context for callbacks
   preview_context = context_;
 

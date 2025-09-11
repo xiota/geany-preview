@@ -109,7 +109,6 @@ gboolean previewInit(
   preview_context.geany_key_group_ =
       plugin_set_key_group(plugin, "Preview", PreviewShortcuts::shortcutCount(), nullptr);
   preview_shortcuts = std::make_unique<PreviewShortcuts>(&preview_context);
-  preview_shortcuts->registerAll();
 
   return true;
 }

@@ -11,10 +11,7 @@
 
 class PreviewShortcuts {
  public:
-  explicit PreviewShortcuts(PreviewContext *context)
-      : context_(context), key_group_(context_->geany_key_group_) {}
-
-  void registerAll();
+  explicit PreviewShortcuts(PreviewContext *context);
 
   static constexpr gsize shortcutCount() {
     return std::size(shortcut_defs_);
