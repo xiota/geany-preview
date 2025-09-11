@@ -14,12 +14,24 @@ class PreviewShortcuts {
   explicit PreviewShortcuts(PreviewContext *context);
 
   static constexpr gsize shortcutCount() {
-    return std::size(shortcut_defs_);
+    return std::size(shortcut_defs_) - 1;
   }
 
  private:
   PreviewContext *context_;
   GeanyKeyGroup *key_group_;
+
+  static void onCopy(guint /*key_id*/);
+  static void onCut(guint /*key_id*/);
+  static void onPaste(guint /*key_id*/);
+
+  static void onFind(guint /*key_id*/);
+  static void onFindNext(guint /*key_id*/);
+  static void onFindPrev(guint /*key_id*/);
+
+  static void onFindWv(guint /*key_id*/);
+  static void onFindNextWv(guint /*key_id*/);
+  static void onFindPrevWv(guint /*key_id*/);
 
   static void onFocusPreview(guint /*key_id*/);
   static void onFocusPreviewEditor(guint /*key_id*/);
@@ -34,6 +46,66 @@ class PreviewShortcuts {
 
   // clang-format off
   inline static const ShortcutDef shortcut_defs_[] = {
+    { "Copy in Preview (1)",
+      "Copy selected text in Editor or Preview",
+      onCopy },
+
+    { "Copy in Preview (2)",
+      "Extra copy shortcut (1).",
+      onCopy },
+
+    { "Copy in Preview (3)",
+      "Extra copy shortcut (2)",
+      onCopy },
+
+    { "Cut in Preview (1)",
+      "Cut selected text in Editor or Preview",
+      onCut },
+
+    { "Cut in Preview (2)",
+      "Extra cut shortcut (1)",
+      onCut },
+
+    { "Cut in Preview (3)",
+      "Extra cut shortcut (2)",
+      onCut },
+
+    { "Paste in Preview (1)",
+      "Paste selected text in the Editor or Preview",
+      onPaste },
+
+    { "Paste in Preview (2)",
+      "Extra paste shortcut (1)",
+      onPaste },
+
+    { "Paste in Preview (3)",
+      "Extra paste shortcut (2)",
+      onPaste },
+
+    { "Find in Editor or Preview",
+      "Open find prompt for Editor or Preview",
+      onFind },
+
+    { "Find in Preview",
+      "Open find prompt for Preview only",
+      onFindWv },
+
+    { "Find Next in Editor or Preview",
+      "Find next match in Editor or Preview",
+      onFindNext },
+
+    { "Find Next in Preview",
+      "Find next match in Preview only",
+      onFindNextWv },
+
+    { "Find Previous in Editor or Preview",
+      "Find previous match in Editor or Preview",
+      onFindPrev },
+
+    { "Find Previous in Preview",
+      "Find previous match in Preview only",
+      onFindPrevWv },
+
     { "Focus Preview",
       "Focus on Preview",
       onFocusPreview },
@@ -48,7 +120,9 @@ class PreviewShortcuts {
 
     { "Open Terminal",
       "Open Terminal at document path",
-      onOpenTerminal }
+      onOpenTerminal },
+
+    { nullptr, nullptr, nullptr },
   };
   // clang-format on
 };

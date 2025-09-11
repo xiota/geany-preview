@@ -13,10 +13,12 @@
 #include <keybindings.h>
 #include <msgwindow.h>
 #include <plugindata.h>
+#include <scintilla/Scintilla.h>
 #include <ui_utils.h>
 
 #include "preview_pane.h"
 #include "util/gtk_utils.h"
+#include "webview.h"
 
 namespace {
 
@@ -170,12 +172,126 @@ void PreviewShortcuts::onOpenTerminal(guint /*key_id*/) {
   std::ignore = std::system(cmd.c_str());
 }
 
+void PreviewShortcuts::onCopy(guint /*key_id*/) {
+  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_) {
+    return;
+  }
+
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
+    auto *wv = preview_context->webview_->widget();
+    webkit_web_view_execute_editing_command(WEBKIT_WEB_VIEW(wv), WEBKIT_EDITING_COMMAND_COPY);
+  } else {
+    keybindings_send_command(GEANY_KEY_GROUP_CLIPBOARD, GEANY_KEYS_CLIPBOARD_COPY);
+  }
+}
+
+void PreviewShortcuts::onCut(guint /*key_id*/) {
+  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_) {
+    return;
+  }
+
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
+    auto *wv = preview_context->webview_->widget();
+    webkit_web_view_execute_editing_command(WEBKIT_WEB_VIEW(wv), WEBKIT_EDITING_COMMAND_CUT);
+  } else {
+    keybindings_send_command(GEANY_KEY_GROUP_CLIPBOARD, GEANY_KEYS_CLIPBOARD_CUT);
+  }
+}
+
+void PreviewShortcuts::onPaste(guint /*key_id*/) {
+  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_) {
+    return;
+  }
+
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
+    auto *wv = preview_context->webview_->widget();
+    webkit_web_view_execute_editing_command(WEBKIT_WEB_VIEW(wv), WEBKIT_EDITING_COMMAND_PASTE);
+  } else {
+    keybindings_send_command(GEANY_KEY_GROUP_CLIPBOARD, GEANY_KEYS_CLIPBOARD_PASTE);
+  }
+}
+
+void PreviewShortcuts::onFind(guint /*key_id*/) {
+  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_ ||
+      !preview_context->geany_data_ || !preview_context->geany_data_->main_widgets ||
+      !preview_context->geany_data_->main_widgets->window) {
+    return;
+  }
+
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
+    preview_context->webview_->showFindPrompt(
+        GTK_WINDOW(preview_context->geany_data_->main_widgets->window)
+    );
+  } else {
+    keybindings_send_command(GEANY_KEY_GROUP_SEARCH, GEANY_KEYS_SEARCH_FIND);
+  }
+}
+
+void PreviewShortcuts::onFindNext(guint /*key_id*/) {
+  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_ ||
+      !preview_context->geany_data_ || !preview_context->geany_data_->main_widgets ||
+      !preview_context->geany_data_->main_widgets->window) {
+    return;
+  }
+
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
+    preview_context->webview_->findNext();
+  } else {
+    keybindings_send_command(GEANY_KEY_GROUP_SEARCH, GEANY_KEYS_SEARCH_FINDNEXTSEL);
+  }
+}
+
+void PreviewShortcuts::onFindPrev(guint /*key_id*/) {
+  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_ ||
+      !preview_context->geany_data_ || !preview_context->geany_data_->main_widgets ||
+      !preview_context->geany_data_->main_widgets->window) {
+    return;
+  }
+
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
+    preview_context->webview_->findPrevious();
+  } else {
+    keybindings_send_command(GEANY_KEY_GROUP_SEARCH, GEANY_KEYS_SEARCH_FINDPREVSEL);
+  }
+}
+
+void PreviewShortcuts::onFindWv(guint /*key_id*/) {
+  if (!preview_context || !preview_context->webview_ || !preview_context->geany_data_ ||
+      !preview_context->geany_data_->main_widgets ||
+      !preview_context->geany_data_->main_widgets->window) {
+    return;
+  }
+
+  preview_context->webview_->showFindPrompt(
+      GTK_WINDOW(preview_context->geany_data_->main_widgets->window)
+  );
+}
+
+void PreviewShortcuts::onFindNextWv(guint /*key_id*/) {
+  if (!preview_context || !preview_context->webview_) {
+    return;
+  }
+
+  preview_context->webview_->findNext();
+}
+
+void PreviewShortcuts::onFindPrevWv(guint /*key_id*/) {
+  if (!preview_context || !preview_context->webview_) {
+    return;
+  }
+
+  preview_context->webview_->findPrevious();
+}
+
 PreviewShortcuts::PreviewShortcuts(PreviewContext *context)
     : context_(context), key_group_(context_->geany_key_group_) {
   // Stash context for callbacks
   preview_context = context_;
 
   for (gsize i = 0; i < std::size(shortcut_defs_); ++i) {
+    if (!shortcut_defs_[i].label) {
+      break;  // stop at dummy entry
+    }
     keybindings_set_item(
         key_group_,
         i,
