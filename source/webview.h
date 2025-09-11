@@ -79,6 +79,8 @@ class WebView final {
         }),
         this
     );
+
+    g_signal_connect_after(webview_, "context-menu", G_CALLBACK(onContextMenu), this);
   }
 
   ~WebView() noexcept {
@@ -327,7 +329,211 @@ class WebView final {
     return *this;
   }
 
+  WebView &findText(
+      const std::string &text,
+      WebKitFindOptions options = WEBKIT_FIND_OPTIONS_CASE_INSENSITIVE,
+      guint maxMatches = G_MAXUINT
+  ) {
+    auto *fc = webkit_web_view_get_find_controller(WEBKIT_WEB_VIEW(webview_));
+    webkit_find_controller_search(fc, text.c_str(), options, maxMatches);
+    return *this;
+  }
+
+  WebView &findNext() {
+    auto *fc = webkit_web_view_get_find_controller(WEBKIT_WEB_VIEW(webview_));
+    webkit_find_controller_search_next(fc);
+    return *this;
+  }
+
+  WebView &findPrevious() {
+    auto *fc = webkit_web_view_get_find_controller(WEBKIT_WEB_VIEW(webview_));
+    webkit_find_controller_search_previous(fc);
+    return *this;
+  }
+
+  WebView &clearFind() {
+    auto *fc = webkit_web_view_get_find_controller(WEBKIT_WEB_VIEW(webview_));
+    webkit_find_controller_search_finish(fc);
+    return *this;
+  }
+
  private:
+  static void showFindPrompt(WebView *wv, GtkWindow *parent_window) {
+    // Track the currently open prompt so we don't spawn duplicates
+    static GtkWidget *active_find_window = nullptr;
+
+    if (active_find_window && GTK_IS_WINDOW(active_find_window)) {
+      gtk_window_present(GTK_WINDOW(active_find_window));
+      return;
+    }
+
+    GtkWidget *find_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    active_find_window = find_window;
+
+    gtk_window_set_title(GTK_WINDOW(find_window), "Find in Page");
+    gtk_window_set_transient_for(GTK_WINDOW(find_window), parent_window);
+    gtk_window_set_modal(GTK_WINDOW(find_window), false);
+    gtk_container_set_border_width(GTK_CONTAINER(find_window), 6);
+
+    GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+
+    GtkWidget *entry_search = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(entry_search), "Search text…");
+    gtk_entry_set_activates_default(GTK_ENTRY(entry_search), true);
+
+    GtkWidget *btn_next = gtk_button_new_with_label("Next");
+    GtkWidget *btn_prev = gtk_button_new_with_label("Previous");
+
+    gtk_box_pack_start(GTK_BOX(hbox), entry_search, true, true, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), btn_next, false, false, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), btn_prev, false, false, 0);
+
+    gtk_container_add(GTK_CONTAINER(find_window), hbox);
+
+    // Live search
+    g_signal_connect(
+        entry_search,
+        "changed",
+        G_CALLBACK(+[](GtkEntry *entry, gpointer data) {
+          auto *wv = static_cast<WebView *>(data);
+          const char *text = gtk_entry_get_text(entry);
+          if (text && *text) {
+            wv->findText(text);
+          } else {
+            wv->clearFind();
+          }
+        }),
+        wv
+    );
+
+    // Enter triggers "Next"
+    g_signal_connect(
+        entry_search,
+        "activate",
+        G_CALLBACK(+[](GtkEntry *, gpointer data) {
+          static_cast<WebView *>(data)->findNext();
+        }),
+        wv
+    );
+
+    // Navigation buttons
+    g_signal_connect(
+        btn_next,
+        "clicked",
+        G_CALLBACK(+[](GtkButton *, gpointer data) {
+          static_cast<WebView *>(data)->findNext();
+        }),
+        wv
+    );
+
+    g_signal_connect(
+        btn_prev,
+        "clicked",
+        G_CALLBACK(+[](GtkButton *, gpointer data) {
+          static_cast<WebView *>(data)->findPrevious();
+        }),
+        wv
+    );
+
+    // Close on Esc
+    g_signal_connect(
+        find_window,
+        "key-press-event",
+        G_CALLBACK(+[](GtkWidget *widget, GdkEventKey *event, gpointer) -> gboolean {
+          if (event->keyval == GDK_KEY_Escape) {
+            gtk_widget_destroy(widget);
+            return true;
+          }
+          return false;
+        }),
+        nullptr
+    );
+
+    // Clear highlights and reset static pointer when closed
+    g_signal_connect(
+        find_window,
+        "destroy",
+        G_CALLBACK(+[](GtkWidget *, gpointer data) {
+          static_cast<WebView *>(data)->clearFind();
+          active_find_window = nullptr;
+        }),
+        wv
+    );
+
+    gtk_widget_show_all(find_window);
+
+    // --- Center over the WebView in the sidebar ---
+    if (gtk_widget_get_window(wv->widget())) {
+      int wx = 0, wy = 0;
+      gdk_window_get_origin(gtk_widget_get_window(wv->widget()), &wx, &wy);
+
+      int w_width = gtk_widget_get_allocated_width(wv->widget());
+      int w_height = gtk_widget_get_allocated_height(wv->widget());
+
+      GtkRequisition req;
+      gtk_widget_get_preferred_size(find_window, &req, nullptr);
+      int f_width = req.width;
+      int f_height = req.height;
+
+      int pos_x = wx + (w_width - f_width) / 2;
+      int pos_y = wy + (w_height - f_height) / 2;
+
+      gtk_window_move(GTK_WINDOW(find_window), pos_x, pos_y);
+    }
+  }
+
+  static gboolean onContextMenu(
+      WebKitWebView *view,
+      WebKitContextMenu *menu,
+      GdkEvent *event,
+      WebKitHitTestResult *hit_test_result,
+      gpointer user_data
+  ) {
+    auto *self = static_cast<WebView *>(user_data);
+
+    // Prune unwanted defaults
+    if (GList *items = webkit_context_menu_get_items(menu)) {
+      for (GList *l = items; l != nullptr;) {
+        WebKitContextMenuItem *menu_item = static_cast<WebKitContextMenuItem *>(l->data);
+        WebKitContextMenuAction action = webkit_context_menu_item_get_stock_action(menu_item);
+        l = l->next;
+        if (action == WEBKIT_CONTEXT_MENU_ACTION_GO_BACK ||
+            action == WEBKIT_CONTEXT_MENU_ACTION_GO_FORWARD ||
+            action == WEBKIT_CONTEXT_MENU_ACTION_STOP) {
+          webkit_context_menu_remove(menu, menu_item);
+        }
+      }
+    }
+
+    // Separator
+    webkit_context_menu_append(menu, webkit_context_menu_item_new_separator());
+
+    // GAction-backed "Find in Page…" item
+    GSimpleAction *find_action = g_simple_action_new("find_in_page", nullptr);
+    g_signal_connect(
+        find_action,
+        "activate",
+        G_CALLBACK(+[](GSimpleAction *, GVariant *, gpointer data) {
+          auto *wv = static_cast<WebView *>(data);
+          GtkWidget *toplevel = gtk_widget_get_toplevel(wv->widget());
+          if (GTK_IS_WINDOW(toplevel)) {
+            showFindPrompt(wv, GTK_WINDOW(toplevel));
+          } else {
+            showFindPrompt(wv, nullptr);
+          }
+        }),
+        self
+    );
+
+    WebKitContextMenuItem *find_item = webkit_context_menu_item_new_from_gaction(
+        G_ACTION(find_action), "Find in Page…", nullptr
+    );
+    webkit_context_menu_append(menu, find_item);
+
+    g_object_unref(find_action);
+    return false;
+  }
+
   WebKitSettings *webview_settings_ = nullptr;
   GtkWidget *webview_ = nullptr;
   WebKitWebContext *webview_context_ = nullptr;
