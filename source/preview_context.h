@@ -8,6 +8,7 @@
  */
 
 #include <gtk/gtk.h>
+#include <keybindings.h>
 #include <plugindata.h>
 #include <ui_utils.h>
 

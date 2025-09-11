@@ -8,6 +8,7 @@
 
 #include "preview_config.h"
 #include "preview_context.h"
+#include "preview_menu.h"
 #include "preview_pane.h"
 #include "preview_shortcuts.h"
 #include "tweakui_auto_set_read_only.h"
@@ -21,6 +22,7 @@
 namespace {
 std::unique_ptr<PreviewPane> preview_pane;
 std::unique_ptr<PreviewConfig> preview_config;
+std::unique_ptr<PreviewMenu> preview_menu;
 std::unique_ptr<PreviewShortcuts> preview_shortcuts;
 
 std::unique_ptr<TweakUiAutoSetReadOnly> tweakui_auto_set_read_only;
@@ -105,6 +107,9 @@ gboolean previewInit(
   tweakui_sidebar_auto_resize = std::make_unique<TweakUiSidebarAutoResize>(&preview_context);
   tweakui_unchange_document = std::make_unique<TweakUiUnchangeDocument>(&preview_context);
 
+  // menu
+  preview_menu = std::make_unique<PreviewMenu>(&preview_context);
+
   // shortcuts
   preview_context.geany_key_group_ =
       plugin_set_key_group(plugin, "Preview", PreviewShortcuts::shortcutCount(), nullptr);
@@ -122,6 +127,7 @@ void previewCleanup(
   }
   preview_pane.reset();
   preview_config.reset();
+  preview_menu.reset();
   preview_shortcuts.reset();
 
   tweakui_auto_set_read_only.reset();
