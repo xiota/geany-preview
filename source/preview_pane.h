@@ -228,6 +228,37 @@ class PreviewPane final {
     update_pending_ = false;
   }
 
+  bool exportHtmlToFile(const std::filesystem::path &dest) {
+    // Shared HTML
+    auto html = generateHtml();
+
+    // Fresh base URI for export (not cached)
+    std::string base_uri = calculateBaseUri();
+
+    // Minimal standalone HTML document
+    std::string doc;
+    doc.reserve(html.size() + 256);
+    doc += "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
+    if (!base_uri.empty()) {
+      doc += "<base href=\"" + base_uri + "\">\n";
+    }
+    doc += "</head>\n<body>\n";
+    doc += html;
+    doc += "\n</body>\n</html>\n";
+
+    std::error_code ec;
+    if (!dest.parent_path().empty()) {
+      std::filesystem::create_directories(dest.parent_path(), ec);  // best-effort
+    }
+
+    std::ofstream out(dest, std::ios::binary | std::ios::trunc);
+    if (!out) {
+      return false;
+    }
+    out.write(doc.data(), static_cast<std::streamsize>(doc.size()));
+    return static_cast<bool>(out);
+  }
+
  private:
   void safeReparentWebView_(GtkWidget *new_parent, bool pack_into_box) {
     GtkWidget *wv = webview_.widget();
@@ -258,10 +289,9 @@ class PreviewPane final {
     g_object_unref(wv);
   }
 
-  PreviewPane &update() {
+  std::string generateHtml() const {
     Document document(document_get_current());
 
-    // Preprocess into headers + body (string_view)
     ConverterPreprocessor pre(document, preview_config_->get<int>("headers_incomplete_max"));
 
     Converter *converter = nullptr;
@@ -272,7 +302,6 @@ class PreviewPane final {
       converter = registrar_.getConverter(document);
     }
 
-    std::string html;
     auto normalizedType = [](std::string_view t) {
       auto s = StringUtils::trimWhitespace(t);
       s = StringUtils::toLower(s);
@@ -284,16 +313,33 @@ class PreviewPane final {
     };
 
     if (converter) {
-      // Convert only the body text
-      html = pre.headersToHtml();
-      html += converter->toHtml(pre.body());
+      return pre.headersToHtml() + std::string{ converter->toHtml(pre.body()) };
     } else {
-      html = "<tt>" + document.filetypeName() + ", " + document.encodingName();
+      std::string html = "<tt>" + document.filetypeName() + ", " + document.encodingName();
       if (!pre.type().empty()) {
         html += ", " + normalizedType(pre.type());
       }
       html += "</tt>";
+      return html;
     }
+  }
+
+  std::string calculateBaseUri() const {
+    Document document(document_get_current());
+    auto file_path = std::filesystem::path(document.fileName());
+    auto current_dir = file_path.parent_path().lexically_normal();
+
+    if (!current_dir.empty()) {
+      return "file://" + current_dir.string() + "/";
+    }
+    return {};
+  }
+
+  PreviewPane &update() {
+    Document document(document_get_current());
+
+    std::string html = generateHtml();
+
     // load new css on document type change
     bool changed = false;
     auto key = registrar_.getConverterKey(document);
