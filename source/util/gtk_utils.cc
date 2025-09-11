@@ -130,7 +130,7 @@ void removeFocusWithin(GtkWidget *page) {
 
 gboolean onFocusIn(GtkWidget *child, GdkEventFocus * /*event*/, gpointer page) {
   addFocusWithin(static_cast<GtkWidget *>(page));
-  return FALSE;  // propagate
+  return false;  // propagate
 }
 
 gboolean onFocusOut(GtkWidget *child, GdkEventFocus * /*event*/, gpointer page) {
@@ -141,7 +141,7 @@ gboolean onFocusOut(GtkWidget *child, GdkEventFocus * /*event*/, gpointer page) 
       removeFocusWithin(static_cast<GtkWidget *>(page));
     }
   }
-  return FALSE;
+  return false;
 }
 
 void trackFocusForDescendants(GtkWidget *widget, GtkWidget *page) {
@@ -168,6 +168,20 @@ void onChildAdded(GtkContainer * /*container*/, GtkWidget *child, gpointer page)
 void enableFocusWithinTracking(GtkWidget *page) {
   trackFocusForDescendants(page, page);
   g_signal_connect(page, "add", G_CALLBACK(onChildAdded), page);
+}
+
+bool hasFocusWithin(GtkWidget *widget) {
+  if (!GTK_IS_WIDGET(widget)) {
+    return false;
+  }
+
+  GtkWidget *toplevel = gtk_widget_get_toplevel(widget);
+  if (!GTK_IS_WINDOW(toplevel)) {
+    return false;
+  }
+
+  GtkWidget *focus = gtk_window_get_focus(GTK_WINDOW(toplevel));
+  return focus && gtk_widget_is_ancestor(focus, widget);
 }
 
 }  // namespace GtkUtils

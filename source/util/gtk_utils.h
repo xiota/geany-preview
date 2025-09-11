@@ -28,4 +28,7 @@ bool isWidgetOnVisibleNotebookPage(GtkNotebook *notebook, GtkWidget *widget);
 // focus.
 void enableFocusWithinTracking(GtkWidget *page);
 
+// Returns true if `widget` itself or any of its descendants currently has keyboard focus.
+bool hasFocusWithin(GtkWidget *widget);
+
 }  // namespace GtkUtils

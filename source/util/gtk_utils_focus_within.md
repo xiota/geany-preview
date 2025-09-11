@@ -42,8 +42,8 @@ GtkUtils::enableFocusWithinTracking(page);
 
 GtkWidget* entry = gtk_entry_new();
 GtkWidget* button = gtk_button_new_with_label("Click me");
-gtk_box_pack_start(GTK_BOX(page), entry, FALSE, FALSE, 0);
-gtk_box_pack_start(GTK_BOX(page), button, FALSE, FALSE, 0);
+gtk_box_pack_start(GTK_BOX(page), entry, false, false, 0);
+gtk_box_pack_start(GTK_BOX(page), button, false, false, 0);
 ```
 
 **CSS:**
