@@ -73,10 +73,38 @@ class ConverterPreprocessor {
     if (!line.empty() && (line.front() == ' ' || line.front() == '\t')) {
       return false;
     }
+
     // Reject if key portion contains space/tab
     std::string_view key_part = line.substr(0, colon_pos);
-    return key_part.find(' ') == std::string_view::npos &&
-           key_part.find('\t') == std::string_view::npos;
+    if (key_part.find(' ') != std::string_view::npos ||
+        key_part.find('\t') != std::string_view::npos) {
+      return false;
+    }
+
+    // Lowercase for comparison
+    auto lower_key = StringUtils::toLower(key_part);
+
+    // Known protocols
+    static const std::vector<std::string> protocols = { "http", "https",  "file",
+                                                        "ftp",  "mailto", "data" };
+
+    // Check char after colon
+    char after_colon = (colon_pos + 1 < line.size()) ? line[colon_pos + 1] : '\0';
+    char after_colon2 = (colon_pos + 2 < line.size()) ? line[colon_pos + 2] : '\0';
+
+    // Reject known protocol + no space after colon
+    for (const auto &proto : protocols) {
+      if (lower_key == proto && after_colon != ' ' && after_colon != '\t') {
+        return false;
+      }
+    }
+
+    // Reject colon followed immediately by "//"
+    if (after_colon == '/' && after_colon2 == '/') {
+      return false;
+    }
+
+    return true;
   }
 
   void splitDocument(const Document &doc) {
