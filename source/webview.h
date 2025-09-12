@@ -24,19 +24,21 @@ class WebView final {
   WebView &injectPatcher();
   WebView &loadHtml(
       std::string_view body_content,
-      const std::string &base_uri = "",
-      double *scroll_fraction_ptr = nullptr
+      const std::string &base_uri,
+      std::string_view root_id,
+      double *scroll_fraction_ptr
   );
+
   WebView &updateHtml(
       std::string_view body_content,
-      const std::string &base_uri = "",
-      double *scroll_fraction_ptr = nullptr,
-      bool allow_fallback = false
+      const std::string &base_uri,
+      std::string_view root_id,
+      double *scroll_fraction_ptr
   );
   void getScrollFraction(std::function<void(double)> callback) const;
   WebView &setScrollFraction(double fraction);
   static std::string escapeForJsTemplateLiteral(std::string_view input);
-  WebView &injectBaseUri(const std::string &base_uri);
+  WebView &injectBaseUri(const std::string &base_uri, std::string_view root_id);
   WebView &clearInjectedCss();
   WebView &injectCssFromString(const std::string &css);
   WebView &injectCssFromFile(const std::filesystem::path &file);

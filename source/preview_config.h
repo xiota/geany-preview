@@ -26,10 +26,6 @@ class PreviewConfig {
 
   // clang-format off
   inline static const SettingDef setting_defs_[] = {
-    { "allow_update_fallback",
-      setting_value_type{ false },
-      "Whether to use fallback rendering mode if DOM patch mode fails." },
-
     { "auto_set_read_only",
       setting_value_type{ false },
       "Automatically set documents to read-only mode when they are not writable." },

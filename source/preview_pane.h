@@ -140,7 +140,8 @@ class PreviewPane final {
     previous_theme_.clear();
 
     const std::string base_uri = calculateBaseUri();
-    webview_.loadHtml("", base_uri);
+    root_id_ = "geany-preview-" + StringUtils::randomHex(8);
+    webview_.loadHtml("", base_uri, root_id_, nullptr);
 
     webview_.clearInjectedCss();
     addWatchIfNeeded(preview_config_->configDir() / "preview.css");
@@ -158,22 +159,23 @@ class PreviewPane final {
   }
 
   PreviewPane &checkHealth() {
-    const char *js = R"JS(
-!(
-  document.documentElement &&
-  document.head &&
-  document.body &&
-  document.getElementById('root')
-)
-)JS";
-
     if (!webview_healthy_) {
       return *this;
     }
 
+    std::string js =
+        "!("
+        "document.documentElement && "
+        "document.head && "
+        "document.body && "
+        "document.getElementById(`" +
+        WebView::escapeForJsTemplateLiteral(root_id_) +
+        "`)"
+        ")";
+
     webkit_web_view_evaluate_javascript(
         WEBKIT_WEB_VIEW(webview_.widget()),
-        js,
+        js.c_str(),
         -1,
         nullptr,
         nullptr,
@@ -383,15 +385,14 @@ class PreviewPane final {
 
     if (base_uri != previous_base_uri_) {
       previous_base_uri_ = base_uri;
-      webview_.loadHtml(html, base_uri, &scroll_by_file_[file]);
+      webview_.loadHtml(html, base_uri, root_id_, &scroll_by_file_[file]);
     } else if (!webview_healthy_) {
-      webview_.loadHtml(html, base_uri, &scroll_by_file_[file]);
+      webview_.loadHtml(html, base_uri, root_id_, &scroll_by_file_[file]);
       webview_healthy_ = true;
     } else {
-      bool allow_fallback = preview_config_->get<bool>("allow_update_fallback", false);
-      webview_.getScrollFraction([this, file, base_uri, html, allow_fallback](double frac) {
+      webview_.getScrollFraction([this, file, base_uri, html](double frac) {
         scroll_by_file_[file] = frac;
-        webview_.updateHtml(html, base_uri, &scroll_by_file_[file], allow_fallback);
+        webview_.updateHtml(html, base_uri, root_id_, &scroll_by_file_[file]);
       });
     }
     return *this;
@@ -464,4 +465,5 @@ class PreviewPane final {
   std::string previous_base_uri_;
 
   bool webview_healthy_ = false;
+  std::string root_id_;
 };

@@ -8,6 +8,7 @@
 #include <string_view>
 
 #include "util/file_utils.h"
+#include "util/string_utils.h"
 
 // Anonymous namespace for internal constants
 namespace {
@@ -19,8 +20,8 @@ function parseBody(html) {
   return doc.body || document.createElement('body');
 }
 
-function applyPatch(newHtml) {
-  const root = document.getElementById('root');
+function applyPatch(newHtml, root_id) {
+  root = document.getElementById(root_id);
   if (!root) return;
 
   const nextBody = parseBody(newHtml);
@@ -90,8 +91,11 @@ WebView &WebView::injectPatcher() {
 WebView &WebView::loadHtml(
     std::string_view body_content,
     const std::string &base_uri,
+    std::string_view root_id,
     double *scroll_fraction_ptr
 ) {
+  constexpr auto kDefaultBaseUri = "file:///example/example.html";
+
   double fraction = scroll_fraction_ptr ? *scroll_fraction_ptr : internal_scroll_fraction_;
   fraction = std::clamp(fraction, 0.0, 1.0);
 
@@ -104,18 +108,18 @@ WebView &WebView::loadHtml(
       std::string(kApplyPatchJS) + "</script>";
 
   if (!base_uri.empty()) {
-    head += "<base href=\"" + escapeForJsTemplateLiteral(base_uri) + "\">";
+    head += "<base href=\"" + StringUtils::escapeHtml(base_uri) + "\">";
   } else {
-    head += "<base href=\"file:///example/example.html\">";
+    head += "<base href=\"" + StringUtils::escapeHtml(kDefaultBaseUri) + "\">";
   }
 
-  std::string html = head + "</head><body><div id=\"root\">" + std::string(body_content) +
-                     "</div></body></html>";
+  std::string html = head + "</head><body><div id=\"" + StringUtils::escapeHtml(root_id) +
+                     "\">" + std::string(body_content) + "</div></body></html>";
 
   webkit_web_view_load_html(
       WEBKIT_WEB_VIEW(webview_),
       html.c_str(),
-      base_uri.empty() ? "file:///example/example.html" : base_uri.c_str()
+      base_uri.empty() ? kDefaultBaseUri : base_uri.c_str()
   );
 
   setScrollFraction(fraction);
@@ -125,8 +129,8 @@ WebView &WebView::loadHtml(
 WebView &WebView::updateHtml(
     std::string_view body_content,
     const std::string &base_uri,
-    double *scroll_fraction_ptr,
-    bool allow_fallback
+    std::string_view root_id,
+    double *scroll_fraction_ptr
 ) {
   double fraction = scroll_fraction_ptr ? *scroll_fraction_ptr : internal_scroll_fraction_;
   fraction = std::clamp(fraction, 0.0, 1.0);
@@ -134,30 +138,12 @@ WebView &WebView::updateHtml(
   std::string escaped = escapeForJsTemplateLiteral(body_content);
 
   std::string js;
-  if (allow_fallback) {
-    js = "if (typeof applyPatch === 'function') {"
-         "  applyPatch(`" +
-         escaped +
-         "`);"
-         "} else {"
-         "  var root = document.getElementById('root');"
-         "  if (root) { root.innerHTML = `" +
-         escaped +
-         "`; }"
-         "  else { document.body.innerHTML = `" +
-         escaped +
-         "`; }"
-         "}"
-         "window.scrollTo(0, document.body.scrollHeight * " +
-         std::to_string(fraction) + ");";
-  } else {
-    js = "applyPatch(`" + escaped +
-         "`);"
-         "window.scrollTo(0, document.body.scrollHeight * " +
-         std::to_string(fraction) + ");";
-  }
+  js = "applyPatch(`" + escaped + "`, `" + escapeForJsTemplateLiteral(root_id) +
+       "`);"
+       "window.scrollTo(0, document.body.scrollHeight * " +
+       std::to_string(fraction) + ");";
 
-  injectBaseUri(base_uri);
+  injectBaseUri(base_uri, root_id);
 
   webkit_web_view_evaluate_javascript(
       WEBKIT_WEB_VIEW(webview_), js.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr
@@ -238,7 +224,7 @@ std::string WebView::escapeForJsTemplateLiteral(std::string_view input) {
   return out;
 }
 
-WebView &WebView::injectBaseUri(const std::string &base_uri) {
+WebView &WebView::injectBaseUri(const std::string &base_uri, std::string_view root_id) {
   if (base_uri.empty()) {
     return *this;
   }
