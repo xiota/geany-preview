@@ -95,37 +95,27 @@ WebView &WebView::loadHtml(
   double fraction = scroll_fraction_ptr ? *scroll_fraction_ptr : internal_scroll_fraction_;
   fraction = std::clamp(fraction, 0.0, 1.0);
 
-  injectBaseUri(base_uri);
-
-  std::string html =
+  std::string head =
       "<!DOCTYPE html><html><head>"
-      "<base href=\"" +
-      escapeForJsTemplateLiteral(base_uri) +
-      "\">"
       "<meta charset=\"UTF-8\">"
       "<title>Preview</title>"
       "<style></style>"
       "<script>" +
-      std::string(kApplyPatchJS) +
-      "</script>"
-      "</head><body><div id=\"root\">" +
-      std::string(body_content) + "</div></body></html>";
+      std::string(kApplyPatchJS) + "</script>";
 
-  GBytes *bytes = g_bytes_new_static(html.data(), html.size());
-  webkit_web_view_load_bytes(
-      WEBKIT_WEB_VIEW(webview_), bytes, "text/html", "UTF-8", "file:///example/example.html"
-  );
-  g_bytes_unref(bytes);
+  if (!base_uri.empty()) {
+    head += "<base href=\"" + escapeForJsTemplateLiteral(base_uri) + "\">";
+  } else {
+    head += "<base href=\"file:///example/example.html\">";
+  }
 
-  g_signal_connect(
-      webview_,
-      "load-changed",
-      G_CALLBACK(+[](WebKitWebView *view, WebKitLoadEvent load_event, gpointer user_data) {
-        if (load_event == WEBKIT_LOAD_FINISHED) {
-          static_cast<WebView *>(user_data)->injectPatcher();
-        }
-      }),
-      this
+  std::string html = head + "</head><body><div id=\"root\">" + std::string(body_content) +
+                     "</div></body></html>";
+
+  webkit_web_view_load_html(
+      WEBKIT_WEB_VIEW(webview_),
+      html.c_str(),
+      base_uri.empty() ? "file:///example/example.html" : base_uri.c_str()
   );
 
   setScrollFraction(fraction);

@@ -133,12 +133,13 @@ class PreviewPane final {
     return page_box_ ? page_box_ : webview_.widget();
   }
 
-  void initWebView() {
-    previous_base_uri_ = std::filesystem::path{};
+  PreviewPane &initWebView() {
+    previous_base_uri_.clear();
     previous_key_.clear();
     previous_theme_.clear();
 
-    webview_.loadHtml("");
+    const std::string base_uri = calculateBaseUri();
+    webview_.loadHtml("", base_uri);
 
     webview_.clearInjectedCss();
     addWatchIfNeeded(preview_config_->configDir() / "preview.css");
@@ -152,6 +153,7 @@ class PreviewPane final {
     }
 
     triggerUpdate();
+    return *this;
   }
 
   PreviewPane &checkHealth() {
@@ -326,13 +328,20 @@ class PreviewPane final {
 
   std::string calculateBaseUri() const {
     Document document(document_get_current());
-    auto file_path = std::filesystem::path(document.fileName());
-    auto current_dir = file_path.parent_path().lexically_normal();
-
-    if (!current_dir.empty()) {
-      return "file://" + current_dir.string() + "/";
+    const auto file_path = std::filesystem::path(document.fileName()).lexically_normal();
+    if (file_path.empty()) {
+      return {};
     }
-    return {};
+
+    // Properly escaped file:// URI
+    if (gchar *uri = g_filename_to_uri(file_path.string().c_str(), nullptr, nullptr)) {
+      std::string out(uri);
+      g_free(uri);
+      return out;
+    }
+
+    // Fallback (unescaped)
+    return "file://" + file_path.string();
   }
 
   PreviewPane &update() {
@@ -365,26 +374,18 @@ class PreviewPane final {
       previous_theme_ = theme;
     }
 
-    // base URI
-    auto file = document.fileName();
-    auto file_path = std::filesystem::path(file);
-    auto current_dir = file_path.parent_path().lexically_normal();
-
-    std::string base_uri_str;
-    if (current_dir != previous_base_uri_) {
-      if (!current_dir.empty()) {
-        base_uri_str = "file://" + current_dir.string() + "/";
-      }
-      previous_base_uri_ = current_dir;
+    std::string base_uri = calculateBaseUri();
+    if (base_uri != previous_base_uri_) {
+      previous_base_uri_ = base_uri;
+      webview_.loadHtml(html, base_uri);
+    } else {
+      bool allow_fallback = preview_config_->get<bool>("allow_update_fallback", false);
+      auto file = document.fileName();
+      webview_.getScrollFraction([this, file, base_uri, html, allow_fallback](double frac) {
+        scroll_by_file_[file] = frac;
+        webview_.updateHtml(html, base_uri, &scroll_by_file_[file], allow_fallback);
+      });
     }
-
-    // inject HTML
-    bool allow_fallback = preview_config_->get<bool>("allow_update_fallback", false);
-    webview_.getScrollFraction([this, file, base_uri_str, html, allow_fallback](double frac) {
-      scroll_by_file_[file] = frac;
-      webview_.updateHtml(html, base_uri_str, &scroll_by_file_[file], allow_fallback);
-    });
-
     return *this;
   }
 
@@ -452,5 +453,5 @@ class PreviewPane final {
   std::string previous_theme_;
 
   std::unordered_map<std::filesystem::path, FileUtils::FileWatchHandle> watches_;
-  std::filesystem::path previous_base_uri_;
+  std::string previous_base_uri_;
 };
