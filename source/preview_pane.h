@@ -54,6 +54,7 @@ class PreviewPane final {
         "load-changed",
         G_CALLBACK(+[](WebKitWebView *, WebKitLoadEvent e, gpointer user_data) {
           auto *self = static_cast<PreviewPane *>(user_data);
+
           if (e == WEBKIT_LOAD_FINISHED) {
             self->scheduleUpdate();
             g_signal_handler_disconnect(self->webview_.widget(), self->init_handler_id_);
@@ -166,6 +167,10 @@ class PreviewPane final {
 )
 )JS";
 
+    if (!webview_healthy_) {
+      return *this;
+    }
+
     webkit_web_view_evaluate_javascript(
         WEBKIT_WEB_VIEW(webview_.widget()),
         js,
@@ -174,9 +179,11 @@ class PreviewPane final {
         nullptr,
         nullptr,
         [](GObject *source, GAsyncResult *res, gpointer user_data) {
+          auto *self = static_cast<PreviewPane *>(user_data);
           GError *err = nullptr;
           JSCValue *val =
               webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(source), res, &err);
+
           bool needs_reinit = false;
           if (!err && jsc_value_is_boolean(val)) {
             needs_reinit = jsc_value_to_boolean(val);
@@ -188,10 +195,7 @@ class PreviewPane final {
             g_error_free(err);
           }
 
-          if (needs_reinit) {
-            auto *self = static_cast<PreviewPane *>(user_data);
-            self->initWebView();
-          }
+          self->webview_healthy_ = !needs_reinit;
         },
         this
     );
@@ -374,13 +378,17 @@ class PreviewPane final {
       previous_theme_ = theme;
     }
 
+    auto file = document.fileName();
     std::string base_uri = calculateBaseUri();
+
     if (base_uri != previous_base_uri_) {
       previous_base_uri_ = base_uri;
-      webview_.loadHtml(html, base_uri);
+      webview_.loadHtml(html, base_uri, &scroll_by_file_[file]);
+    } else if (!webview_healthy_) {
+      webview_.loadHtml(html, base_uri, &scroll_by_file_[file]);
+      webview_healthy_ = true;
     } else {
       bool allow_fallback = preview_config_->get<bool>("allow_update_fallback", false);
-      auto file = document.fileName();
       webview_.getScrollFraction([this, file, base_uri, html, allow_fallback](double frac) {
         scroll_by_file_[file] = frac;
         webview_.updateHtml(html, base_uri, &scroll_by_file_[file], allow_fallback);
@@ -454,4 +462,6 @@ class PreviewPane final {
 
   std::unordered_map<std::filesystem::path, FileUtils::FileWatchHandle> watches_;
   std::string previous_base_uri_;
+
+  bool webview_healthy_ = false;
 };
