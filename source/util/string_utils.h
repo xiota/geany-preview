@@ -5,6 +5,9 @@
 
 #include <algorithm>
 #include <cctype>
+#include <iomanip>
+#include <random>
+#include <sstream>
 #include <string>
 #include <string_view>
 
@@ -62,6 +65,17 @@ inline std::string escapeHtml(std::string_view sv) {
         out.push_back(c);
         break;
     }
+  }
+  return out;
+}
+
+inline std::string randomHex(std::size_t length) {
+  static thread_local std::mt19937 rng{ std::random_device{}() };
+  static std::uniform_int_distribution<int> dist(0, 15);
+  std::string out;
+  out.reserve(length);
+  for (std::size_t i = 0; i < length; ++i) {
+    out.push_back("0123456789abcdef"[dist(rng)]);
   }
   return out;
 }
