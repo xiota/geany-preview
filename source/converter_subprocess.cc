@@ -24,7 +24,7 @@ std::string_view ConverterSubprocess::toHtml(std::string_view source) {
   Subprocess runner;
   Subprocess::Result result;
 
-  if (!runner.run(buildCommandArgs(), source, [&](Subprocess::Result res) {
+  if (!runner.runWithPipes(buildCommandArgs(), source, [&](Subprocess::Result res) {
         result = std::move(res);
         g_main_loop_quit(loop);
       })) {

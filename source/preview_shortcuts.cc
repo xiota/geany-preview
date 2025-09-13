@@ -5,37 +5,26 @@
 
 #include <algorithm>  // std::transform
 #include <cstddef>    // std::size
-#include <cstdlib>    // std::system, std::getenv
+#include <cstdlib>    // std::getenv
 #include <filesystem>
+#include <iterator>
+#include <sstream>
 #include <string>
 
-#include <gtk/gtk.h>  // gtk_widget_grab_focus()
+#include <gtk/gtk.h>
 #include <keybindings.h>
 #include <msgwindow.h>
 #include <plugindata.h>
-#include <scintilla/Scintilla.h>
 #include <ui_utils.h>
 
 #include "preview_pane.h"
+#include "subprocess.h"
 #include "util/gtk_utils.h"
 #include "webview.h"
 
 namespace {
 
 PreviewContext *preview_context = nullptr;
-
-bool commandExists(const std::string &cmd) {
-  if (cmd.empty()) {
-    return false;
-  }
-
-  // Extract the first token (the executable name)
-  auto spacePos = cmd.find(' ');
-  std::string exe = (spacePos == std::string::npos) ? cmd : cmd.substr(0, spacePos);
-
-  std::string check = "command -v " + exe + " >/dev/null 2>&1";
-  return (std::system(check.c_str()) == 0);
-}
 
 std::string detectDesktopEnv() {
   const char *env = std::getenv("XDG_CURRENT_DESKTOP");
@@ -149,19 +138,19 @@ void PreviewShortcuts::onOpenTerminal(guint /*key_id*/) {
 
   std::string cmd = preview_context->preview_config_->get<std::string>("terminal_command");
 
-  if (!commandExists(cmd)) {
-    if (commandExists("xdg-terminal-exec")) {
+  if (!Subprocess::commandExists(cmd)) {
+    if (Subprocess::commandExists("xdg-terminal-exec")) {
       cmd = "xdg-terminal-exec --working-directory=%d";
     } else {
       std::string de = detectDesktopEnv();
       std::string deTerm = pickTerminalForDe(de);
-      if (!deTerm.empty() && commandExists(deTerm)) {
+      if (!deTerm.empty() && Subprocess::commandExists(deTerm)) {
         cmd = deTerm;
       }
     }
   }
 
-  if (!commandExists(cmd)) {
+  if (!Subprocess::commandExists(cmd)) {
     msgwin_status_add("Preview: No suitable terminal found.");
     return;
   }
@@ -169,7 +158,10 @@ void PreviewShortcuts::onOpenTerminal(guint /*key_id*/) {
   replaceAll(cmd, "%%", "%");
   replaceAll(cmd, "%d", dirPath.string());
 
-  std::ignore = std::system(cmd.c_str());
+  if (!Subprocess::runAsync(cmd)) {
+    msgwin_status_add("Preview: No suitable terminal found.");
+    return;
+  }
 }
 
 void PreviewShortcuts::onCopy(guint /*key_id*/) {

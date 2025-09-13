@@ -23,16 +23,20 @@ class Subprocess {
   Subprocess() noexcept = default;
   ~Subprocess() noexcept = default;
 
-  // Non-copyable, non-movable if you want to manage lifecycle tightly
+  // Non-copyable, non-movable
   Subprocess(const Subprocess &) noexcept = delete;
   Subprocess &operator=(const Subprocess &) noexcept = delete;
 
+  static bool commandExists(std::string_view binary) noexcept;
+
   // Returns true if the process was launched successfully, false otherwise.
-  bool run(
+  bool runWithPipes(
       const std::vector<std::string> &args,
       std::string_view input,
       CompletionHandler handler
   ) const;
+
+  static bool runAsync(const std::string &command) noexcept;
 
   static void cancelAll() noexcept;
 

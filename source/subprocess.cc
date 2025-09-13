@@ -16,6 +16,7 @@
 #include <unordered_map>
 
 #include <glib.h>
+#include <msgwindow.h>
 
 std::unordered_map<std::string, Subprocess::CacheEntry> Subprocess::binary_cache_;
 
@@ -147,7 +148,49 @@ std::chrono::seconds Subprocess::nextCooldown(std::chrono::seconds current) noex
   return current;  // already at cap
 }
 
-bool Subprocess::run(
+bool Subprocess::commandExists(std::string_view binary) noexcept {
+  // Trim leading spaces
+  binary.remove_prefix(std::min(binary.find_first_not_of(" \t"), binary.size()));
+
+  if (binary.empty()) {
+    return false;
+  }
+
+  // Split on first space
+  size_t space_pos = binary.find(' ');
+  if (space_pos != std::string_view::npos) {
+    binary = binary.substr(0, space_pos);
+  }
+
+  std::string cmd(binary);
+
+  // If the command contains a slash, treat it as a path and check directly
+  if (cmd.find('/') != std::string::npos) {
+    return g_file_test(cmd.c_str(), G_FILE_TEST_IS_EXECUTABLE);
+  }
+
+  // Otherwise, search in PATH
+  char *found_path = g_find_program_in_path(cmd.c_str());
+  bool found = (found_path != nullptr);
+  if (found_path) {
+    g_free(found_path);
+  }
+  return found;
+}
+
+bool Subprocess::runAsync(const std::string &command) noexcept {
+  GError *error = nullptr;
+  if (!g_spawn_command_line_async(command.c_str(), &error)) {
+    if (error) {
+      // msgwin_status_add("Preview: runAsync failed: %s", , error->message);
+      g_error_free(error);
+    }
+    return false;
+  }
+  return true;
+}
+
+bool Subprocess::runWithPipes(
     const std::vector<std::string> &args,
     std::string_view input,
     CompletionHandler handler
@@ -156,9 +199,8 @@ bool Subprocess::run(
     return false;
   }
 
-  const std::string &binary = args[0];
   auto now = std::chrono::steady_clock::now();
-  auto it = binary_cache_.find(binary);
+  auto it = binary_cache_.find(args[0]);
   if (it != binary_cache_.end()) {
     CacheEntry &entry = it->second;
     if (!entry.found) {
@@ -168,13 +210,8 @@ bool Subprocess::run(
         return false;
       }
       // Due for availability check.
-      char *found_path = g_find_program_in_path(binary.c_str());
-      bool found = (found_path != nullptr);
-      if (found_path) {
-        g_free(found_path);
-      }
       entry.last_check = now;
-      if (found) {
+      if (commandExists(args[0])) {
         // Reset on success.
         entry.found = true;
         entry.cooldown = kStartCooldown;
@@ -216,7 +253,7 @@ bool Subprocess::run(
       g_error_free(error);
     }
     // Mark as missing and apply backoff if spawn fails.
-    auto &entry = binary_cache_[binary];
+    auto &entry = binary_cache_[args[0]];
     if (entry.last_check.time_since_epoch().count() == 0) {
       entry.cooldown = kStartCooldown;
     }

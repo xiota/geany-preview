@@ -3,10 +3,8 @@
 
 #include "preview_menu.h"
 
-#include <cstdlib>  // std::system
 #include <filesystem>
 
-#include <glib.h>  // g_message
 #include <gtk/gtk.h>
 #include <msgwindow.h>
 
@@ -18,6 +16,7 @@
 #include "preview_config.h"
 #include "preview_context.h"
 #include "preview_pane.h"
+#include "subprocess.h"
 #include "webview.h"
 
 PreviewMenu::PreviewMenu(PreviewContext *context) : context_(context) {
@@ -120,7 +119,11 @@ void PreviewMenu::onOpenConfigFolder(GtkMenuItem *, gpointer user_data) {
   }
 
   std::string cmd = "xdg-open \"" + path.string() + "\"";
-  std::ignore = std::system(cmd.c_str());
+
+  if (!Subprocess::runAsync(cmd)) {
+    msgwin_status_add("Preview: No suitable terminal found.");
+    return;
+  }
 }
 
 void PreviewMenu::onPreferences(GtkMenuItem *, gpointer user_data) {
