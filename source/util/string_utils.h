@@ -41,6 +41,15 @@ inline std::string_view trimWhitespaceView(std::string_view sv) {
   return sv.substr(b, e - b + 1);
 }
 
+inline std::string replaceAll(std::string s, const std::string &from, const std::string &to) {
+  size_t pos = 0;
+  while ((pos = s.find(from, pos)) != std::string::npos) {
+    s.replace(pos, from.length(), to);
+    pos += to.length();
+  }
+  return s;
+}
+
 inline std::string escapeHtml(std::string_view sv) {
   std::string out;
   out.reserve(sv.size() * 2);  // reasonable headroom for most cases

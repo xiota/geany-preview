@@ -20,6 +20,7 @@
 #include "preview_pane.h"
 #include "subprocess.h"
 #include "util/gtk_utils.h"
+#include "util/string_utils.h"
 #include "webview.h"
 
 namespace {
@@ -53,14 +54,6 @@ std::string pickTerminalForDe(const std::string &de) {
   }
   // Add more DEs if you want
   return {};
-}
-
-void replaceAll(std::string &s, const std::string &from, const std::string &to) {
-  size_t pos = 0;
-  while ((pos = s.find(from, pos)) != std::string::npos) {
-    s.replace(pos, from.length(), to);
-    pos += to.length();
-  }
 }
 
 }  // namespace
@@ -155,8 +148,8 @@ void PreviewShortcuts::onOpenTerminal(guint /*key_id*/) {
     return;
   }
 
-  replaceAll(cmd, "%%", "%");
-  replaceAll(cmd, "%d", dirPath.string());
+  cmd = StringUtils::replaceAll(std::move(cmd), "%d", dirPath.string());
+  cmd = StringUtils::replaceAll(std::move(cmd), "%%", "%");
 
   if (!Subprocess::runAsync(cmd)) {
     msgwin_status_add("Preview: No suitable terminal found.");
