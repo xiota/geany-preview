@@ -105,4 +105,10 @@ inline std::string readFileToString(const std::filesystem::path &path) {
   return buffer.str();
 }
 
+// Check if a path exists and is a regular file
+inline bool fileExists(const std::filesystem::path &path) noexcept {
+  std::error_code ec;
+  return std::filesystem::exists(path, ec) && std::filesystem::is_regular_file(path, ec);
+}
+
 }  // namespace FileUtils
