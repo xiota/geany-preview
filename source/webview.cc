@@ -248,16 +248,16 @@ WebView &WebView::clearInjectedCss() {
   return *this;
 }
 
-WebView &WebView::injectCssFromString(const std::string &css) {
+WebView &WebView::injectCssFromLiteral(const char *css) {
   WebKitUserStyleSheet *sheet = webkit_user_style_sheet_new(
-      css.c_str(),
-      WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES,
-      WEBKIT_USER_STYLE_LEVEL_USER,
-      nullptr,
-      nullptr
+      css, WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES, WEBKIT_USER_STYLE_LEVEL_USER, nullptr, nullptr
   );
   webkit_user_content_manager_add_style_sheet(webview_content_manager_, sheet);
   return *this;
+}
+
+WebView &WebView::injectCssFromString(const std::string &css) {
+  return injectCssFromLiteral(css.c_str());
 }
 
 WebView &WebView::injectCssFromFile(const std::filesystem::path &file) {

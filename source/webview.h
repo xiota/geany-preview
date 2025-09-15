@@ -40,6 +40,7 @@ class WebView final {
   static std::string escapeForJsTemplateLiteral(std::string_view input);
   WebView &injectBaseUri(const std::string &base_uri, std::string_view root_id);
   WebView &clearInjectedCss();
+  WebView &injectCssFromLiteral(const char *css);
   WebView &injectCssFromString(const std::string &css);
   WebView &injectCssFromFile(const std::filesystem::path &file);
   WebView &print(GtkWindow *parent = nullptr);
