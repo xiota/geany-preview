@@ -8,6 +8,7 @@ project(
 
 project_name = meson.project_name()
 plugin_name  = project_name.startswith('geany-') ? project_name.substring(6) : project_name
+plugin_datadir = get_option('datadir') / 'geany' / 'plugins' / plugin_name
 
 geany_dep = dependency('geany')
 cmark_dep = dependency('libcmark-gfm')
@@ -20,6 +21,34 @@ if not pdf_export.disabled()
 else
   podofo_dep = disabler()
 endif
+
+# Configuration
+conf_data = configuration_data()
+conf_data.set('version', meson.project_version())
+conf_data.set('project_datadir', plugin_datadir)
+conf_data.set10('pdf_export', podofo_dep.found())
+
+config_h = configure_file(
+  input: 'source/config.h.in',
+  output: 'config.h',
+  configuration: conf_data
+)
+
+# Default CSS
+fs = import('fs')
+
+preview_css_content  = fs.read(meson.project_source_root() / 'data/preview.css')
+markdown_css_content = fs.read(meson.project_source_root() / 'data/markdown.css')
+
+css_conf = configuration_data()
+css_conf.set('PREVIEW_CSS',  preview_css_content.strip())
+css_conf.set('MARKDOWN_CSS', markdown_css_content.strip())
+
+default_css_h = configure_file(
+  input: 'source/default_css.h.in',
+  output: 'default_css.h',
+  configuration: css_conf
+)
 
 src_files = files(
   'source/converter_cmark_gfm.cc',

@@ -1,0 +1,14 @@
+/* terminal-like box */
+pre code {
+  display: block;
+  color: #eee;
+  background: #333;
+
+  padding: .75rem .75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  line-height: 1.35;
+  font-family: monospace;
+  font-size: 0.95rem;
+  overflow: auto;
+}

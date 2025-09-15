@@ -6,6 +6,7 @@
 
 #include <geanyplugin.h>
 
+#include "config.h"
 #include "preview_config.h"
 #include "preview_context.h"
 #include "preview_menu.h"
@@ -144,7 +145,7 @@ extern "C" G_MODULE_EXPORT void geany_load_module(GeanyPlugin *plugin) {
   plugin->info->name = "Preview";
   plugin->info->description =
       "Preview pane for Markdown and other lightweight markup languages";
-  plugin->info->version = "0.2";
+  plugin->info->version = VERSION;
   plugin->info->author = "xiota";
 
   plugin->funcs->init = previewInit;

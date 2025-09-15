@@ -1,0 +1,182 @@
+/* ===== Theme Variables (auto-adapting) ===== */
+:root {
+  /* Borders: 40% text color mixed into background */
+  --border-color: color-mix(in srgb, CanvasText 40%, Canvas 60%);
+
+  /* Faint background: mostly background color, with a touch of text color */
+  --bg-faint: color-mix(in srgb, Canvas 92%, CanvasText 8%);
+
+  /* Table borders: slightly stronger than normal borders */
+  --table-border: color-mix(in srgb, CanvasText 50%, Canvas 50%);
+
+  /* Table stripe: a bit more text color than bg-faint for visibility */
+  --table-stripe: color-mix(in srgb, Canvas 85%, CanvasText 15%);
+
+  /* Blockquote border: stronger than normal border */
+  --blockquote-border: color-mix(in srgb, CanvasText 60%, Canvas 40%);
+
+  /* Links: medium blue mixed with text color so it adapts */
+  --link-color: color-mix(in srgb, #3a78b4 70%, CanvasText 30%);
+  --link-hover-color: color-mix(in srgb, #1f5a8a 70%, CanvasText 30%);
+}
+
+/* for email-style headers */
+.headers {
+  margin: 0.25rem 0;
+  padding: 0.5rem 0.5rem 0.25rem 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--bg-faint);
+  font-family: monospace;
+}
+
+.header-line {
+  white-space: pre-wrap;
+}
+
+.header-key {
+  font-weight: 400;
+}
+
+.header-value {
+  font-weight: 400;
+}
+
+.incomplete {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+/* Enhancement 2: adaptive highlight for <mark> */
+mark {
+  background-color: color-mix(in srgb, #fffa8b 60%, Canvas 40%);
+  padding: 0 0.15em;
+  border-radius: 2px;
+}
+
+/* for print-like formatting */
+body {
+  margin: 0.5rem 1rem 0.5rem 0.5rem;
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+a {
+  color: var(--link-color);
+}
+
+a:hover,
+a:focus {
+  color: var(--link-hover-color);
+}
+
+code,
+pre {
+  font-family: monospace;
+  white-space: pre-wrap;
+}
+
+pre {
+  margin: 1rem 0 1rem 1rem;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-align: left;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+h1 {
+  font-size: 1.6rem;
+}
+
+h2 {
+  font-size: 1.4rem;
+}
+
+h3 {
+  font-size: 1.2rem;
+}
+
+h4,
+h5,
+h6 {
+  font-size: 1rem;
+}
+
+h5,
+h6 {
+  font-style: italic;
+}
+
+h6 {
+  font-style: italic;
+  font-weight: 400;
+}
+
+p {
+  margin: 0 0 0.65rem 0;
+  padding: 0;
+}
+
+img {
+  display: block;
+  max-width: calc(100% - 2rem);
+  height: auto;
+  margin: 1rem auto 0.5rem auto;
+  padding: 0;
+}
+
+ul,
+ol {
+  margin: 0.5rem 0;
+}
+
+em,
+em em em,
+em em em em em {
+  font-style: italic;
+}
+
+em em,
+em em em em {
+  font-style: normal;
+}
+
+table {
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+th,
+td {
+  border: 1px solid var(--table-border);
+  padding: 0.25rem;
+}
+
+tbody tr:nth-child(even) {
+  background-color: var(--table-stripe);
+}
+
+q {
+  quotes: "“" "”" "‘" "’";
+}
+
+.footnote-ref {
+  vertical-align: super;
+}
+
+.smallcaps {
+  font-variant: small-caps;
+}
+
+blockquote {
+  margin: 1rem 0;
+  padding-left: 0.8rem;
+  border-left: 0.2rem solid var(--blockquote-border);
+}
