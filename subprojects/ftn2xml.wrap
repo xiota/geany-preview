@@ -1,0 +1,4 @@
+[wrap-git]
+directory = ftn2xml
+url = https://github.com/xiota/ftn2xml.git
+revision = main

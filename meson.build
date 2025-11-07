@@ -18,9 +18,17 @@ webkit_dep = dependency('webkit2gtk-4.1')
 pdf_export = get_option('pdf_export')
 if not pdf_export.disabled()
   podofo_dep = dependency('libpodofo', required: pdf_export)
+  pdf_export_str = podofo_dep.found() ? 'enabled' : 'disabled'
 else
   podofo_dep = disabler()
+  pdf_export_str = 'disabled'
 endif
+
+ftn2xml_dep = dependency(
+  'ftn2xml',
+  fallback: ['ftn2xml', 'ftn2xml_dep'],
+  default_options: {'pdf_export': pdf_export_str},
+)
 
 # Configuration
 conf_data = configuration_data()
@@ -67,7 +75,7 @@ src_files = files(
 shared_module(
   plugin_name,
   src_files,
-  dependencies: [geany_dep, cmark_dep, podofo_dep, tomlpp_dep, webkit_dep],
+  dependencies: [geany_dep, cmark_dep, ftn2xml_dep, podofo_dep, tomlpp_dep, webkit_dep],
   name_prefix: '',
   install: true,
   install_dir: join_paths(geany_dep.get_variable(pkgconfig: 'libdir'), 'geany'),
