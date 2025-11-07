@@ -45,10 +45,12 @@ config_h = configure_file(
 # Default CSS
 fs = import('fs')
 
+fountain_css_content  = fs.read(meson.project_source_root() / 'data/fountain.css')
 preview_css_content  = fs.read(meson.project_source_root() / 'data/preview.css')
 markdown_css_content = fs.read(meson.project_source_root() / 'data/markdown.css')
 
 css_conf = configuration_data()
+css_conf.set('FOUNTAIN_CSS',  fountain_css_content.strip())
 css_conf.set('PREVIEW_CSS',  preview_css_content.strip())
 css_conf.set('MARKDOWN_CSS', markdown_css_content.strip())
 

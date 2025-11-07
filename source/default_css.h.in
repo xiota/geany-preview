@@ -6,6 +6,10 @@
 #include <string_view>
 #include <unordered_map>
 
+constexpr std::string_view kFountainCss = R"CSS(
+@FOUNTAIN_CSS@
+)CSS";
+
 constexpr std::string_view kPreviewCss = R"CSS(
 @PREVIEW_CSS@
 )CSS";
@@ -15,6 +19,7 @@ constexpr std::string_view kMarkdownCss = R"CSS(
 )CSS";
 
 const std::unordered_map<std::string, std::string_view> kDefaultCssMap = {
+    { "fountain.css",  kFountainCss },
     { "preview.css",  kPreviewCss },
-    { "markdown.css", kMarkdownCss }
+    { "markdown.css", kMarkdownCss },
 };
