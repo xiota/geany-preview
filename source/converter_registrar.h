@@ -12,6 +12,7 @@
 #include "converter.h"
 #include "converter_asciidoctor.h"
 #include "converter_cmark_gfm.h"
+#include "converter_ftn2xml.h"
 #include "converter_pandoc.h"
 #include "converter_passthrough.h"
 #include "document.h"
@@ -41,6 +42,11 @@ class ConverterRegistrar final {
   // clang-format off
   inline static const ConverterDef converter_defs_[] = {
     // native
+    { "fountain", "Fountain",
+      [] { return std::make_unique<ConverterFtn2xml>(); },
+      { ".ftn", ".fountain" },
+      { "text/fountain", "text/x-fountain" } },
+
     { "html", "HTML",
       [] { return std::make_unique<ConverterPassthrough>(); },
       { ".htm", ".html", ".shtml", ".xhtml" },

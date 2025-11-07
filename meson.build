@@ -60,6 +60,7 @@ default_css_h = configure_file(
 
 src_files = files(
   'source/converter_cmark_gfm.cc',
+  'source/converter_ftn2xml.cc',
   'source/converter_registrar.cc',
   'source/converter_subprocess.cc',
   'source/document.cc',
