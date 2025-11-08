@@ -19,6 +19,8 @@ This plugin is developed and tested on Linux.  It does not work on Windows and h
 
 * Debian and Ubuntu users, see [Building on Debian or Ubuntu](Building-Debian.md).
 
+* Fedora users, see [Building on Fedora](Building-Fedora.md).
+
 * Users who are interested in building directly from source, see [Building from Source with Meson](Building-Meson.md).
 
 > How do I start the Preview plugin?
