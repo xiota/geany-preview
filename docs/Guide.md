@@ -10,24 +10,20 @@ This plugin is developed and tested on Linux.  It does not work on Windows and h
 
 > How do I install the Preview plugin?
 
-On Arch Linux.  Prebuilt binaries are available from [Chaotic AUR](https://aur.chaotic.cx/)
+* For Arch Linux, Garuda Linux, and some other Arch-based distros, prebuilt binaries are available from [Chaotic AUR](https://aur.chaotic.cx/).  They can be installed with `pacman`.
 
-Alternatively, you can build from source using packages from the [Arch User Repository](https://wiki.archlinux.org/title/Arch_User_Repository).
+    Packages are also available on the [Arch User Repository](https://wiki.archlinux.org/title/Arch_User_Repository).
 
-* [`aur/geany-plugin-preview`](https://aur.archlinux.org/packages/geany-plugin-preview)
-* [`aur/geany-plugin-preview-git`](https://aur.archlinux.org/packages/geany-plugin-preview-git)
+    * [`aur/geany-plugin-preview`](https://aur.archlinux.org/packages/geany-plugin-preview)
+    * [`aur/geany-plugin-preview-git`](https://aur.archlinux.org/packages/geany-plugin-preview-git)
 
-> What if I use Debian or Ubuntu?
+* Debian and Ubuntu users, see [Building on Debian or Ubuntu](Building-Debian.md).
 
-See [Building on Debian or Ubuntu](Building-Debian.md).
+* Users who are interested in building directly from source, see [Building from Source with Meson](Building-Meson.md).
 
 > How do I start the Preview plugin?
 
 After installation, Preview can be enabled in the Plugin Manager (*Tools/Plugin Manager*).  The sidebar must be visible (*View/Show Sidebar*).
-
-> What if I want to build directly from source?
-
-See [Building from Source with Meson](Building-Meson.md).
 
 ### Configuration
 
