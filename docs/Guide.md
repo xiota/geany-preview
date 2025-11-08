@@ -19,32 +19,7 @@ Alternatively, you can build from source using packages from the [Arch User Repo
 
 > What if I use Debian or Ubuntu?
 
-In a clean working directory, clone the repo, and change into the source path:
-
-```
-git clone https://github.com/xiota/geany-preview.git
-cd geany-preview
-```
-
-Then update your system and install dependencies:
-
-```
-sudo apt-get update
-sudo apt-get dist-upgrade   # upgrade all packages
-sudo apt-get build-dep ./   # installs everything listed in Build-Depends
-```
-
-Build the package:
-
-```
-dpkg-buildpackage -us -uc
-```
-
-Install the package:
-
-```
-sudo apt install ../geany-plugin-preview_*.deb
-```
+See [Building on Debian or Ubuntu](Building-Debian.md).
 
 > How do I start the Preview plugin?
 
