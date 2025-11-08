@@ -1,1 +1,12 @@
-option('pdf_export', type: 'feature', value: 'auto', description: 'Enable PDF Export')
+option('markdown_backend',
+  type: 'combo',
+  choices: ['auto', 'cmark-gfm', 'md4c', 'cmark'],
+  value: 'auto',
+  description: 'Select Markdown backend (auto uses best available)'
+)
+
+option('pdf_export',
+  type: 'feature',
+  value: 'auto',
+  description: 'Enable PDF Export'
+)

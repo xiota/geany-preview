@@ -14,24 +14,41 @@ geany_dep = dependency('geany')
 tomlpp_dep = dependency('tomlplusplus')
 webkit_dep = dependency('webkit2gtk-4.1')
 
-# priority: cmark-gfm, md4c, cmark
-markdown_dep = dependency('libcmark-gfm', required: false)
+markdown_backend = get_option('markdown_backend')
 markdown_src = 'source/converter_cmark.cc'
-if markdown_dep.found()
+if markdown_backend == 'cmark-gfm'
+  message('using markdown backend: cmark-gfm')
+  markdown_dep = dependency('libcmark-gfm', required: true)
   add_project_arguments('-DHAVE_CMARK_GFM', language: 'cpp')
+elif markdown_backend == 'md4c'
+  message('using markdown backend: md4c')
+  markdown_dep = dependency('md4c-html', required: true)
+  add_project_arguments('-DHAVE_MD4C', language: 'cpp')
+  markdown_src = 'source/converter_md4c.cc'
+elif markdown_backend == 'cmark'
+  message('using markdown backend: cmark')
+  markdown_dep = dependency('libcmark', required: true)
+  add_project_arguments('-DHAVE_CMARK', language: 'cpp')
 else
-  markdown_dep = dependency('md4c-html', required: false)
+  # auto priority: cmark-gfm, md4c, cmark
+  markdown_dep = dependency('libcmark-gfm', required: false)
   if markdown_dep.found()
-    warning('libcmark-gfm not found, using md4c')
-    add_project_arguments('-DHAVE_MD4C', language: 'cpp')
-    markdown_src = 'source/converter_md4c.cc'
+    add_project_arguments('-DHAVE_CMARK_GFM', language: 'cpp')
+    message('using markdown backend: cmark-gfm (auto)')
   else
-    markdown_dep = dependency('libcmark', required: false)
+    markdown_dep = dependency('md4c-html', required: false)
     if markdown_dep.found()
-      warning('libcmark-gfm and md4c not found, using plain libcmark')
-      add_project_arguments('-DHAVE_CMARK', language: 'cpp')
+      message('using markdown backend: md4c (auto)')
+      add_project_arguments('-DHAVE_MD4C', language: 'cpp')
+      markdown_src = 'source/converter_md4c.cc'
     else
-      error('No markdown library found (libcmark-gfm, md4c, libcmark)')
+      markdown_dep = dependency('libcmark', required: false)
+      if markdown_dep.found()
+        message('using markdown backend: cmark (auto)')
+        add_project_arguments('-DHAVE_CMARK', language: 'cpp')
+      else
+        error('No markdown library found (cmark-gfm, md4c, cmark)')
+      endif
     endif
   endif
 endif
