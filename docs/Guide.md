@@ -27,43 +27,7 @@ After installation, Preview can be enabled in the Plugin Manager (*Tools/Plugin 
 
 > What if I want to build directly from source?
 
-Install dependencies.  Then clone in a new working directory.
-
-```
-git clone https://github.com/xiota/geany-preview.git
-```
-
-Then build:
-
-```
-meson setup build geany-preview
-meson compile -C build
-```
-
-Installing directly from source is not recommended.  However, if you wish to proceed:
-
-```
-meson install -C build
-```
-
-> What dependencies do I need to install?
-
-To build and run the Preview plugin, you need the following:
-
-* **Geany** – the editor itself, to run the plugin
-    * requires GTK3
-* **Meson** – the build system
-    * requires Ninja and pkgconfig
-* **WebKitGTK** – the webview, to show the preview
-* **cmark-gfm** – to render Markdown documents
-* **tomlplusplus** – to save and restore configuration
-
-Optional:
-* **PoDoFo** – to export PDF from Fountain documents
-* **Asciidoctor** – to render AsciiDoc files
-* **Pandoc** – to render other document formats
-
-Package names vary according to distro.
+See [Building from Source with Meson](Building-Meson.md).
 
 ### Configuration
 
