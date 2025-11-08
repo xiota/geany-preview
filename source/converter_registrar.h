@@ -11,12 +11,19 @@
 
 #include "converter.h"
 #include "converter_asciidoctor.h"
-#include "converter_cmark.h"
 #include "converter_ftn2xml.h"
 #include "converter_pandoc.h"
 #include "converter_passthrough.h"
 #include "document.h"
 #include "util/string_utils.h"
+
+#if defined(HAVE_CMARK_GFM) || defined(HAVE_CMARK)
+#  include "converter_cmark.h"
+#elif defined(HAVE_MD4C)
+#  include "converter_md4c.h"
+#else
+#  error "No Markdown converter backend available (libcmark-gfm, md4c, libcmark)"
+#endif
 
 using ConverterFactory = std::function<std::unique_ptr<Converter>()>;
 
@@ -52,10 +59,17 @@ class ConverterRegistrar final {
       { ".htm", ".html", ".shtml", ".xhtml" },
       { "text/html", "application/xhtml+xml" } },
 
+#if defined(HAVE_CMARK_GFM) || defined(HAVE_CMARK)
     { "markdown", "Markdown",
       [] { return std::make_unique<ConverterCmark>(); },
       { ".md", ".markdown", ".txt" },
       { "text/markdown", "text/x-markdown" } },
+#elif defined(HAVE_MD4C)
+    { "markdown", "Markdown",
+      [] { return std::make_unique<ConverterMd4c>(); },
+      { ".md", ".markdown", ".txt" },
+      { "text/markdown", "text/x-markdown" } },
+#endif
 
     // subprocess
     { "asciidoc", "Asciidoc",

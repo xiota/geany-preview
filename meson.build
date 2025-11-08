@@ -14,16 +14,25 @@ geany_dep = dependency('geany')
 tomlpp_dep = dependency('tomlplusplus')
 webkit_dep = dependency('webkit2gtk-4.1')
 
-cmark_dep = dependency('libcmark-gfm', required: false)
-if cmark_dep.found()
+# priority: cmark-gfm, md4c, cmark
+markdown_dep = dependency('libcmark-gfm', required: false)
+markdown_src = 'source/converter_cmark.cc'
+if markdown_dep.found()
   add_project_arguments('-DHAVE_CMARK_GFM', language: 'cpp')
 else
-  cmark_dep = dependency('libcmark', required: false)
-
-  if cmark_dep.found()
-    warning('libcmark-gfm not found, falling back to plain libcmark')
+  markdown_dep = dependency('md4c-html', required: false)
+  if markdown_dep.found()
+    warning('libcmark-gfm not found, using md4c')
+    add_project_arguments('-DHAVE_MD4C', language: 'cpp')
+    markdown_src = 'source/converter_md4c.cc'
   else
-    error('Neither libcmark-gfm nor libcmark found!')
+    markdown_dep = dependency('libcmark', required: false)
+    if markdown_dep.found()
+      warning('libcmark-gfm and md4c not found, using plain libcmark')
+      add_project_arguments('-DHAVE_CMARK', language: 'cpp')
+    else
+      error('No markdown library found (libcmark-gfm, md4c, libcmark)')
+    endif
   endif
 endif
 
@@ -73,7 +82,7 @@ default_css_h = configure_file(
 )
 
 src_files = files(
-  'source/converter_cmark.cc',
+  markdown_src,
   'source/converter_ftn2xml.cc',
   'source/converter_registrar.cc',
   'source/converter_subprocess.cc',
@@ -90,7 +99,7 @@ src_files = files(
 shared_module(
   plugin_name,
   src_files,
-  dependencies: [geany_dep, cmark_dep, ftn2xml_dep, podofo_dep, tomlpp_dep, webkit_dep],
+  dependencies: [geany_dep, markdown_dep, ftn2xml_dep, podofo_dep, tomlpp_dep, webkit_dep],
   name_prefix: '',
   install: true,
   install_dir: join_paths(geany_dep.get_variable(pkgconfig: 'libdir'), 'geany'),
