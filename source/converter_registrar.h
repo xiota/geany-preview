@@ -11,7 +11,7 @@
 
 #include "converter.h"
 #include "converter_asciidoctor.h"
-#include "converter_cmark_gfm.h"
+#include "converter_cmark.h"
 #include "converter_ftn2xml.h"
 #include "converter_pandoc.h"
 #include "converter_passthrough.h"
@@ -53,7 +53,7 @@ class ConverterRegistrar final {
       { "text/html", "application/xhtml+xml" } },
 
     { "markdown", "Markdown",
-      [] { return std::make_unique<ConverterCmarkGfm>(); },
+      [] { return std::make_unique<ConverterCmark>(); },
       { ".md", ".markdown", ".txt" },
       { "text/markdown", "text/x-markdown" } },
 

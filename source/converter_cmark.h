@@ -9,12 +9,12 @@
 
 #include "converter.h"
 
-class ConverterCmarkGfm final : public Converter {
+class ConverterCmark final : public Converter {
  public:
-  ~ConverterCmarkGfm() override = default;
+  ~ConverterCmark() override = default;
 
   std::string_view id() const override {
-    return "cmark-gfm";
+    return "cmark";
   }
   std::string_view toHtml(std::string_view source) override;
 

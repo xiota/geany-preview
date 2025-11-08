@@ -11,9 +11,21 @@ plugin_name  = project_name.startswith('geany-') ? project_name.substring(6) : p
 plugin_datadir = get_option('datadir') / 'geany' / 'plugins' / plugin_name
 
 geany_dep = dependency('geany')
-cmark_dep = dependency('libcmark-gfm')
 tomlpp_dep = dependency('tomlplusplus')
 webkit_dep = dependency('webkit2gtk-4.1')
+
+cmark_dep = dependency('libcmark-gfm', required: false)
+if cmark_dep.found()
+  add_project_arguments('-DHAVE_CMARK_GFM', language: 'cpp')
+else
+  cmark_dep = dependency('libcmark', required: false)
+
+  if cmark_dep.found()
+    warning('libcmark-gfm not found, falling back to plain libcmark')
+  else
+    error('Neither libcmark-gfm nor libcmark found!')
+  endif
+endif
 
 pdf_export = get_option('pdf_export')
 if not pdf_export.disabled()
@@ -61,7 +73,7 @@ default_css_h = configure_file(
 )
 
 src_files = files(
-  'source/converter_cmark_gfm.cc',
+  'source/converter_cmark.cc',
   'source/converter_ftn2xml.cc',
   'source/converter_registrar.cc',
   'source/converter_subprocess.cc',
