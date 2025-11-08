@@ -1,0 +1,28 @@
+Source: geany-plugin-preview
+Section: devel
+Priority: optional
+Maintainer: xiota <xiota@users.noreply.github.com>
+Build-Depends:
+   debhelper-compat (= 13),
+   meson,
+   geany,
+   libcmark-gfm-dev,
+   libcmark-gfm-extensions-dev,
+   libglib2.0-dev,
+   libgtk-3-dev,
+   libpodofo-dev,
+   libtomlplusplus-dev,
+   libwebkit2gtk-4.1-dev,
+Standards-Version: 4.6.0
+Homepage: https://github.com/xiota/geany-preview
+Vcs-Git: https://github.com/xiota/geany-preview.git
+
+Package: geany-plugin-preview
+Architecture: amd64
+Enhances: geany
+Depends: ${shlibs:Depends}, ${misc:Depends}, geany,
+Description: preview plugin for Geany
+ This plugin provides a preview pane for Geany to view the formatting of
+ several lightweight markup languages as they are edited. Supported document
+ types include AsciiDoc, DocBook, Fountain, HTML, LaTeX, Markdown, MediaWiki,
+ reStructuredText, Textile, and Txt2Tags.
