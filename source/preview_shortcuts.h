@@ -38,6 +38,7 @@ class PreviewShortcuts {
   static void onFocusSidebarEditor(guint /*key_id*/);
 
   static void onOpenTerminal(guint /*key_id*/);
+  static void onOpenFileManager(guint /*key_id*/);
 
   struct ShortcutDef {
     const char *label;
@@ -122,6 +123,10 @@ class PreviewShortcuts {
     { "Open Terminal",
       "Open Terminal at file location",
       onOpenTerminal },
+
+    { "Open File Manager",
+      "Open File Manager at file location",
+      onOpenFileManager },
 
     { nullptr, nullptr, nullptr },
   };

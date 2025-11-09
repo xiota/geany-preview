@@ -54,6 +54,10 @@ class PreviewConfig {
       setting_value_type{ std::vector<std::string>{ "#ccc", "#bdf", "#fcf", "#ccc", "#fba", "#ccc", "#ccc", "#ccc", "#ccc" } },
       "Colors for each column marker, in #RRGGBB or #RGB format, matching the order of 'column_markers_columns'." },
 
+    { "file_manager_command",
+      setting_value_type{ std::string{ "xdg-open %d" } },
+      "Command to launch a file manager. Supports XDG field codes: %d = directory of current document." },
+
     { "headers_incomplete_max",
       setting_value_type{ 3 },
       "Max number of incomplete header lines before treating all as body." },

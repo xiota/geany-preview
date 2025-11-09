@@ -39,6 +39,13 @@ constexpr DeCommand terminalCommands[] = {
   { nullptr, nullptr }  // sentinel
 };
 
+constexpr DeCommand fileManagerCommands[] = {
+  { "XFCE", "thunar %d" },
+  { "KDE", "dolphin %d" },
+  { "GNOME", "nautilus %d" },
+  { nullptr, nullptr }  // sentinel
+};
+
 std::string detectDesktopEnv() {
   const char *env = std::getenv("XDG_CURRENT_DESKTOP");
   if (!env || !*env) {
@@ -160,6 +167,42 @@ void PreviewShortcuts::onOpenTerminal(guint /*key_id*/) {
 
   if (!Subprocess::runAsync(cmd)) {
     msgwin_status_add("Preview: No suitable terminal found.");
+    return;
+  }
+}
+
+void PreviewShortcuts::onOpenFileManager(guint /*key_id*/) {
+  GeanyDocument *doc = document_get_current();
+  if (!DOC_VALID(doc) || !doc->real_path) {
+    return;
+  }
+
+  auto dirPath = std::filesystem::path(doc->real_path).parent_path();
+
+  std::string cmd = preview_context->preview_config_->get<std::string>("file_manager_command");
+
+  if (!Subprocess::commandExists(cmd)) {
+    if (Subprocess::commandExists("xdg-open")) {
+      cmd = "xdg-open %d";
+    } else {
+      std::string de = detectDesktopEnv();
+      std::string deCmd = pickCommandForDe(de, fileManagerCommands);
+      if (!deCmd.empty() && Subprocess::commandExists(deCmd)) {
+        cmd = deCmd;
+      }
+    }
+  }
+
+  if (!Subprocess::commandExists(cmd)) {
+    msgwin_status_add("Preview: No suitable file manager found.");
+    return;
+  }
+
+  cmd = StringUtils::replaceAll(std::move(cmd), "%d", dirPath.string());
+  cmd = StringUtils::replaceAll(std::move(cmd), "%%", "%");
+
+  if (!Subprocess::runAsync(cmd)) {
+    msgwin_status_add("Preview: No suitable file manager found.");
     return;
   }
 }
