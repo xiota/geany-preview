@@ -4,34 +4,44 @@
 
 1. Open a terminal in a clean working directory.
 
-2. Update your system, and install packaging tools.
+2. (optional) Update the system.
 
     ```
     sudo dnf upgrade --refresh
+    ```
+
+3. Install packaging tools.
+
+    ```
     sudo dnf install rpm-build rpmdevtools
     ```
 
-3. Download the `.spec` file.
+4. Download the `.spec` file.
 
     ```
     curl -L -o geany-plugins-preview.spec \
-       https://github.com/xiota/geany-preview/raw/refs/heads/main/geany-plugins-preview.spec
+       https://github.com/xiota/geany-preview/raw/refs/heads/main/docs/geany-plugins-preview.spec
     ```
 
-4. Install dependencies, listed in the `.spec` file.
+5. Install dependencies, listed in the `.spec` file.
 
     ```
     sudo dnf builddep geany-plugins-preview.spec
     ```
 
-5. Download the tarball, and build the package.
+6. Download the tarball, as specified in the `.spec` file.
 
     ```
     spectool -g -R geany-plugins-preview.spec
+    ```
+
+7. Build the package.
+
+    ```
     rpmbuild -ba geany-plugins-preview.spec
     ```
 
-6. Install the package.
+8. Install the package.
 
     ```
     sudo dnf install ~/rpmbuild/RPMS/*/geany-plugins-preview-[0-9]*.rpm
