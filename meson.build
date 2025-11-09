@@ -11,8 +11,12 @@ plugin_name  = project_name.startswith('geany-') ? project_name.substring(6) : p
 plugin_datadir = get_option('datadir') / 'geany' / 'plugins' / plugin_name
 
 geany_dep = dependency('geany')
-tomlpp_dep = dependency('tomlplusplus')
 webkit_dep = dependency('webkit2gtk-4.1')
+
+tomlpp_dep = dependency('tomlplusplus')
+tomlpp_headers = declare_dependency(
+  include_directories: tomlpp_dep.get_variable(pkgconfig: 'includedir')
+)
 
 markdown_backend = get_option('markdown_backend')
 markdown_src = 'source/converter_cmark.cc'
@@ -116,7 +120,7 @@ src_files = files(
 shared_module(
   plugin_name,
   src_files,
-  dependencies: [geany_dep, markdown_dep, ftn2xml_dep, podofo_dep, tomlpp_dep, webkit_dep],
+  dependencies: [geany_dep, markdown_dep, ftn2xml_dep, podofo_dep, tomlpp_headers, webkit_dep],
   name_prefix: '',
   install: true,
   install_dir: join_paths(geany_dep.get_variable(pkgconfig: 'libdir'), 'geany'),
