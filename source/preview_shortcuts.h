@@ -36,6 +36,7 @@ class PreviewShortcuts {
   static void onFocusPreview(guint /*key_id*/);
   static void onFocusPreviewEditor(guint /*key_id*/);
   static void onFocusSidebarEditor(guint /*key_id*/);
+
   static void onOpenTerminal(guint /*key_id*/);
 
   struct ShortcutDef {
@@ -119,7 +120,7 @@ class PreviewShortcuts {
       onFocusSidebarEditor },
 
     { "Open Terminal",
-      "Open Terminal at document path",
+      "Open Terminal at file location",
       onOpenTerminal },
 
     { nullptr, nullptr, nullptr },

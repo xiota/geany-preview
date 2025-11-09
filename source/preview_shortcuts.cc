@@ -27,6 +27,18 @@ namespace {
 
 PreviewContext *preview_context = nullptr;
 
+struct DeCommand {
+  const char *key;      // substring to look for in DE string
+  const char *command;  // associated command template
+};
+
+constexpr DeCommand terminalCommands[] = {
+  { "XFCE", "xfce4-terminal --working-directory=%d" },
+  { "KDE", "konsole --workdir %d" },
+  { "GNOME", "gnome-terminal --working-directory=%d" },
+  { nullptr, nullptr }  // sentinel
+};
+
 std::string detectDesktopEnv() {
   const char *env = std::getenv("XDG_CURRENT_DESKTOP");
   if (!env || !*env) {
@@ -42,17 +54,12 @@ std::string detectDesktopEnv() {
   return de;
 }
 
-std::string pickTerminalForDe(const std::string &de) {
-  if (de.find("XFCE") != std::string::npos) {
-    return "xfce4-terminal --working-directory=%d";
+std::string pickCommandForDe(const std::string &de, const DeCommand *cmds) {
+  for (const DeCommand *c = cmds; c->key != nullptr; ++c) {
+    if (de.find(c->key) != std::string::npos) {
+      return c->command;
+    }
   }
-  if (de.find("KDE") != std::string::npos || de.find("PLASMA") != std::string::npos) {
-    return "konsole --workdir %d";
-  }
-  if (de.find("GNOME") != std::string::npos || de.find("UNITY") != std::string::npos) {
-    return "gnome-terminal --working-directory=%d";
-  }
-  // Add more DEs if you want
   return {};
 }
 
@@ -136,7 +143,7 @@ void PreviewShortcuts::onOpenTerminal(guint /*key_id*/) {
       cmd = "xdg-terminal-exec --working-directory=%d";
     } else {
       std::string de = detectDesktopEnv();
-      std::string deTerm = pickTerminalForDe(de);
+      std::string deTerm = pickCommandForDe(de, terminalCommands);
       if (!deTerm.empty() && Subprocess::commandExists(deTerm)) {
         cmd = deTerm;
       }
