@@ -83,7 +83,7 @@ std::string ConverterRegistrar::getConverterKey(const Document &document) const 
 
   // Try extension
   namespace fs = std::filesystem;
-  std::string ext = fs::path(document.fileName()).extension().string();
+  std::string ext = fs::path(document.filePath()).extension().string();
   auto eit = alias_to_key_.find(normalizeExtension(ext));
   if (eit != alias_to_key_.end()) {
     return eit->second;

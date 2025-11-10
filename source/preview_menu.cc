@@ -13,6 +13,7 @@
 #endif
 #include <geany/pluginutils.h>
 
+#include "document_geany.h"
 #include "preview_config.h"
 #include "preview_context.h"
 #include "preview_pane.h"
@@ -56,8 +57,8 @@ void PreviewMenu::onExportToHtml(GtkMenuItem *, gpointer user_data) {
   }
 
   // Suggest a default filename based on current document
-  Document doc(document_get_current());
-  std::filesystem::path default_name = std::filesystem::path(doc.fileName()).filename();
+  DocumentGeany doc(document_get_current());
+  std::filesystem::path default_name = std::filesystem::path(doc.filePath()).filename();
   if (default_name.empty() || default_name == ".") {
     default_name = "preview.html";
   } else {

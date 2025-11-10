@@ -14,7 +14,7 @@
 #include "converter_ftn2xml.h"
 #include "converter_pandoc.h"
 #include "converter_passthrough.h"
-#include "document.h"
+#include "document_geany.h"
 #include "util/string_utils.h"
 
 #if defined(HAVE_CMARK_GFM) || defined(HAVE_CMARK)

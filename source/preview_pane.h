@@ -13,6 +13,7 @@
 #include "converter_preprocessor.h"
 #include "converter_registrar.h"
 #include "default_css.h"
+#include "document_geany.h"
 #include "preview_config.h"
 #include "preview_context.h"
 #include "util/file_utils.h"
@@ -293,7 +294,7 @@ class PreviewPane final {
   }
 
   std::string generateHtml() const {
-    Document document(document_get_current());
+    DocumentGeany document(document_get_current());
 
     ConverterPreprocessor pre(document, preview_config_->get<int>("headers_incomplete_max"));
 
@@ -328,8 +329,8 @@ class PreviewPane final {
   }
 
   std::string calculateBaseUri() const {
-    Document document(document_get_current());
-    const auto file_path = std::filesystem::path(document.fileName()).lexically_normal();
+    DocumentGeany document(document_get_current());
+    const auto file_path = std::filesystem::path(document.filePath()).lexically_normal();
     if (file_path.empty()) {
       return {};
     }
@@ -346,7 +347,7 @@ class PreviewPane final {
   }
 
   PreviewPane &update() {
-    Document document(document_get_current());
+    DocumentGeany document(document_get_current());
 
     std::string html = generateHtml();
 
@@ -363,7 +364,7 @@ class PreviewPane final {
       injectCssTheme();
     }
 
-    auto file = document.fileName();
+    auto file = document.filePath();
     std::string base_uri = calculateBaseUri();
 
     if (base_uri != previous_base_uri_) {

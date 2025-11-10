@@ -107,7 +107,7 @@ src_files = files(
   'source/converter_ftn2xml.cc',
   'source/converter_registrar.cc',
   'source/converter_subprocess.cc',
-  'source/document.cc',
+  'source/document_geany.cc',
   'source/preview.cc',
   'source/preview_config.cc',
   'source/preview_menu.cc',

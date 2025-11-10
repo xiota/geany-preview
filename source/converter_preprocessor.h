@@ -3,12 +3,11 @@
 
 #pragma once
 
-#include "document.h"
-
 #include <string>
 #include <string_view>
 #include <vector>
 
+#include "document_geany.h"
 #include "util/string_utils.h"
 
 class ConverterPreprocessor {
