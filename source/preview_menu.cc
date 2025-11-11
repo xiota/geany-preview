@@ -49,25 +49,27 @@ PreviewMenu::PreviewMenu(PreviewContext *context) : context_(context) {
 }
 
 // --- Callbacks ---
+namespace {
 
-void PreviewMenu::onExportToHtml(GtkMenuItem *, gpointer user_data) {
-  auto *ctx = static_cast<PreviewContext *>(user_data);
+// Show a save dialog and return the chosen destination path.
+// Returns empty path if user cancels.
+std::filesystem::path
+getExportDestination(PreviewContext *ctx, const char *dialog_title, const char *default_ext) {
   if (!ctx || !ctx->preview_pane_) {
-    return;
+    return {};
   }
 
-  // Suggest a default filename based on current document
   DocumentGeany doc(document_get_current());
   std::filesystem::path default_name = std::filesystem::path(doc.filePath()).filename();
   if (default_name.empty() || default_name == ".") {
-    default_name = "preview.html";
+    default_name = std::string("preview") + default_ext;
   } else {
-    default_name.replace_extension(".html");
+    default_name.replace_extension(default_ext);
   }
 
   GtkWindow *parent = GTK_WINDOW(ctx->geany_data_->main_widgets->window);
   GtkWidget *dlg = gtk_file_chooser_dialog_new(
-      "Export Preview to HTML",
+      dialog_title,
       parent,
       GTK_FILE_CHOOSER_ACTION_SAVE,
       "_Cancel",
@@ -89,8 +91,16 @@ void PreviewMenu::onExportToHtml(GtkMenuItem *, gpointer user_data) {
   }
   gtk_widget_destroy(dlg);
 
+  return dest_path;
+}
+
+}  // anonymous namespace
+
+void PreviewMenu::onExportToHtml(GtkMenuItem *, gpointer user_data) {
+  auto *ctx = static_cast<PreviewContext *>(user_data);
+  auto dest_path = getExportDestination(ctx, "Export Preview to HTML", ".html");
   if (dest_path.empty()) {
-    return;  // user cancelled
+    return;
   }
 
   if (ctx->preview_pane_->exportHtmlToFile(dest_path)) {
