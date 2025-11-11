@@ -52,7 +52,8 @@ class PreviewPane final {
     addWatchIfNeeded(preview_config_->configDir() / "preview.css");
     addWatchIfNeeded(preview_config_->configDir() / (previous_key_ + ".css"));
 
-    initWebView();
+    DocumentGeany document(document_get_current());
+    initWebView(document);
 
     init_handler_id_ = g_signal_connect(
         webview_.widget(),
@@ -139,9 +140,7 @@ class PreviewPane final {
     return page_box_ ? page_box_ : webview_.widget();
   }
 
-  PreviewPane &initWebView() {
-    DocumentGeany document(document_get_current());
-
+  PreviewPane &initWebView(const Document &document) {
     previous_base_uri_.clear();
     previous_key_.clear();
     previous_theme_.clear();
@@ -229,7 +228,9 @@ class PreviewPane final {
   }
 
   void triggerUpdate() {
-    update();
+    DocumentGeany document(document_get_current());
+
+    update(document);
     last_update_time_ = g_get_monotonic_time() / 1000;
     update_pending_ = false;
   }
@@ -347,9 +348,7 @@ class PreviewPane final {
     return "file://" + file_path.string();
   }
 
-  PreviewPane &update() {
-    DocumentGeany document(document_get_current());
-
+  PreviewPane &update(const Document &document) {
     std::string html = generateHtml(document);
 
     // load new css on document type change
