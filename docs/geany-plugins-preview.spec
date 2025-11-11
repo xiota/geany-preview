@@ -1,5 +1,5 @@
 Name:           geany-plugins-preview
-Version:        0.2.2
+Version:        0.2.3
 Release:        1%{?dist}
 Summary:        Preview plugin to render Markdown in Geany
 
