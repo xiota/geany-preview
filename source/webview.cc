@@ -7,6 +7,9 @@
 #include <string>
 #include <string_view>
 
+#include "document_local.h"
+#include "preview_context.h"
+#include "preview_pane.h"
 #include "util/file_utils.h"
 #include "util/string_utils.h"
 
@@ -48,7 +51,8 @@ function applyPatch(newHtml, root_id) {
 
 }  // namespace
 
-WebView::WebView() noexcept : webview_settings_(webkit_settings_new()) {
+WebView::WebView(PreviewContext *context) noexcept
+    : context_(context), webview_settings_(webkit_settings_new()) {
   webkit_settings_set_allow_file_access_from_file_urls(webview_settings_, true);
   webkit_settings_set_allow_universal_access_from_file_urls(webview_settings_, true);
 
@@ -69,6 +73,7 @@ WebView::WebView() noexcept : webview_settings_(webkit_settings_new()) {
   );
 
   g_signal_connect_after(webview_, "context-menu", G_CALLBACK(onContextMenu), this);
+  g_signal_connect(webview_, "decide-policy", G_CALLBACK(onDecidePolicy), this);
 }
 
 WebView::~WebView() noexcept {
@@ -508,4 +513,49 @@ gboolean WebView::onContextMenu(
 
   g_object_unref(find_action);
   return false;
+}
+
+void WebView::onDecidePolicy(
+    WebKitWebView *view,
+    WebKitPolicyDecision *decision,
+    WebKitPolicyDecisionType type,
+    gpointer user_data
+) {
+  if (type != WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION) {
+    return;
+  }
+
+  auto *nav = WEBKIT_NAVIGATION_POLICY_DECISION(decision);
+  WebKitNavigationAction *action = webkit_navigation_policy_decision_get_navigation_action(nav);
+  WebKitNavigationType nav_type = webkit_navigation_action_get_navigation_type(action);
+
+  if (nav_type != WEBKIT_NAVIGATION_TYPE_LINK_CLICKED) {
+    return;  // only handle clicks
+  }
+
+  WebView *self = static_cast<WebView *>(user_data);
+  WebKitURIRequest *req = webkit_navigation_action_get_request(action);
+  const gchar *uri = webkit_uri_request_get_uri(req);
+
+  if (!uri) {
+    return;
+  }
+
+  if (g_str_has_prefix(uri, "file://")) {
+    gchar *filename = g_filename_from_uri(uri, nullptr, nullptr);
+    if (filename) {
+      DocumentLocal doc(filename);
+
+      if (self->context_ && self->context_->preview_pane_) {
+        if (self->context_->preview_pane_->canPreviewFile(doc)) {
+          self->context_->preview_pane_->initWebView(doc);
+          webkit_policy_decision_ignore(decision);  // suppress default navigation
+        }
+      }
+      g_free(filename);
+      return;
+    }
+  }
+
+  // For external links (https:// etc.), let WebKit handle navigation normally.
 }

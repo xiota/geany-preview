@@ -26,7 +26,8 @@ class PreviewPane final {
   explicit PreviewPane(PreviewContext *context)
       : context_(context),
         sidebar_notebook_(context_->geany_sidebar_),
-        preview_config_(context_->preview_config_) {
+        preview_config_(context_->preview_config_),
+        webview_(context) {
     context_->webview_ = &webview_;
 
     page_box_ = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -268,6 +269,10 @@ class PreviewPane final {
     return static_cast<bool>(out);
   }
 
+  bool canPreviewFile(const Document &doc) const {
+    return !registrar_.getConverterKey(doc).empty();
+  }
+
  private:
   void safeReparentWebView_(GtkWidget *new_parent, bool pack_into_box) {
     GtkWidget *wv = webview_.widget();
@@ -322,7 +327,12 @@ class PreviewPane final {
     if (converter) {
       return pre.headersToHtml() + std::string{ converter->toHtml(pre.body()) };
     } else {
-      std::string html = "<tt>" + document.filetypeName() + ", " + document.encodingName();
+      std::string html = "<tt>";
+      if (!document.filetypeName().empty()) {
+        html += document.filetypeName() + ", " + document.encodingName();
+      } else {
+        html += "Unknown";
+      }
       if (!pre.type().empty()) {
         html += ", " + normalizedType(pre.type());
       }

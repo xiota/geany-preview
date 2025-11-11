@@ -12,11 +12,12 @@
 #include <gtk/gtk.h>
 #include <webkit2/webkit2.h>
 
+#include "preview_context.h"
 #include "util/file_utils.h"
 
 class WebView final {
  public:
-  WebView() noexcept;
+  explicit WebView(PreviewContext *context) noexcept;
   ~WebView() noexcept;
 
   GtkWidget *widget() const;
@@ -64,6 +65,14 @@ class WebView final {
       gpointer user_data
   );
 
+  static void onDecidePolicy(
+      WebKitWebView *view,
+      WebKitPolicyDecision *decision,
+      WebKitPolicyDecisionType type,
+      gpointer user_data
+  );
+
+  PreviewContext *context_;
   WebKitSettings *webview_settings_ = nullptr;
   GtkWidget *webview_ = nullptr;
   WebKitWebContext *webview_context_ = nullptr;
