@@ -238,7 +238,7 @@ class PreviewPane final {
     DocumentGeany document(document_get_current());
 
     // Shared HTML
-    auto html = generateHtml();
+    auto html = generateHtml(document);
 
     // Fresh base URI for export (not cached)
     std::string base_uri = calculateBaseUri(document);
@@ -297,9 +297,7 @@ class PreviewPane final {
     g_object_unref(wv);
   }
 
-  std::string generateHtml() const {
-    DocumentGeany document(document_get_current());
-
+  std::string generateHtml(const Document &document) const {
     ConverterPreprocessor pre(document, preview_config_->get<int>("headers_incomplete_max"));
 
     Converter *converter = nullptr;
@@ -352,7 +350,7 @@ class PreviewPane final {
   PreviewPane &update() {
     DocumentGeany document(document_get_current());
 
-    std::string html = generateHtml();
+    std::string html = generateHtml(document);
 
     // load new css on document type change
     auto key = registrar_.getConverterKey(document);
