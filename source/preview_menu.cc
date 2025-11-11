@@ -110,6 +110,26 @@ void PreviewMenu::onExportToHtml(GtkMenuItem *, gpointer user_data) {
   }
 }
 
+void PreviewMenu::onExportToPdf(GtkMenuItem *, gpointer user_data) {
+  auto *ctx = static_cast<PreviewContext *>(user_data);
+  auto dest_path = getExportDestination(ctx, "Export Preview to PDF", ".pdf");
+  if (dest_path.empty()) {
+    return;
+  }
+
+  if (!ctx->preview_pane_->exportPdfToFile(dest_path)) {
+    msgwin_status_add("Preview: Failed to export PDF.");
+  } else {
+    while (gtk_events_pending()) {
+      gtk_main_iteration();
+    }
+    if (std::filesystem::exists(dest_path)) {
+      msgwin_status_add("Preview: Exported PDF to: %s", dest_path.string().c_str());
+      return;
+    }
+  }
+}
+
 void PreviewMenu::onPrint(GtkMenuItem *, gpointer user_data) {
   auto *ctx = static_cast<PreviewContext *>(user_data);
   if (ctx && ctx->webview_) {

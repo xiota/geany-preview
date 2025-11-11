@@ -57,26 +57,20 @@ else
   endif
 endif
 
-pdf_export = get_option('pdf_export')
-if not pdf_export.disabled()
-  podofo_dep = dependency('libpodofo', required: pdf_export)
-  pdf_export_str = podofo_dep.found() ? 'enabled' : 'disabled'
-else
-  podofo_dep = disabler()
-  pdf_export_str = 'disabled'
+podofo_dep = dependency('libpodofo', required: get_option('podofo'))
+if podofo_dep.found()
+  add_project_arguments('-DHAVE_PODOFO', language: 'cpp')
 endif
 
 ftn2xml_dep = dependency(
   'ftn2xml',
   fallback: ['ftn2xml', 'ftn2xml_dep'],
-  default_options: {'pdf_export': pdf_export_str},
 )
 
 # Configuration
 conf_data = configuration_data()
 conf_data.set('version', meson.project_version())
 conf_data.set('project_datadir', plugin_datadir)
-conf_data.set10('pdf_export', podofo_dep.found())
 
 config_h = configure_file(
   input: 'source/config.h.in',

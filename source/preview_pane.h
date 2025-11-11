@@ -16,6 +16,7 @@
 #include "document_geany.h"
 #include "preview_config.h"
 #include "preview_context.h"
+#include "renderers_pdf.h"
 #include "util/file_utils.h"
 #include "util/gtk_utils.h"
 #include "util/string_utils.h"
@@ -267,6 +268,45 @@ class PreviewPane final {
     }
     out.write(doc.data(), static_cast<std::streamsize>(doc.size()));
     return static_cast<bool>(out);
+  }
+
+  bool exportPdfToFile(const std::filesystem::path &dest) {
+    DocumentGeany document(document_get_current());
+
+    // Ensure parent directories exist
+    std::error_code ec;
+    if (!dest.parent_path().empty()) {
+      std::filesystem::create_directories(dest.parent_path(), ec);  // best-effort
+    }
+
+#ifdef HAVE_PODOFO
+    // Fountain with PoDoFo
+    if (registrar_.getConverterKey(document) == "fountain") {
+      return Fountain::ftn2pdf(dest.string(), document.text());
+    }
+#endif
+
+    // Fallback: WebKit print-to-PDF
+    WebKitPrintOperation *op = webkit_print_operation_new(WEBKIT_WEB_VIEW(webview_.widget()));
+
+    GtkPrintSettings *settings = gtk_print_settings_new();
+    gtk_print_settings_set(settings, GTK_PRINT_SETTINGS_PRINTER, "Print to File");
+    gtk_print_settings_set(settings, GTK_PRINT_SETTINGS_OUTPUT_FILE_FORMAT, "pdf");
+
+    std::string uri = g_filename_to_uri(dest.c_str(), nullptr, nullptr);
+    gtk_print_settings_set(settings, GTK_PRINT_SETTINGS_OUTPUT_URI, uri.c_str());
+
+    GtkPageSetup *page_setup = gtk_page_setup_new();
+    webkit_print_operation_set_print_settings(op, settings);
+    webkit_print_operation_set_page_setup(op, page_setup);
+
+    webkit_print_operation_print(op);
+
+    g_object_unref(settings);
+    g_object_unref(page_setup);
+    g_object_unref(op);
+
+    return true;
   }
 
   bool canPreviewFile(const Document &doc) const {

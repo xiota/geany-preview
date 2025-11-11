@@ -5,8 +5,8 @@ option('markdown_backend',
   description: 'Select Markdown backend (auto uses best available)'
 )
 
-option('pdf_export',
+option('podofo',
   type: 'feature',
   value: 'auto',
-  description: 'Enable PDF Export'
+  description: 'Enable PDF export for Fountain documents (via PoDoFo)'
 )

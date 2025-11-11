@@ -3,5 +3,3 @@
 #define VERSION "@version@"
 
 #define CSS_PATH "@project_datadir@"
-
-#define ENABLE_EXPORT_PDF @pdf_export@
