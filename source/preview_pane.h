@@ -90,10 +90,11 @@ class PreviewPane final {
                        guint /*page_num*/,
                        gpointer user_data) {
           auto *self = static_cast<PreviewPane *>(user_data);
+          DocumentGeany document(document_get_current());
 
           if (page == self->page_box_) {
             self->safeReparentWebView_(self->page_box_, true);
-            self->triggerUpdate();
+            self->triggerUpdate(document);
           } else {
             int w = gtk_widget_get_allocated_width(self->page_box_);
             int h = gtk_widget_get_allocated_height(self->page_box_);
@@ -151,7 +152,7 @@ class PreviewPane final {
 
     clearAndReloadCss();
 
-    triggerUpdate();
+    triggerUpdate(document);
     return *this;
   }
 
@@ -219,7 +220,8 @@ class PreviewPane final {
         delay_ms,
         [](gpointer data) -> gboolean {
           auto *self = static_cast<PreviewPane *>(data);
-          self->triggerUpdate();
+          DocumentGeany document(document_get_current());
+          self->triggerUpdate(document);
           return G_SOURCE_REMOVE;
         },
         this
@@ -227,9 +229,7 @@ class PreviewPane final {
     return *this;
   }
 
-  void triggerUpdate() {
-    DocumentGeany document(document_get_current());
-
+  void triggerUpdate(const Document &document) {
     update(document);
     last_update_time_ = g_get_monotonic_time() / 1000;
     update_pending_ = false;
