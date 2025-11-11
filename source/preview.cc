@@ -12,6 +12,7 @@
 #include "preview_menu.h"
 #include "preview_pane.h"
 #include "preview_shortcuts.h"
+#include "tweakui_auto_set_pwd.h"
 #include "tweakui_auto_set_read_only.h"
 #include "tweakui_color_tip.h"
 #include "tweakui_column_markers.h"
@@ -27,6 +28,7 @@ std::unique_ptr<PreviewConfig> preview_config;
 std::unique_ptr<PreviewMenu> preview_menu;
 std::unique_ptr<PreviewShortcuts> preview_shortcuts;
 
+std::unique_ptr<TweakUiAutoSetPwd> tweakui_auto_set_pwd;
 std::unique_ptr<TweakUiAutoSetReadOnly> tweakui_auto_set_read_only;
 std::unique_ptr<TweakUiColorTip> tweakui_color_tip;
 std::unique_ptr<TweakUiColumnMarkers> tweakui_column_markers;
@@ -102,6 +104,7 @@ gboolean previewInit(
   );
 
   // tweaks
+  tweakui_auto_set_pwd = std::make_unique<TweakUiAutoSetPwd>(&preview_context);
   tweakui_auto_set_read_only = std::make_unique<TweakUiAutoSetReadOnly>(&preview_context);
   tweakui_color_tip = std::make_unique<TweakUiColorTip>(&preview_context);
   tweakui_column_markers = std::make_unique<TweakUiColumnMarkers>(&preview_context);
@@ -135,6 +138,7 @@ void previewCleanup(
   preview_menu.reset();
   preview_shortcuts.reset();
 
+  tweakui_auto_set_pwd.reset();
   tweakui_auto_set_read_only.reset();
   tweakui_color_tip.reset();
   tweakui_column_markers.reset();

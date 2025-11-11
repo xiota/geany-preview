@@ -26,6 +26,11 @@ class PreviewConfig {
 
   // clang-format off
   inline static const SettingDef setting_defs_[] = {
+    { "auto_set_pwd",
+      setting_value_type{ false },
+      "Keep the working directory (and $PWD) set to the current document's folder. "
+      "If it does not exist, walk up until a valid directory is found." },
+
     { "auto_set_read_only",
       setting_value_type{ false },
       "Automatically set documents to read-only mode when they are not writable." },
