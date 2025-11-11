@@ -140,11 +140,13 @@ class PreviewPane final {
   }
 
   PreviewPane &initWebView() {
+    DocumentGeany document(document_get_current());
+
     previous_base_uri_.clear();
     previous_key_.clear();
     previous_theme_.clear();
 
-    const std::string base_uri = calculateBaseUri();
+    const std::string base_uri = calculateBaseUri(document);
     root_id_ = "geany-preview-" + StringUtils::randomHex(8);
     webview_.loadHtml("", base_uri, root_id_, nullptr);
 
@@ -233,11 +235,13 @@ class PreviewPane final {
   }
 
   bool exportHtmlToFile(const std::filesystem::path &dest) {
+    DocumentGeany document(document_get_current());
+
     // Shared HTML
     auto html = generateHtml();
 
     // Fresh base URI for export (not cached)
-    std::string base_uri = calculateBaseUri();
+    std::string base_uri = calculateBaseUri(document);
 
     // Minimal standalone HTML document
     std::string doc;
@@ -328,8 +332,7 @@ class PreviewPane final {
     }
   }
 
-  std::string calculateBaseUri() const {
-    DocumentGeany document(document_get_current());
+  std::string calculateBaseUri(const Document &document) const {
     const auto file_path = std::filesystem::path(document.filePath()).lexically_normal();
     if (file_path.empty()) {
       return {};
@@ -365,7 +368,7 @@ class PreviewPane final {
     }
 
     auto file = document.filePath();
-    std::string base_uri = calculateBaseUri();
+    std::string base_uri = calculateBaseUri(document);
 
     if (base_uri != previous_base_uri_) {
       previous_base_uri_ = base_uri;
