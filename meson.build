@@ -105,6 +105,7 @@ src_files = files(
   'source/preview.cc',
   'source/preview_config.cc',
   'source/preview_menu.cc',
+  'source/preview_pane.cc',
   'source/preview_shortcuts.cc',
   'source/subprocess.cc',
   'source/util/gtk_utils.cc',
