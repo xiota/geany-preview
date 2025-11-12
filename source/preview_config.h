@@ -28,8 +28,7 @@ class PreviewConfig {
   inline static const SettingDef setting_defs_[] = {
     { "auto_set_pwd",
       setting_value_type{ false },
-      "Keep the working directory (and $PWD) set to the current document's folder. "
-      "If it does not exist, walk up until a valid directory is found." },
+      "Set $PWD to the current document’s folder, walking up if needed." },
 
     { "auto_set_read_only",
       setting_value_type{ false },
@@ -53,19 +52,19 @@ class PreviewConfig {
 
     { "column_markers_columns",
       setting_value_type{ std::vector<int>{ 60, 72, 80, 88, 96, 104, 112, 120, 128 } },
-      "List of column positions (in characters) where vertical guide lines will be drawn." },
+      "List of column positions (in characters) for vertical guide lines." },
 
     { "column_markers_colors",
       setting_value_type{ std::vector<std::string>{ "#ccc", "#bdf", "#fcf", "#ccc", "#fba", "#ccc", "#ccc", "#ccc", "#ccc" } },
-      "Colors for each column marker, in #RRGGBB or #RGB format, matching the order of 'column_markers_columns'." },
+      "Colors for each column marker, #RRGGBB or #RGB, matching column_markers_columns." },
 
     { "disable_ctrl_wheel_zoom",
       setting_value_type{ false },
-      "Disable zooming the editor with Ctrl+MouseWheel. Keyboard zoom shortcuts remain available." },
+      "Disable Ctrl+MouseWheel zoom. Keyboard zoom shortcuts still work." },
 
     { "file_manager_command",
       setting_value_type{ std::string{ "xdg-open %d" } },
-      "Command to launch a file manager. Supports XDG field codes: %d = directory of current document." },
+      "Command to launch a file manager. %d = current document directory." },
 
     { "focus_editor_on_raise",
       setting_value_type{ false },
@@ -89,42 +88,35 @@ class PreviewConfig {
 
     { "redetect_filetype_on_reload",
       setting_value_type{ false },
-      "Re-detect file type when a document is reloaded. Geany normally auto-detects file type only on open and save." },
+      "Re-detect file type when a document is reloaded. Normally only on open and save." },
 
     { "sidebar_auto_resize",
       setting_value_type{ false },
-      "Enable or disable automatic resizing of the sidebar based on window state "
-      "(normal, maximized, fullscreen)." },
+      "Auto resize sidebar based on window state (normal, maximized, fullscreen)." },
 
     { "sidebar_resize_delay",
       setting_value_type{ 50 },
-      "Delay in milliseconds before applying the automatic sidebar resize after a window "
-      "state or size change. A small delay helps avoid race conditions with GTK/Geany's "
-      "own layout adjustments. Set to 0 to apply immediately." },
+      "Delay (ms) before auto resize after window changes." },
 
     { "sidebar_columns_fullscreen",
       setting_value_type{ 94 },
-      "Number of editor columns to keep visible when the window is in fullscreen mode. "
-      "The sidebar width will be adjusted accordingly." },
+      "Editor columns to keep visible in fullscreen mode." },
 
     { "sidebar_columns_maximized",
       setting_value_type{ 94 },
-      "Number of editor columns to keep visible when the window is maximized. "
-      "The sidebar width will be adjusted accordingly." },
+      "Editor columns to keep visible in maximized mode." },
 
     { "sidebar_columns_normal",
       setting_value_type{ 82 },
-      "Number of editor columns to keep visible when the window is in normal (non-maximized) state. "
-      "The sidebar width will be adjusted accordingly." },
+      "Editor columns to keep visible in normal mode." },
 
     { "sidebar_size_min",
       setting_value_type{ 150 },
-      "Minimum width of the sidebar in pixels. "
-      "Prevents automatic resizing from shrinking the sidebar too far." },
+      "Minimum sidebar width (px). Prevents shrinking too far." },
 
     { "terminal_command",
       setting_value_type{ std::string{ "xdg-terminal-exec --working-directory=%d" } },
-      "Command to launch a terminal. Supports XDG field codes: %d = directory of current document." },
+      "Command to launch a terminal. %d = current document directory." },
 
     { "theme_mode",
       setting_value_type{ std::string{ "system" } },
@@ -136,11 +128,11 @@ class PreviewConfig {
 
     { "update_cooldown",
       setting_value_type{ 65 },
-      "Time in milliseconds to wait between preview updates to prevent excessive refreshing." },
+      "Cooldown (ms) between preview updates to avoid excessive refresh." },
 
     { "update_min_delay",
       setting_value_type{ 15 },
-      "Time in milliseconds to wait before the first preview update after a change." },
+      "Delay (ms) before first preview update after a change." },
   };
   // clang-format on
 
