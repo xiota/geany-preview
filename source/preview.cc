@@ -17,6 +17,7 @@
 #include "tweakui_color_tip.h"
 #include "tweakui_column_markers.h"
 #include "tweakui_disable_ctrl_wheel_zoom.h"
+#include "tweakui_focus_editor_on_raise.h"
 #include "tweakui_mark_word.h"
 #include "tweakui_redetect_filetype.h"
 #include "tweakui_sidebar_auto_resize.h"
@@ -33,6 +34,7 @@ std::unique_ptr<TweakUiAutoSetReadOnly> tweakui_auto_set_read_only;
 std::unique_ptr<TweakUiColorTip> tweakui_color_tip;
 std::unique_ptr<TweakUiColumnMarkers> tweakui_column_markers;
 std::unique_ptr<TweakUiDisableCtrlWheelZoom> tweakui_disable_ctrl_wheel_zoom;
+std::unique_ptr<TweakUiFocusEditorOnRaise> tweakui_focus_editor_on_raise;
 std::unique_ptr<TweakUiMarkWord> tweakui_mark_word;
 std::unique_ptr<TweakUiRedetectFileType> tweakui_redetect_filetype;
 std::unique_ptr<TweakUiSidebarAutoResize> tweakui_sidebar_auto_resize;
@@ -110,6 +112,7 @@ gboolean previewInit(
   tweakui_column_markers = std::make_unique<TweakUiColumnMarkers>(&preview_context);
   tweakui_disable_ctrl_wheel_zoom =
       std::make_unique<TweakUiDisableCtrlWheelZoom>(&preview_context);
+  tweakui_focus_editor_on_raise = std::make_unique<TweakUiFocusEditorOnRaise>(&preview_context);
   tweakui_mark_word = std::make_unique<TweakUiMarkWord>(&preview_context);
   tweakui_redetect_filetype = std::make_unique<TweakUiRedetectFileType>(&preview_context);
   tweakui_sidebar_auto_resize = std::make_unique<TweakUiSidebarAutoResize>(&preview_context);
@@ -143,6 +146,7 @@ void previewCleanup(
   tweakui_color_tip.reset();
   tweakui_column_markers.reset();
   tweakui_disable_ctrl_wheel_zoom.reset();
+  tweakui_focus_editor_on_raise.reset();
   tweakui_mark_word.reset();
   tweakui_redetect_filetype.reset();
   tweakui_sidebar_auto_resize.reset();

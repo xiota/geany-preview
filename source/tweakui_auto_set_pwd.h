@@ -1,8 +1,6 @@
 // SPDX-FileCopyrightText: Copyright 2025 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// tweakui_auto_set_pwd.h (part 1/1)
-
 #pragma once
 
 #include <stdlib.h>  // setenv

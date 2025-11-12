@@ -67,6 +67,10 @@ class PreviewConfig {
       setting_value_type{ std::string{ "xdg-open %d" } },
       "Command to launch a file manager. Supports XDG field codes: %d = directory of current document." },
 
+    { "focus_editor_on_raise",
+      setting_value_type{ false },
+      "Focus the editor when the Geany window is raised." },
+
     { "headers_incomplete_max",
       setting_value_type{ 3 },
       "Max number of incomplete header lines before treating all as body." },
