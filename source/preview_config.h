@@ -58,9 +58,9 @@ class PreviewConfig {
       setting_value_type{ std::vector<std::string>{ "#ccc", "#bdf", "#fcf", "#ccc", "#fba", "#ccc", "#ccc", "#ccc", "#ccc" } },
       "Colors for each column marker, #RRGGBB or #RGB, matching column_markers_columns." },
 
-    { "disable_ctrl_wheel_zoom",
+    { "disable_editor_ctrl_wheel_zoom",
       setting_value_type{ false },
-      "Disable Ctrl+MouseWheel zoom. Keyboard zoom shortcuts still work." },
+      "Disable Ctrl+MouseWheel zoom in the editor." },
 
     { "file_manager_command",
       setting_value_type{ std::string{ "xdg-open %d" } },

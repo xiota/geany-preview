@@ -16,7 +16,7 @@
 #include "tweakui_auto_set_read_only.h"
 #include "tweakui_color_tip.h"
 #include "tweakui_column_markers.h"
-#include "tweakui_disable_ctrl_wheel_zoom.h"
+#include "tweakui_disable_editor_ctrl_wheel_zoom.h"
 #include "tweakui_focus_editor_on_raise.h"
 #include "tweakui_mark_word.h"
 #include "tweakui_redetect_filetype.h"
@@ -33,7 +33,7 @@ std::unique_ptr<TweakUiAutoSetPwd> tweakui_auto_set_pwd;
 std::unique_ptr<TweakUiAutoSetReadOnly> tweakui_auto_set_read_only;
 std::unique_ptr<TweakUiColorTip> tweakui_color_tip;
 std::unique_ptr<TweakUiColumnMarkers> tweakui_column_markers;
-std::unique_ptr<TweakUiDisableCtrlWheelZoom> tweakui_disable_ctrl_wheel_zoom;
+std::unique_ptr<TweakUiDisableEditorCtrlWheelZoom> tweakui_disable_editor_ctrl_wheel_zoom;
 std::unique_ptr<TweakUiFocusEditorOnRaise> tweakui_focus_editor_on_raise;
 std::unique_ptr<TweakUiMarkWord> tweakui_mark_word;
 std::unique_ptr<TweakUiRedetectFileType> tweakui_redetect_filetype;
@@ -110,8 +110,8 @@ gboolean previewInit(
   tweakui_auto_set_read_only = std::make_unique<TweakUiAutoSetReadOnly>(&preview_context);
   tweakui_color_tip = std::make_unique<TweakUiColorTip>(&preview_context);
   tweakui_column_markers = std::make_unique<TweakUiColumnMarkers>(&preview_context);
-  tweakui_disable_ctrl_wheel_zoom =
-      std::make_unique<TweakUiDisableCtrlWheelZoom>(&preview_context);
+  tweakui_disable_editor_ctrl_wheel_zoom =
+      std::make_unique<TweakUiDisableEditorCtrlWheelZoom>(&preview_context);
   tweakui_focus_editor_on_raise = std::make_unique<TweakUiFocusEditorOnRaise>(&preview_context);
   tweakui_mark_word = std::make_unique<TweakUiMarkWord>(&preview_context);
   tweakui_redetect_filetype = std::make_unique<TweakUiRedetectFileType>(&preview_context);
@@ -145,7 +145,7 @@ void previewCleanup(
   tweakui_auto_set_read_only.reset();
   tweakui_color_tip.reset();
   tweakui_column_markers.reset();
-  tweakui_disable_ctrl_wheel_zoom.reset();
+  tweakui_disable_editor_ctrl_wheel_zoom.reset();
   tweakui_focus_editor_on_raise.reset();
   tweakui_mark_word.reset();
   tweakui_redetect_filetype.reset();

@@ -10,9 +10,9 @@
 
 #include "preview_context.h"
 
-class TweakUiDisableCtrlWheelZoom {
+class TweakUiDisableEditorCtrlWheelZoom {
  public:
-  explicit TweakUiDisableCtrlWheelZoom(PreviewContext *context) : context_(context) {
+  explicit TweakUiDisableEditorCtrlWheelZoom(PreviewContext *context) : context_(context) {
     if (!context_ || !context_->geany_data_) {
       return;
     }
@@ -50,12 +50,12 @@ class TweakUiDisableCtrlWheelZoom {
 
  private:
   static gboolean onScrollEvent(GtkWidget *, GdkEventScroll *event, gpointer user_data) {
-    auto *self = static_cast<TweakUiDisableCtrlWheelZoom *>(user_data);
+    auto *self = static_cast<TweakUiDisableEditorCtrlWheelZoom *>(user_data);
     if (!self->context_ || !self->context_->preview_config_) {
       return false;
     }
 
-    if (!self->context_->preview_config_->get<bool>("disable_ctrl_wheel_zoom", true)) {
+    if (!self->context_->preview_config_->get<bool>("disable_editor_ctrl_wheel_zoom", true)) {
       return false;
     }
 
@@ -81,12 +81,12 @@ class TweakUiDisableCtrlWheelZoom {
   }
 
   static void documentSignal(GObject *, GeanyDocument *doc, gpointer user_data) {
-    auto *self = static_cast<TweakUiDisableCtrlWheelZoom *>(user_data);
+    auto *self = static_cast<TweakUiDisableEditorCtrlWheelZoom *>(user_data);
     self->connectScrollHandler(doc);
   }
 
   static void documentClose(GObject *, GeanyDocument *doc, gpointer user_data) {
-    auto *self = static_cast<TweakUiDisableCtrlWheelZoom *>(user_data);
+    auto *self = static_cast<TweakUiDisableEditorCtrlWheelZoom *>(user_data);
     g_return_if_fail(DOC_VALID(doc));
     g_signal_handlers_disconnect_by_func(doc->editor->sci, gpointer(onScrollEvent), self);
   }
