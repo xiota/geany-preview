@@ -286,17 +286,22 @@ bool PreviewPane::exportPdfToFile(const std::filesystem::path &dest) {
 #endif
 
   // Fallback: WebKit print-to-PDF
-  WebKitPrintOperation *op = webkit_print_operation_new(WEBKIT_WEB_VIEW(webview_.widget()));
-
   GtkPrintSettings *settings = gtk_print_settings_new();
   gtk_print_settings_set(settings, GTK_PRINT_SETTINGS_PRINTER, "Print to File");
   gtk_print_settings_set(settings, GTK_PRINT_SETTINGS_OUTPUT_FILE_FORMAT, "pdf");
 
-  std::string uri = g_filename_to_uri(dest.c_str(), nullptr, nullptr);
-  gtk_print_settings_set(settings, GTK_PRINT_SETTINGS_OUTPUT_URI, uri.c_str());
+  if (char *uri = g_filename_to_uri(dest.c_str(), nullptr, nullptr)) {
+    gtk_print_settings_set(settings, GTK_PRINT_SETTINGS_OUTPUT_URI, uri);
+    g_free(uri);
+  } else {
+    g_object_unref(settings);
+    return false;
+  }
+
+  WebKitPrintOperation *op = webkit_print_operation_new(WEBKIT_WEB_VIEW(webview_.widget()));
+  webkit_print_operation_set_print_settings(op, settings);
 
   GtkPageSetup *page_setup = gtk_page_setup_new();
-  webkit_print_operation_set_print_settings(op, settings);
   webkit_print_operation_set_page_setup(op, page_setup);
 
   webkit_print_operation_print(op);
