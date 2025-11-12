@@ -72,6 +72,9 @@ class WebView final {
       gpointer user_data
   );
 
+  static gboolean onScrollEvent(GtkWidget *widget, GdkEventScroll *event, gpointer user_data);
+  double zoom_level_ = 1.0;
+
   PreviewContext *context_;
   WebKitSettings *webview_settings_ = nullptr;
   GtkWidget *webview_ = nullptr;

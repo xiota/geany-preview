@@ -62,6 +62,10 @@ class PreviewConfig {
       setting_value_type{ false },
       "Disable Ctrl+MouseWheel zoom in the editor." },
 
+    { "disable_preview_ctrl_wheel_zoom",
+      setting_value_type{ false },
+      "Disable Ctrl+MouseWheel zoom in the preview pane." },
+
     { "file_manager_command",
       setting_value_type{ std::string{ "xdg-open %d" } },
       "Command to launch a file manager. %d = current document directory." },
@@ -85,6 +89,14 @@ class PreviewConfig {
     { "mark_word_single_click_deselect",
       setting_value_type{ true },
       "Deselect the previous highlight by single click." },
+
+    { "preview_zoom_factor",
+      setting_value_type{ 10 },
+      "Zoom step factor (%) for Ctrl+MouseWheel in the preview pane." },
+
+    { "preview_zoom_default",
+      setting_value_type{ 100 },
+      "Default zoom level (%) for the preview pane." },
 
     { "redetect_filetype_on_reload",
       setting_value_type{ false },

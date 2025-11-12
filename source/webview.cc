@@ -61,6 +61,13 @@ WebView::WebView(PreviewContext *context) noexcept
   webview_content_manager_ =
       webkit_web_view_get_user_content_manager(WEBKIT_WEB_VIEW(webview_));
 
+  double default_percent = 100;
+  if (context_ && context_->preview_config_) {
+    default_percent = context_->preview_config_->get<int>("preview_zoom_default", 100);
+  }
+  zoom_level_ = std::max(default_percent / 100.0, 0.01);
+  webkit_web_view_set_zoom_level(WEBKIT_WEB_VIEW(webview_), zoom_level_);
+
   g_signal_connect(
       webview_,
       "load-changed",
@@ -74,6 +81,7 @@ WebView::WebView(PreviewContext *context) noexcept
 
   g_signal_connect_after(webview_, "context-menu", G_CALLBACK(onContextMenu), this);
   g_signal_connect(webview_, "decide-policy", G_CALLBACK(onDecidePolicy), this);
+  g_signal_connect(webview_, "scroll-event", G_CALLBACK(onScrollEvent), this);
 }
 
 WebView::~WebView() noexcept {
@@ -558,4 +566,38 @@ void WebView::onDecidePolicy(
   }
 
   // For external links (https:// etc.), let WebKit handle navigation normally.
+}
+
+gboolean WebView::onScrollEvent(GtkWidget *widget, GdkEventScroll *event, gpointer user_data) {
+  auto *self = static_cast<WebView *>(user_data);
+
+  if (self->context_ && self->context_->preview_config_) {
+    if (self->context_->preview_config_->get<bool>("disable_preview_ctrl_wheel_zoom", false)) {
+      return false;  // let normal scroll continue
+    }
+  }
+
+  if ((event->state & GDK_CONTROL_MASK) == 0) {
+    return false;
+  }
+
+  double step_percent = 10;
+  if (self->context_ && self->context_->preview_config_) {
+    step_percent = self->context_->preview_config_->get<int>("preview_zoom_factor", 10);
+  }
+  double step = step_percent / 100.0;
+
+  if (event->direction == GDK_SCROLL_SMOOTH) {
+    self->zoom_level_ = self->zoom_level_ - event->delta_y * step;
+  } else if (event->direction == GDK_SCROLL_UP) {
+    self->zoom_level_ = self->zoom_level_ + step;
+  } else if (event->direction == GDK_SCROLL_DOWN) {
+    self->zoom_level_ = self->zoom_level_ - step;
+  } else {
+    return false;
+  }
+
+  self->zoom_level_ = std::max(self->zoom_level_, 0.01);
+  webkit_web_view_set_zoom_level(WEBKIT_WEB_VIEW(self->webview_), self->zoom_level_);
+  return true;
 }
