@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
+#include <sstream>
 #include <unordered_set>
 
 #include <gtk/gtk.h>
@@ -151,7 +153,20 @@ onValueEdited(GtkCellRendererText *, gchar *path_str, gchar *new_text, gpointer 
   g_free(key_c);
   g_free(type_c);
 
-  if (type == "int") {
+  if (type == "double") {
+    try {
+      double dv = std::stod(new_text);
+      ctx->self->set<double>(key, dv);
+
+      std::ostringstream oss;
+      oss << std::fixed << std::setprecision(3) << dv;
+      gtk_list_store_set(
+          GTK_LIST_STORE(store_model), &store_iter, COL_VALUE_STR, oss.str().c_str(), -1
+      );
+    } catch (...) {
+      g_warning("Invalid double: %s", new_text);
+    }
+  } else if (type == "int") {
     try {
       ctx->self->set<int>(key, std::stoi(new_text));
       gtk_list_store_set(GTK_LIST_STORE(store_model), &store_iter, COL_VALUE_STR, new_text, -1);
@@ -239,8 +254,8 @@ bool PreviewConfig::load() {
             [&](auto &current) {
               using T = std::decay_t<decltype(current)>;
 
-              if constexpr (std::is_same_v<T, int> || std::is_same_v<T, bool> ||
-                            std::is_same_v<T, std::string>) {
+              if constexpr (std::is_same_v<T, bool> || std::is_same_v<T, double> ||
+                            std::is_same_v<T, int> || std::is_same_v<T, std::string>) {
                 if (auto v = node.value<T>()) {
                   current = *v;
                 }
@@ -286,8 +301,8 @@ bool PreviewConfig::save() const {
     std::visit(
         [&](auto &&current) {
           using T = std::decay_t<decltype(current)>;
-          if constexpr (std::is_same_v<T, int> || std::is_same_v<T, bool> ||
-                        std::is_same_v<T, std::string>) {
+          if constexpr (std::is_same_v<T, bool> || std::is_same_v<T, double> ||
+                        std::is_same_v<T, int> || std::is_same_v<T, std::string>) {
             preview_tbl.insert_or_assign(key, current);
           } else if constexpr (std::is_same_v<T, std::vector<int>> ||
                                std::is_same_v<T, std::vector<std::string>>) {
@@ -357,12 +372,17 @@ GtkListStore *PreviewConfig::createConfigModel() {
     std::visit(
         [&](auto &&v) {
           using T = std::decay_t<decltype(v)>;
-          if constexpr (std::is_same_v<T, int>) {
-            type = "int";
-            value_str = std::to_string(v);
-          } else if constexpr (std::is_same_v<T, bool>) {
+          if constexpr (std::is_same_v<T, bool>) {
             type = "bool";
             value_bool = v;
+          } else if constexpr (std::is_same_v<T, double>) {
+            type = "double";
+            std::ostringstream oss;
+            oss << std::fixed << std::setprecision(3) << v;
+            value_str = oss.str();
+          } else if constexpr (std::is_same_v<T, int>) {
+            type = "int";
+            value_str = std::to_string(v);
           } else if constexpr (std::is_same_v<T, std::vector<int>>) {
             type = "vector<int>";
             value_str = joinForDisplay(v);
