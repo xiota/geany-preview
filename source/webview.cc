@@ -530,26 +530,24 @@ void WebView::onDecidePolicy(
     gpointer user_data
 ) {
   if (type != WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION) {
+    webkit_policy_decision_use(decision);
     return;
   }
 
   auto *nav = WEBKIT_NAVIGATION_POLICY_DECISION(decision);
   WebKitNavigationAction *action = webkit_navigation_policy_decision_get_navigation_action(nav);
-  WebKitNavigationType nav_type = webkit_navigation_action_get_navigation_type(action);
-
-  if (nav_type != WEBKIT_NAVIGATION_TYPE_LINK_CLICKED) {
-    return;  // only handle clicks
-  }
 
   WebView *self = static_cast<WebView *>(user_data);
   WebKitURIRequest *req = webkit_navigation_action_get_request(action);
   const gchar *uri = webkit_uri_request_get_uri(req);
 
   if (!uri) {
+    webkit_policy_decision_use(decision);
     return;
   }
 
-  if (g_str_has_prefix(uri, "file://")) {
+  const gchar *scheme = g_uri_parse_scheme(uri);
+  if (scheme && g_str_equal(scheme, "file")) {
     gchar *filename = g_filename_from_uri(uri, nullptr, nullptr);
     if (filename) {
       DocumentLocal doc(filename);
@@ -557,15 +555,20 @@ void WebView::onDecidePolicy(
       if (self->context_ && self->context_->preview_pane_) {
         if (self->context_->preview_pane_->canPreviewFile(doc)) {
           self->context_->preview_pane_->initWebView(doc);
-          webkit_policy_decision_ignore(decision);  // suppress default navigation
+          webkit_policy_decision_ignore(decision);
+          g_free(filename);
+          return;
         }
       }
+
       g_free(filename);
+      webkit_policy_decision_use(decision);
       return;
     }
   }
 
   // For external links (https:// etc.), let WebKit handle navigation normally.
+  webkit_policy_decision_use(decision);
 }
 
 gboolean WebView::onScrollEvent(GtkWidget *widget, GdkEventScroll *event, gpointer user_data) {
