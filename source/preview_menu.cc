@@ -103,18 +103,13 @@ void PreviewMenu::onExportToHtml(GtkMenuItem *, gpointer user_data) {
     return;
   }
 
-  if (!ctx->preview_pane_->exportHtmlToFile(dest_path)) {
-    msgwin_status_add("Preview: Failed to export HTML.");
-  } else {
-    while (gtk_events_pending()) {
-      gtk_main_iteration();
-    }
-    if (std::filesystem::exists(dest_path)) {
+  ctx->preview_pane_->exportHtmlToFileAsync(dest_path, [dest_path](bool ok) {
+    if (ok) {
       msgwin_status_add("Preview: Exported HTML to: %s", dest_path.string().c_str());
     } else {
       msgwin_status_add("Preview: Failed to export HTML.");
     }
-  }
+  });
 }
 
 void PreviewMenu::onExportToPdf(GtkMenuItem *, gpointer user_data) {

@@ -28,7 +28,9 @@ class PreviewPane final {
 
   void triggerUpdate(const Document &document);
 
-  bool exportHtmlToFile(const std::filesystem::path &dest);
+  void
+  exportHtmlToFileAsync(const std::filesystem::path &dest, std::function<void(bool)> callback);
+
   bool exportPdfToFile(const std::filesystem::path &dest);
 
   bool canPreviewFile(const Document &doc) const;

@@ -236,22 +236,31 @@ void PreviewPane::triggerUpdate(const Document &document) {
   update_pending_ = false;
 }
 
-bool PreviewPane::exportHtmlToFile(const std::filesystem::path &dest) {
-  // Ensure parent directories exist
-  std::error_code ec;
-  if (!dest.parent_path().empty()) {
-    std::filesystem::create_directories(dest.parent_path(), ec);
-  }
-
-  webview_.getDomSnapshot(root_id_, [dest](const std::string &content_html) {
-    std::ofstream out(dest, std::ios::binary | std::ios::trunc);
-    if (out) {
-      out << "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n</head>\n"
-          << "<body>\n"
-          << content_html << "\n</body>\n</html>\n";
-    }
-  });
-  return true;
+void PreviewPane::exportHtmlToFileAsync(
+    const std::filesystem::path &dest,
+    std::function<void(bool)> callback
+) {
+  webview_.getDomSnapshot(
+      root_id_, [dest, cb = std::move(callback)](const std::string &content_html) {
+        bool success = false;
+        if (!content_html.empty()) {
+          std::error_code ec;
+          if (!dest.parent_path().empty()) {
+            std::filesystem::create_directories(dest.parent_path(), ec);
+          }
+          std::ofstream out(dest, std::ios::binary | std::ios::trunc);
+          if (out) {
+            out << "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n</head>\n"
+                << "<body>\n"
+                << content_html << "\n</body>\n</html>\n";
+            out.flush();
+            out.close();
+            success = out.good();
+          }
+        }
+        cb(success);
+      }
+  );
 }
 
 bool PreviewPane::exportPdfToFile(const std::filesystem::path &dest) {
