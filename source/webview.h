@@ -56,6 +56,9 @@ class WebView final {
 
   WebView &showFindPrompt(GtkWindow *parent_window);
 
+  void
+  getDomSnapshot(std::string_view root_id, std::function<void(std::string)> callback) const;
+
  private:
   static gboolean onContextMenu(
       WebKitWebView *view,

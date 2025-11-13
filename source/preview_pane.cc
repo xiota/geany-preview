@@ -237,36 +237,28 @@ void PreviewPane::triggerUpdate(const Document &document) {
 }
 
 bool PreviewPane::exportHtmlToFile(const std::filesystem::path &dest) {
-  DocumentGeany document(document_get_current());
-
-  // Shared HTML
-  auto html = generateHtml(document);
-
-  // Fresh base URI for export (not cached)
-  std::string base_uri = calculateBaseUri(document);
-
-  // Minimal standalone HTML document
-  std::string doc;
-  doc.reserve(html.size() + 256);
-  doc += "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
-  if (!base_uri.empty()) {
-    doc += "<base href=\"" + base_uri + "\">\n";
-  }
-  doc += "</head>\n<body>\n";
-  doc += html;
-  doc += "\n</body>\n</html>\n";
-
+  // Ensure parent directories exist
   std::error_code ec;
   if (!dest.parent_path().empty()) {
-    std::filesystem::create_directories(dest.parent_path(), ec);  // best-effort
+    std::filesystem::create_directories(dest.parent_path(), ec);
   }
 
-  std::ofstream out(dest, std::ios::binary | std::ios::trunc);
-  if (!out) {
-    return false;
-  }
-  out.write(doc.data(), static_cast<std::streamsize>(doc.size()));
-  return static_cast<bool>(out);
+  bool file_created = false;
+  GMainLoop *loop = g_main_loop_new(nullptr, false);
+
+  webview_.getDomSnapshot(root_id_, [&](const std::string &content_html) {
+    std::ofstream out(dest, std::ios::binary | std::ios::trunc);
+    if (out) {
+      out << "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n</head>\n"
+          << "<body>\n"
+          << content_html << "\n</body>\n</html>\n";
+    }
+  });
+
+  g_main_loop_run(loop);
+  g_main_loop_unref(loop);
+
+  return file_created;
 }
 
 bool PreviewPane::exportPdfToFile(const std::filesystem::path &dest) {

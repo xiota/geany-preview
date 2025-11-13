@@ -601,3 +601,52 @@ gboolean WebView::onScrollEvent(GtkWidget *widget, GdkEventScroll *event, gpoint
   webkit_web_view_set_zoom_level(WEBKIT_WEB_VIEW(self->webview_), self->zoom_level_);
   return true;
 }
+
+void WebView::getDomSnapshot(
+    std::string_view root_id,
+    std::function<void(std::string)> callback
+) const {
+  auto *cb_ptr = new std::function<void(std::string)>(std::move(callback));
+
+  std::string js;
+  if (!root_id.empty()) {
+    js = "var el = document.getElementById('" + escapeForJsTemplateLiteral(root_id) +
+         "'); el ? el.innerHTML : '';";
+  } else {
+    js = "document.body.outerHTML;";
+  }
+
+  webkit_web_view_evaluate_javascript(
+      WEBKIT_WEB_VIEW(webview_),
+      js.c_str(),
+      -1,
+      nullptr,
+      nullptr,
+      nullptr,
+      [](GObject *source, GAsyncResult *res, gpointer user_data) {
+        auto *cb = static_cast<std::function<void(std::string)> *>(user_data);
+        std::string html;
+        GError *err = nullptr;
+        JSCValue *val =
+            webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(source), res, &err);
+
+        if (!err && jsc_value_is_string(val)) {
+          gchar *str = jsc_value_to_string(val);
+          if (str) {
+            html.assign(str);
+            g_free(str);
+          }
+        }
+        if (G_IS_OBJECT(val)) {
+          g_object_unref(val);
+        }
+        if (err) {
+          g_error_free(err);
+        }
+
+        (*cb)(html);
+        delete cb;
+      },
+      cb_ptr
+  );
+}
