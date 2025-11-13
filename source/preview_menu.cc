@@ -103,10 +103,17 @@ void PreviewMenu::onExportToHtml(GtkMenuItem *, gpointer user_data) {
     return;
   }
 
-  if (ctx->preview_pane_->exportHtmlToFile(dest_path)) {
-    msgwin_status_add("Preview: Exported HTML to: %s", dest_path.string().c_str());
-  } else {
+  if (!ctx->preview_pane_->exportHtmlToFile(dest_path)) {
     msgwin_status_add("Preview: Failed to export HTML.");
+  } else {
+    while (gtk_events_pending()) {
+      gtk_main_iteration();
+    }
+    if (std::filesystem::exists(dest_path)) {
+      msgwin_status_add("Preview: Exported HTML to: %s", dest_path.string().c_str());
+    } else {
+      msgwin_status_add("Preview: Failed to export HTML.");
+    }
   }
 }
 

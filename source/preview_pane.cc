@@ -243,10 +243,7 @@ bool PreviewPane::exportHtmlToFile(const std::filesystem::path &dest) {
     std::filesystem::create_directories(dest.parent_path(), ec);
   }
 
-  bool file_created = false;
-  GMainLoop *loop = g_main_loop_new(nullptr, false);
-
-  webview_.getDomSnapshot(root_id_, [&](const std::string &content_html) {
+  webview_.getDomSnapshot(root_id_, [dest](const std::string &content_html) {
     std::ofstream out(dest, std::ios::binary | std::ios::trunc);
     if (out) {
       out << "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n</head>\n"
@@ -254,11 +251,7 @@ bool PreviewPane::exportHtmlToFile(const std::filesystem::path &dest) {
           << content_html << "\n</body>\n</html>\n";
     }
   });
-
-  g_main_loop_run(loop);
-  g_main_loop_unref(loop);
-
-  return file_created;
+  return true;
 }
 
 bool PreviewPane::exportPdfToFile(const std::filesystem::path &dest) {
