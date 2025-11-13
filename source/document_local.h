@@ -13,7 +13,20 @@
 class DocumentLocal final : public Document {
  public:
   explicit DocumentLocal(const std::filesystem::path &path)
-      : file_path_(path.string()), filetype_name_(""), encoding_name_("UTF-8") {}
+      : filetype_name_(""), encoding_name_("UTF-8") {
+    std::error_code ec;
+    std::filesystem::path p = path;
+    p = p.lexically_normal();
+    if (!p.is_absolute()) {
+      p = std::filesystem::absolute(p, ec);
+      ec.clear();
+    }
+    if (std::filesystem::exists(p)) {
+      file_path_ = p.string();
+    } else {
+      file_path_.clear();  // invalid / non-existent
+    }
+  }
 
   std::string_view textView() const override {
     ensureLoaded();
@@ -39,9 +52,18 @@ class DocumentLocal final : public Document {
 
  private:
   void ensureLoaded() const {
-    if (!loaded_) {
-      text_cache_ = FileUtils::readFileToString(file_path_);
-      loaded_ = true;
+    if (loaded_) {
+      return;
+    }
+    loaded_ = true;
+
+    if (file_path_.empty()) {
+      text_cache_.clear();
+      return;
+    }
+
+    text_cache_ = FileUtils::readFileToString(file_path_);
+    if (text_cache_.empty()) {
     }
   }
 
