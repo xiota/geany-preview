@@ -263,7 +263,10 @@ void PreviewPane::exportHtmlToFileAsync(
   );
 }
 
-bool PreviewPane::exportPdfToFile(const std::filesystem::path &dest) {
+void PreviewPane::exportPdfToFileAsync(
+    const std::filesystem::path &dest,
+    std::function<void(bool)> callback
+) {
   DocumentGeany document(document_get_current());
 
   // Ensure parent directories exist
@@ -275,7 +278,9 @@ bool PreviewPane::exportPdfToFile(const std::filesystem::path &dest) {
 #ifdef HAVE_PODOFO
   // Fountain with PoDoFo
   if (registrar_.getConverterKey(document) == "fountain") {
-    return Fountain::ftn2pdf(dest.string(), document.text());
+    bool ok = Fountain::ftn2pdf(dest.string(), document.text());
+    callback(ok);
+    return;
   }
 #endif
 
@@ -289,7 +294,8 @@ bool PreviewPane::exportPdfToFile(const std::filesystem::path &dest) {
     g_free(uri);
   } else {
     g_object_unref(settings);
-    return false;
+    callback(false);
+    return;
   }
 
   WebKitPrintOperation *op = webkit_print_operation_new(WEBKIT_WEB_VIEW(webview_.widget()));
@@ -298,13 +304,23 @@ bool PreviewPane::exportPdfToFile(const std::filesystem::path &dest) {
   GtkPageSetup *page_setup = gtk_page_setup_new();
   webkit_print_operation_set_page_setup(op, page_setup);
 
+  // Connect to the "finished" signal to know when printing completes
+  g_signal_connect(
+      op,
+      "finished",
+      G_CALLBACK(+[](WebKitPrintOperation *, gboolean success, gpointer user_data) {
+        auto *cb_ptr = static_cast<std::function<void(bool)> *>(user_data);
+        (*cb_ptr)(success);
+        delete cb_ptr;
+      }),
+      new std::function<void(bool)>(std::move(callback))
+  );
+
   webkit_print_operation_print(op);
 
   g_object_unref(settings);
   g_object_unref(page_setup);
   g_object_unref(op);
-
-  return true;
 }
 
 bool PreviewPane::canPreviewFile(const Document &doc) const {
