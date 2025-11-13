@@ -16,7 +16,7 @@ class PreviewConfig {
  public:
   // Expanded to support vectors of ints and strings
   using setting_value_type =
-      std::variant<int, bool, std::string, std::vector<int>, std::vector<std::string> >;
+      std::variant<int, double, bool, std::string, std::vector<int>, std::vector<std::string> >;
 
   struct SettingDef {
     const char *key;
@@ -90,13 +90,9 @@ class PreviewConfig {
       setting_value_type{ true },
       "Deselect the previous highlight by single click." },
 
-    { "preview_zoom_factor",
-      setting_value_type{ 10 },
-      "Zoom step factor (%) for Ctrl+MouseWheel in the preview pane." },
-
     { "preview_zoom_default",
-      setting_value_type{ 100 },
-      "Default zoom level (%) for the preview pane." },
+      setting_value_type{ 1.0 },
+      "Default zoom level for the preview pane.  (1.0 = 100%)" },
 
     { "preview_zoom_sync",
       setting_value_type{ false },

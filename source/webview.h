@@ -56,8 +56,11 @@ class WebView final {
 
   WebView &showFindPrompt(GtkWindow *parent_window);
 
-  void
-  getDomSnapshot(std::string_view root_id, std::function<void(std::string)> callback) const;
+  WebView &getDomSnapshot(std::string_view root_id, std::function<void(std::string)> callback);
+
+  WebView &resetZoom();
+  WebView &setZoom(double zoom);
+  WebView &stepZoom(int step);
 
  private:
   static gboolean onContextMenu(
@@ -76,7 +79,6 @@ class WebView final {
   );
 
   static gboolean onScrollEvent(GtkWidget *widget, GdkEventScroll *event, gpointer user_data);
-  double zoom_level_ = 1.0;
 
   PreviewContext *context_;
   WebKitSettings *webview_settings_ = nullptr;

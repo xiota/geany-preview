@@ -61,12 +61,12 @@ WebView::WebView(PreviewContext *context) noexcept
   webview_content_manager_ =
       webkit_web_view_get_user_content_manager(WEBKIT_WEB_VIEW(webview_));
 
-  double default_percent = 100;
+  double zoom = 100;
   if (context_ && context_->preview_config_) {
-    default_percent = context_->preview_config_->get<int>("preview_zoom_default", 100);
+    zoom = context_->preview_config_->get<int>("preview_zoom_default", 100);
   }
-  zoom_level_ = std::max(default_percent / 100.0, 0.01);
-  webkit_web_view_set_zoom_level(WEBKIT_WEB_VIEW(webview_), zoom_level_);
+  zoom = std::max(zoom / 100.0, 0.01);
+  webkit_web_view_set_zoom_level(WEBKIT_WEB_VIEW(webview_), zoom);
 
   g_signal_connect(
       webview_,
@@ -573,7 +573,7 @@ gboolean WebView::onScrollEvent(GtkWidget *widget, GdkEventScroll *event, gpoint
 
   if (self->context_ && self->context_->preview_config_) {
     if (self->context_->preview_config_->get<bool>("disable_preview_ctrl_wheel_zoom", false)) {
-      return false;  // let normal scroll continue
+      return false;
     }
   }
 
@@ -581,31 +581,23 @@ gboolean WebView::onScrollEvent(GtkWidget *widget, GdkEventScroll *event, gpoint
     return false;
   }
 
-  double step_percent = 10;
-  if (self->context_ && self->context_->preview_config_) {
-    step_percent = self->context_->preview_config_->get<int>("preview_zoom_factor", 10);
-  }
-  double step = step_percent / 100.0;
-
   if (event->direction == GDK_SCROLL_SMOOTH) {
-    self->zoom_level_ = self->zoom_level_ - event->delta_y * step;
+    double zoom = webkit_web_view_get_zoom_level(WEBKIT_WEB_VIEW(self->webview_));
+    zoom = std::max(zoom - event->delta_y * 0.1, 0.01);
+    webkit_web_view_set_zoom_level(WEBKIT_WEB_VIEW(self->webview_), zoom);
   } else if (event->direction == GDK_SCROLL_UP) {
-    self->zoom_level_ = self->zoom_level_ + step;
+    self->stepZoom(+1);
   } else if (event->direction == GDK_SCROLL_DOWN) {
-    self->zoom_level_ = self->zoom_level_ - step;
+    self->stepZoom(-1);
   } else {
     return false;
   }
 
-  self->zoom_level_ = std::max(self->zoom_level_, 0.01);
-  webkit_web_view_set_zoom_level(WEBKIT_WEB_VIEW(self->webview_), self->zoom_level_);
   return true;
 }
 
-void WebView::getDomSnapshot(
-    std::string_view root_id,
-    std::function<void(std::string)> callback
-) const {
+WebView &
+WebView::getDomSnapshot(std::string_view root_id, std::function<void(std::string)> callback) {
   auto *cb_ptr = new std::function<void(std::string)>(std::move(callback));
 
   std::string js;
@@ -649,4 +641,37 @@ void WebView::getDomSnapshot(
       },
       cb_ptr
   );
+
+  return *this;
+}
+
+namespace {
+constexpr int BASE_FONT_SIZE = 12;
+constexpr int SCINTILLA_MIN_OFFSET = -10;
+constexpr int SCINTILLA_MAX_OFFSET = 20;
+}  // namespace
+
+WebView &WebView::resetZoom() {
+  double zoom = 1.0;
+  if (context_ && context_->preview_config_) {
+    zoom = context_->preview_config_->get<double>("preview_zoom_default", 1.0);
+  }
+  return setZoom(zoom);
+}
+
+WebView &WebView::setZoom(double zoom) {
+  constexpr double min_factor =
+      static_cast<double>(std::max(BASE_FONT_SIZE + SCINTILLA_MIN_OFFSET, 1)) / BASE_FONT_SIZE;
+  constexpr double max_factor =
+      static_cast<double>(BASE_FONT_SIZE + SCINTILLA_MAX_OFFSET) / BASE_FONT_SIZE;
+
+  zoom = std::clamp(zoom, min_factor, max_factor);
+  webkit_web_view_set_zoom_level(WEBKIT_WEB_VIEW(webview_), zoom);
+  return *this;
+}
+
+WebView &WebView::stepZoom(int step) {
+  double zoom_step = static_cast<double>(step) / BASE_FONT_SIZE;
+  double zoom = webkit_web_view_get_zoom_level(WEBKIT_WEB_VIEW(webview_));
+  return setZoom(zoom + zoom_step);
 }
