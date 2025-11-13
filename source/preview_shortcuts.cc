@@ -11,6 +11,7 @@
 #include <sstream>
 #include <string>
 
+#include <Scintilla.h>  // for SCI_* messages
 #include <gtk/gtk.h>
 #include <keybindings.h>
 #include <msgwindow.h>
@@ -336,6 +337,136 @@ PreviewShortcuts::PreviewShortcuts(PreviewContext *context)
         shortcut_defs_[i].label,
         shortcut_defs_[i].tooltip,
         nullptr /* user_data unused here */
+    );
+  }
+}
+
+namespace {
+
+constexpr int BASE_FONT_SIZE = 12;
+constexpr int SCINTILLA_MIN_OFFSET = -10;
+constexpr int SCINTILLA_MAX_OFFSET = 20;
+
+inline double scintillaToWebkit(int offset) {
+  int effectiveSize = std::max(BASE_FONT_SIZE + offset, 1);
+  return static_cast<double>(effectiveSize) / BASE_FONT_SIZE;
+}
+
+inline int webkitToScintilla(double factor) {
+  return static_cast<int>(std::round(BASE_FONT_SIZE * factor)) - BASE_FONT_SIZE;
+}
+
+inline void applyWebkitZoomStep(GtkWidget *widget, int step) {
+  double current = webkit_web_view_get_zoom_level(WEBKIT_WEB_VIEW(widget));
+  int offset = webkitToScintilla(current);
+  int newOffset = std::clamp(offset + step, SCINTILLA_MIN_OFFSET, SCINTILLA_MAX_OFFSET);
+  double newFactor = scintillaToWebkit(newOffset);
+  webkit_web_view_set_zoom_level(WEBKIT_WEB_VIEW(widget), newFactor);
+}
+
+inline double clampWebkitZoom(double factor) {
+  double minFactor = scintillaToWebkit(SCINTILLA_MIN_OFFSET);
+  double maxFactor = scintillaToWebkit(SCINTILLA_MAX_OFFSET);
+  return std::clamp(factor, minFactor, maxFactor);
+}
+
+}  // anonymous namespace
+
+void PreviewShortcuts::onZoomInWv(guint) {
+  if (!preview_context || !preview_context->webview_) {
+    return;
+  }
+
+  // Always zoom the Preview only
+  applyWebkitZoomStep(preview_context->webview_->widget(), +1);
+}
+
+void PreviewShortcuts::onZoomOutWv(guint) {
+  if (!preview_context || !preview_context->webview_) {
+    return;
+  }
+
+  // Always zoom the Preview only
+  applyWebkitZoomStep(preview_context->webview_->widget(), -1);
+}
+
+void PreviewShortcuts::onResetZoomWv(guint) {
+  if (!preview_context || !preview_context->webview_) {
+    return;
+  }
+
+  int default_percent = preview_context->preview_config_->get<int>("preview_zoom_default", 100);
+  double zoom_level = std::max(default_percent / 100.0, 0.01);
+  zoom_level = clampWebkitZoom(zoom_level);
+
+  // Always reset the Preview only
+  webkit_web_view_set_zoom_level(
+      WEBKIT_WEB_VIEW(preview_context->webview_->widget()), zoom_level
+  );
+}
+
+void PreviewShortcuts::onZoomInBoth(guint) {
+  if (!preview_context) {
+    return;
+  }
+  bool sync = preview_context->preview_config_->get<bool>("preview_zoom_sync", false);
+
+  GeanyDocument *doc = document_get_current();
+  ScintillaObject *sci = (DOC_VALID(doc) && doc->editor) ? doc->editor->sci : nullptr;
+
+  if (sync && sci) {
+    scintilla_send_message(sci, SCI_ZOOMIN, 0, 0);
+    applyWebkitZoomStep(preview_context->webview_->widget(), +1);
+  } else if (sci && gtk_widget_has_focus(GTK_WIDGET(sci))) {
+    scintilla_send_message(sci, SCI_ZOOMIN, 0, 0);
+  } else if (gtk_widget_has_focus(preview_context->webview_->widget())) {
+    applyWebkitZoomStep(preview_context->webview_->widget(), +1);
+  }
+}
+
+void PreviewShortcuts::onZoomOutBoth(guint) {
+  if (!preview_context) {
+    return;
+  }
+  bool sync = preview_context->preview_config_->get<bool>("preview_zoom_sync", false);
+
+  GeanyDocument *doc = document_get_current();
+  ScintillaObject *sci = (DOC_VALID(doc) && doc->editor) ? doc->editor->sci : nullptr;
+
+  if (sync && sci) {
+    scintilla_send_message(sci, SCI_ZOOMOUT, 0, 0);
+    applyWebkitZoomStep(preview_context->webview_->widget(), -1);
+  } else if (sci && gtk_widget_has_focus(GTK_WIDGET(sci))) {
+    scintilla_send_message(sci, SCI_ZOOMOUT, 0, 0);
+  } else if (gtk_widget_has_focus(preview_context->webview_->widget())) {
+    applyWebkitZoomStep(preview_context->webview_->widget(), -1);
+  }
+}
+
+void PreviewShortcuts::onResetZoomBoth(guint) {
+  if (!preview_context || !preview_context->webview_) {
+    return;
+  }
+
+  bool sync = preview_context->preview_config_->get<bool>("preview_zoom_sync", false);
+
+  int default_percent = preview_context->preview_config_->get<int>("preview_zoom_default", 100);
+  double zoom_level = std::max(default_percent / 100.0, 0.01);
+  zoom_level = clampWebkitZoom(zoom_level);
+
+  GeanyDocument *doc = document_get_current();
+  ScintillaObject *sci = (DOC_VALID(doc) && doc->editor) ? doc->editor->sci : nullptr;
+
+  if (sync && sci) {
+    scintilla_send_message(sci, SCI_SETZOOM, 0, 0);
+    webkit_web_view_set_zoom_level(
+        WEBKIT_WEB_VIEW(preview_context->webview_->widget()), zoom_level
+    );
+  } else if (sci && gtk_widget_has_focus(GTK_WIDGET(sci))) {
+    scintilla_send_message(sci, SCI_SETZOOM, 0, 0);
+  } else if (gtk_widget_has_focus(preview_context->webview_->widget())) {
+    webkit_web_view_set_zoom_level(
+        WEBKIT_WEB_VIEW(preview_context->webview_->widget()), zoom_level
     );
   }
 }

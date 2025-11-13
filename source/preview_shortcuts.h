@@ -40,6 +40,14 @@ class PreviewShortcuts {
   static void onOpenTerminal(guint /*key_id*/);
   static void onOpenFileManager(guint /*key_id*/);
 
+  static void onZoomInWv(guint /*key_id*/);
+  static void onZoomOutWv(guint /*key_id*/);
+  static void onResetZoomWv(guint /*key_id*/);
+
+  static void onZoomInBoth(guint /*key_id*/);
+  static void onZoomOutBoth(guint /*key_id*/);
+  static void onResetZoomBoth(guint /*key_id*/);
+
   struct ShortcutDef {
     const char *label;
     const char *tooltip;
@@ -48,75 +56,75 @@ class PreviewShortcuts {
 
   // clang-format off
   inline static const ShortcutDef shortcut_defs_[] = {
-    { "Copy in Preview (1)",
+    { "Copy (Preview) (1)",
       "Copy selected text in Editor or Preview",
       onCopy },
 
-    { "Copy in Preview (2)",
+    { "Copy (Preview) (2)",
       "Extra copy shortcut (1).",
       onCopy },
 
-    { "Copy in Preview (3)",
+    { "Copy (Preview) (3)",
       "Extra copy shortcut (2)",
       onCopy },
 
-    { "Cut in Preview (1)",
+    { "Cut (Preview) (1)",
       "Cut selected text in Editor or Preview",
       onCut },
 
-    { "Cut in Preview (2)",
+    { "Cut (Preview) (2)",
       "Extra cut shortcut (1)",
       onCut },
 
-    { "Cut in Preview (3)",
+    { "Cut (Preview) (3)",
       "Extra cut shortcut (2)",
       onCut },
 
-    { "Paste in Preview (1)",
+    { "Paste (Preview) (1)",
       "Paste selected text in the Editor or Preview",
       onPaste },
 
-    { "Paste in Preview (2)",
+    { "Paste (Preview) (2)",
       "Extra paste shortcut (1)",
       onPaste },
 
-    { "Paste in Preview (3)",
+    { "Paste (Preview) (3)",
       "Extra paste shortcut (2)",
       onPaste },
 
-    { "Find in Editor or Preview",
+    { "Find (Editor + Preview)",
       "Open find prompt for Editor or Preview",
       onFind },
 
-    { "Find in Preview",
+    { "Find (Preview)",
       "Open find prompt for Preview only",
       onFindWv },
 
-    { "Find Next in Editor or Preview",
+    { "Find Next (Editor + Preview)",
       "Find next match in Editor or Preview",
       onFindNext },
 
-    { "Find Next in Preview",
+    { "Find Next (Preview)",
       "Find next match in Preview only",
       onFindNextWv },
 
-    { "Find Previous in Editor or Preview",
+    { "Find Previous (Editor + Preview)",
       "Find previous match in Editor or Preview",
       onFindPrev },
 
-    { "Find Previous in Preview",
+    { "Find Previous (Preview)",
       "Find previous match in Preview only",
       onFindPrevWv },
 
-    { "Focus Preview",
+    { "Focus (Preview)",
       "Focus on Preview",
       onFocusPreview },
 
-    { "Focus Preview or Editor",
+    { "Focus (Preview + Editor)",
       "Toggle focus between Preview and Editor",
       onFocusPreviewEditor },
 
-    { "Focus Sidebar or Editor",
+    { "Focus (Sidebar + Editor)",
       "Toggle focus between Sidebar and Editor",
       onFocusSidebarEditor },
 
@@ -127,6 +135,30 @@ class PreviewShortcuts {
     { "Open File Manager",
       "Open File Manager at file location",
       onOpenFileManager },
+
+    { "Zoom In (Preview)",
+      "Zoom In for Preview only",
+      onZoomInWv },
+
+    { "Zoom Out (Preview)",
+      "Zoom Out for Preview only",
+      onZoomOutWv },
+
+    { "Zoom Reset (Preview)",
+      "Zoom Reset for Preview only",
+      onResetZoomWv },
+
+    { "Zoom In (Preview + Editor)",
+      "Zoom In for Editor or Preview",
+      onZoomInBoth },
+
+    { "Zoom Out (Preview + Editor)",
+      "Zoom Out for Editor or Preview",
+      onZoomOutBoth },
+
+    { "Zoom Reset (Preview + Editor)",
+      "Zoom Reset for Editor or Preview",
+      onResetZoomBoth },
 
     { nullptr, nullptr, nullptr },
   };

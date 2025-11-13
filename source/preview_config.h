@@ -98,6 +98,10 @@ class PreviewConfig {
       setting_value_type{ 100 },
       "Default zoom level (%) for the preview pane." },
 
+    { "preview_zoom_sync",
+      setting_value_type{ false },
+      "Synchronize zoom changes between Preview and Editor" },
+
     { "redetect_filetype_on_reload",
       setting_value_type{ false },
       "Re-detect file type when a document is reloaded. Normally only on open and save." },
