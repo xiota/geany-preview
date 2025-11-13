@@ -24,6 +24,8 @@ class TweakUiColumnMarkers {
       }
     }
 
+    context_->preview_config_->connectChanged([this]() { show(); });
+
     plugin_signal_connect(
         context_->geany_plugin_,
         nullptr,

@@ -57,6 +57,15 @@ PreviewPane::PreviewPane(PreviewContext *context)
   DocumentGeany document(document_get_current());
   initWebView(document);
 
+  preview_config_->connectChanged([this]() {
+    webview_.resetZoom();
+
+    if (GeanyDocument *doc = document_get_current()) {
+      DocumentGeany document(doc);
+      triggerUpdate(document);
+    }
+  });
+
   init_handler_id_ = g_signal_connect(
       webview_.widget(),
       "load-changed",

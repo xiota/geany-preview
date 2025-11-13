@@ -4,6 +4,7 @@
 #pragma once
 
 #include <filesystem>
+#include <functional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -188,7 +189,23 @@ class PreviewConfig {
     return config_path_;
   }
 
+  // for change signal
+  using Callback = std::function<void()>;
+
+  void connectChanged(Callback cb) {
+    listeners_.push_back(std::move(cb));
+  }
+
  private:
+  // for change signal
+  std::vector<Callback> listeners_;
+
+  void emitChanged() {
+    for (auto &cb : listeners_) {
+      cb();
+    }
+  }
+
   void onDialogResponse(GtkDialog *dialog, gint response_id);
   GtkListStore *createConfigModel();
   GtkTreeView *createConfigTreeView(GtkListStore *store);

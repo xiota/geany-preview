@@ -21,6 +21,10 @@ class TweakUiAutoSetPwd {
       return;
     }
 
+    context_->preview_config_->connectChanged([this]() {
+      documentSignal(nullptr, nullptr, this);
+    });
+
     // Hook into document activation (fires on open/new/switch)
     plugin_signal_connect(
         context_->geany_plugin_,
@@ -35,11 +39,16 @@ class TweakUiAutoSetPwd {
  private:
   static void documentSignal(GObject *, GeanyDocument *doc, gpointer user_data) {
     auto *self = static_cast<TweakUiAutoSetPwd *>(user_data);
-    if (!DOC_VALID(doc) || !self->context_ || !self->context_->preview_config_) {
+    if (!self->context_ || !self->context_->preview_config_) {
       return;
     }
     if (!self->context_->preview_config_->get<bool>("auto_set_pwd", false)) {
       return;
+    }
+
+    if (!DOC_VALID(doc)) {
+      doc = document_get_current();
+      g_return_if_fail(DOC_VALID(doc));
     }
 
     if (doc->real_path) {

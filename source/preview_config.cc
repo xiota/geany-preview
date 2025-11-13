@@ -318,12 +318,14 @@ bool PreviewConfig::save() const {
 void PreviewConfig::onDialogResponse(GtkDialog *dialog, gint response_id) {
   switch (response_id) {
     case GTK_RESPONSE_APPLY:
-      save();
-      break;
+      [[fallthrough]];
     case GTK_RESPONSE_OK:
-      save();
+      if (save()) {
+        emitChanged();
+      }
       break;
     case GTK_RESPONSE_CANCEL:
+      [[fallthrough]];
     case GTK_RESPONSE_CLOSE:
       break;
   }
