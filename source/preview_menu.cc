@@ -150,7 +150,7 @@ void PreviewMenu::onOpenConfigFolder(GtkMenuItem *, gpointer user_data) {
   std::string cmd = "xdg-open \"" + path.string() + "\"";
 
   if (!Subprocess::runAsync(cmd)) {
-    msgwin_status_add("Preview: No suitable terminal found.");
+    msgwin_status_add("Preview: Cannot open config folder.");
     return;
   }
 }
