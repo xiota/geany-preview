@@ -63,8 +63,6 @@ class DocumentLocal final : public Document {
     }
 
     text_cache_ = FileUtils::readFileToString(file_path_);
-    if (text_cache_.empty()) {
-    }
   }
 
   std::string file_path_;
