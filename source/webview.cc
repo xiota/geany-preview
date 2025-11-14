@@ -107,8 +107,6 @@ WebView &WebView::loadHtml(
     std::string_view root_id,
     double *scroll_fraction_ptr
 ) {
-  constexpr auto kDefaultBaseUri = "file:///example/example.html";
-
   double fraction = scroll_fraction_ptr ? *scroll_fraction_ptr : internal_scroll_fraction_;
   fraction = std::clamp(fraction, 0.0, 1.0);
 
@@ -120,20 +118,10 @@ WebView &WebView::loadHtml(
       "<script>" +
       std::string(kApplyPatchJS) + "</script>";
 
-  if (!base_uri.empty()) {
-    head += "<base href=\"" + StringUtils::escapeHtml(base_uri) + "\">";
-  } else {
-    head += "<base href=\"" + StringUtils::escapeHtml(kDefaultBaseUri) + "\">";
-  }
-
   std::string html = head + "</head><body><div id=\"" + StringUtils::escapeHtml(root_id) +
                      "\">" + std::string(body_content) + "</div></body></html>";
 
-  webkit_web_view_load_html(
-      WEBKIT_WEB_VIEW(webview_),
-      html.c_str(),
-      base_uri.empty() ? kDefaultBaseUri : base_uri.c_str()
-  );
+  webkit_web_view_load_html(WEBKIT_WEB_VIEW(webview_), html.c_str(), base_uri.c_str());
 
   setScrollFraction(fraction);
   return *this;

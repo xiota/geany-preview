@@ -8,6 +8,7 @@
 #include <fstream>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <gtk/gtk.h>
 #include <webkit2/webkit2.h>
@@ -22,6 +23,7 @@
 #include "util/file_utils.h"
 #include "util/gtk_utils.h"
 #include "util/string_utils.h"
+#include "util/xdg_utils.h"
 #include "webview.h"
 
 PreviewPane::PreviewPane(PreviewContext *context)
@@ -59,7 +61,6 @@ PreviewPane::PreviewPane(PreviewContext *context)
 
   preview_config_->connectChanged([this]() {
     webview_.resetZoom();
-
     if (GeanyDocument *doc = document_get_current()) {
       DocumentGeany document(doc);
       triggerUpdate(document);
@@ -403,21 +404,42 @@ std::string PreviewPane::generateHtml(const Document &document) const {
   }
 }
 
-std::string PreviewPane::calculateBaseUri(const Document &document) const {
-  const auto file_path = std::filesystem::path(document.filePath()).lexically_normal();
-  if (file_path.empty()) {
-    return {};
+namespace {
+std::string toUri(const std::filesystem::path &path, const std::string &fallback) {
+  std::filesystem::path p = path;
+  if (!p.is_absolute()) {
+    p = std::filesystem::path("/") / p;
   }
+  p /= "";
+  std::string normalized = p.lexically_normal().string();
 
-  // Properly escaped file:// URI
-  if (gchar *uri = g_filename_to_uri(file_path.string().c_str(), nullptr, nullptr)) {
+  gchar *uri = g_filename_to_uri(normalized.c_str(), nullptr, nullptr);
+  if (uri) {
     std::string out(uri);
     g_free(uri);
-    return out;
+    return out.empty() ? fallback : out;
+  }
+  return fallback;
+}
+}  // namespace
+
+std::string PreviewPane::calculateBaseUri(const Document &document) const {
+  std::string config_path = preview_config_->get<std::string>("preview_base_path", "sandbox");
+  config_path = config_path.empty() ? "sandbox" : XdgUtils::expandEnvVars(config_path);
+
+  std::string default_base_uri = toUri(config_path, "file:///sandbox/");
+
+  auto file_path = std::filesystem::path(document.filePath()).lexically_normal();
+  if (file_path.empty()) {
+    return default_base_uri;
   }
 
-  // Fallback (unescaped)
-  return "file://" + file_path.string();
+  auto dir_path = file_path.parent_path();
+  if (dir_path.empty()) {
+    return default_base_uri;
+  }
+
+  return toUri(dir_path, default_base_uri);
 }
 
 PreviewPane &PreviewPane::update(const Document &document) {

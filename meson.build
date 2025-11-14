@@ -109,6 +109,7 @@ src_files = files(
   'source/preview_shortcuts.cc',
   'source/subprocess.cc',
   'source/util/gtk_utils.cc',
+  'source/util/xdg_utils.cc',
   'source/webview.cc',
 )
 

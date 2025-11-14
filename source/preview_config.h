@@ -91,6 +91,10 @@ class PreviewConfig {
       setting_value_type{ true },
       "Deselect the previous highlight by single click." },
 
+    { "preview_base_path",
+      setting_value_type{ std::string{ "sandbox" } },
+      "Base path for preview pane resources. Supports variable expansion ($PWD, $HOME, $XDG_DOCUMENTS_DIR)." },
+
     { "preview_zoom_default",
       setting_value_type{ 1.0 },
       "Default zoom level for the preview pane.  (1.0 = 100%)" },
