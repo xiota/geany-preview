@@ -24,8 +24,8 @@ class Subprocess {
   ~Subprocess() noexcept = default;
 
   // Non-copyable, non-movable
-  Subprocess(const Subprocess &) noexcept = delete;
-  Subprocess &operator=(const Subprocess &) noexcept = delete;
+  Subprocess(const Subprocess &) = delete;
+  Subprocess &operator=(const Subprocess &) = delete;
 
   static bool commandExists(std::string_view binary) noexcept;
 
