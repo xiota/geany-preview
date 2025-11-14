@@ -3,8 +3,10 @@
 
 #pragma once
 
-#include <stdlib.h>  // setenv
+#include <filesystem>
 #include <string>
+
+#include <stdlib.h>  // setenv
 #include <unistd.h>  // chdir
 
 #include <glib.h>
@@ -61,15 +63,12 @@ class TweakUiAutoSetPwd {
       return;
     }
 
-    std::string dir = g_path_get_dirname(path);
+    std::filesystem::path fsPath(path);
+    std::filesystem::path dir = fsPath.parent_path();
+
     // Walk up until we find an existing directory
-    while (!dir.empty() && access(dir.c_str(), F_OK) != 0) {
-      auto pos = dir.find_last_of('/');
-      if (pos == std::string::npos) {
-        dir.clear();
-      } else {
-        dir = dir.substr(0, pos);
-      }
+    while (!dir.empty() && !std::filesystem::exists(dir)) {
+      dir = dir.parent_path();
     }
 
     if (!dir.empty()) {
