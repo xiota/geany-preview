@@ -15,7 +15,17 @@
 
 class PreviewConfig {
  public:
-  // Expanded to support vectors of ints and strings
+  explicit PreviewConfig(
+      const std::filesystem::path &config_path,
+      std::string_view config_file
+  );
+
+  PreviewConfig(const PreviewConfig &) = delete;
+  PreviewConfig &operator=(const PreviewConfig &) = delete;
+  PreviewConfig(PreviewConfig &&) = delete;
+  PreviewConfig &operator=(PreviewConfig &&) = delete;
+
+ private:
   using setting_value_type =
       std::variant<int, double, bool, std::string, std::vector<int>, std::vector<std::string> >;
 
@@ -153,13 +163,9 @@ class PreviewConfig {
   };
   // clang-format on
 
+ public:
   std::unordered_map<std::string, setting_value_type> settings_;
   std::unordered_map<std::string, std::string> help_texts_;
-
-  explicit PreviewConfig(
-      const std::filesystem::path &config_path,
-      std::string_view config_file
-  );
 
   bool load();
   bool save() const;
@@ -178,8 +184,8 @@ class PreviewConfig {
   }
 
   template <typename T>
-  void set(const std::string &key, T value) {
-    settings_[key] = std::move(value);
+  void set(const std::string &key, const T &value) {
+    settings_[key] = value;
   }
 
   std::string getHelp(const std::string &key) const {
