@@ -118,7 +118,7 @@ WebView &WebView::loadHtml(
     std::string_view root_id,
     double *scroll_fraction_ptr
 ) {
-  double fraction = scroll_fraction_ptr ? *scroll_fraction_ptr : internal_scroll_fraction_;
+  double fraction = scroll_fraction_ptr ? *scroll_fraction_ptr : 0.0;
   fraction = std::clamp(fraction, 0.0, 1.0);
 
   std::string head =
@@ -144,7 +144,7 @@ WebView &WebView::updateHtml(
     std::string_view root_id,
     double *scroll_fraction_ptr
 ) {
-  double fraction = scroll_fraction_ptr ? *scroll_fraction_ptr : internal_scroll_fraction_;
+  double fraction = scroll_fraction_ptr ? *scroll_fraction_ptr : 0.0;
   fraction = std::clamp(fraction, 0.0, 1.0);
 
   std::string escaped = escapeForJsTemplateLiteral(body_content);

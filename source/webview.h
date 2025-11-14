@@ -86,5 +86,4 @@ class WebView final {
   GtkWidget *webview_ = nullptr;
   WebKitWebContext *webview_context_ = nullptr;
   WebKitUserContentManager *webview_content_manager_ = nullptr;
-  mutable double internal_scroll_fraction_ = 0.0;
 };
