@@ -20,6 +20,6 @@ class ConverterMd4c final : public Converter {
 
  private:
   // Keeps the buffer alive until the next toHtml() call
-  mutable std::unique_ptr<std::string> html_owner_;
-  mutable std::string_view html_view_;
+  std::unique_ptr<std::string> html_owner_;
+  std::string_view html_view_;
 };
