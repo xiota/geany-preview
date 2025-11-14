@@ -17,6 +17,7 @@
 #include "converter_registrar.h"
 #include "default_css.h"
 #include "document_geany.h"
+#include "document_local.h"
 #include "preview_config.h"
 #include "preview_context.h"
 #include "renderers_pdf.h"
@@ -38,8 +39,6 @@ PreviewPane::PreviewPane(PreviewContext *context)
   gtk_widget_show(offscreen_);
 
   if (GTK_IS_NOTEBOOK(sidebar_notebook_)) {
-    gtk_box_pack_start(GTK_BOX(page_box_), webview_.widget(), true, true, 0);
-
     sidebar_page_number_ = gtk_notebook_append_page(
         GTK_NOTEBOOK(sidebar_notebook_), page_box_, gtk_label_new("Preview")
     );
@@ -56,43 +55,35 @@ PreviewPane::PreviewPane(PreviewContext *context)
   addWatchIfNeeded(preview_config_->configDir() / "preview.css");
   addWatchIfNeeded(preview_config_->configDir() / (previous_key_ + ".css"));
 
-  DocumentGeany document(document_get_current());
-  initWebView(document);
+  // initial webview
+  webview_.reset();
+  connectWebViewSignals();
 
+  DocumentLocal local_doc("/somewhere-out-there/over-the-rainbow.ftn");
+  initWebView(local_doc);
+
+  if (GeanyDocument *doc = document_get_current()) {
+    DocumentGeany document(doc);
+    triggerUpdate(document);
+  }
+
+  safeReparentWebView(page_box_, true);
+
+  // config callback
   preview_config_->connectChanged([this]() {
-    webview_.resetZoom();
+    webview_.reset();
+    connectWebViewSignals();
+
+    DocumentLocal local_doc("/somewhere-out-there/over-the-rainbow.ftn");
+    initWebView(local_doc);
+
     if (GeanyDocument *doc = document_get_current()) {
       DocumentGeany document(doc);
       triggerUpdate(document);
     }
+
+    safeReparentWebView(page_box_, true);
   });
-
-  init_handler_id_ = g_signal_connect(
-      webview_.widget(),
-      "load-changed",
-      G_CALLBACK(+[](WebKitWebView *, WebKitLoadEvent e, gpointer user_data) {
-        auto *self = static_cast<PreviewPane *>(user_data);
-
-        if (e == WEBKIT_LOAD_FINISHED) {
-          self->scheduleUpdate();
-          g_signal_handler_disconnect(self->webview_.widget(), self->init_handler_id_);
-          self->init_handler_id_ = 0;
-        }
-      }),
-      this
-  );
-
-  g_signal_connect(
-      webview_.widget(),
-      "load-changed",
-      G_CALLBACK(+[](WebKitWebView *, WebKitLoadEvent e, gpointer user_data) {
-        auto *self = static_cast<PreviewPane *>(user_data);
-        if (e == WEBKIT_LOAD_FINISHED) {
-          self->checkHealth();
-        }
-      }),
-      this
-  );
 
   sidebar_switch_page_handler_id_ = g_signal_connect(
       sidebar_notebook_,
@@ -103,7 +94,7 @@ PreviewPane::PreviewPane(PreviewContext *context)
             DocumentGeany document(document_get_current());
 
             if (page == self->page_box_) {
-              self->safeReparentWebView_(self->page_box_, true);
+              self->safeReparentWebView(self->page_box_, true);
               self->triggerUpdate(document);
             } else {
               int w = gtk_widget_get_allocated_width(self->page_box_);
@@ -111,7 +102,7 @@ PreviewPane::PreviewPane(PreviewContext *context)
               if (w > 0 && h > 0) {
                 gtk_window_resize(GTK_WINDOW(self->offscreen_), w, h);
               }
-              self->safeReparentWebView_(self->offscreen_, false);
+              self->safeReparentWebView(self->offscreen_, false);
             }
           }
       ),
@@ -165,6 +156,34 @@ PreviewPane &PreviewPane::initWebView(const Document &document) {
 
   triggerUpdate(document);
   return *this;
+}
+
+void PreviewPane::connectWebViewSignals() {
+  init_handler_id_ = g_signal_connect(
+      webview_.widget(),
+      "load-changed",
+      G_CALLBACK(+[](WebKitWebView *, WebKitLoadEvent e, gpointer user_data) {
+        auto *self = static_cast<PreviewPane *>(user_data);
+        if (e == WEBKIT_LOAD_FINISHED) {
+          self->scheduleUpdate();
+          g_signal_handler_disconnect(self->webview_.widget(), self->init_handler_id_);
+          self->init_handler_id_ = 0;
+        }
+      }),
+      this
+  );
+
+  g_signal_connect(
+      webview_.widget(),
+      "load-changed",
+      G_CALLBACK(+[](WebKitWebView *, WebKitLoadEvent e, gpointer user_data) {
+        auto *self = static_cast<PreviewPane *>(user_data);
+        if (e == WEBKIT_LOAD_FINISHED) {
+          self->checkHealth();
+        }
+      }),
+      this
+  );
 }
 
 PreviewPane &PreviewPane::checkHealth() {
@@ -337,7 +356,7 @@ bool PreviewPane::canPreviewFile(const Document &doc) const {
   return !registrar_.getConverterKey(doc).empty();
 }
 
-void PreviewPane::safeReparentWebView_(GtkWidget *new_parent, bool pack_into_box) {
+void PreviewPane::safeReparentWebView(GtkWidget *new_parent, bool pack_into_box) {
   GtkWidget *wv = webview_.widget();
   if (!GTK_IS_WIDGET(new_parent) || !GTK_IS_WIDGET(wv)) {
     return;

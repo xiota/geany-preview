@@ -37,7 +37,8 @@ class PreviewPane final {
   bool canPreviewFile(const Document &doc) const;
 
  private:
-  void safeReparentWebView_(GtkWidget *new_parent, bool pack_into_box);
+  void connectWebViewSignals();
+  void safeReparentWebView(GtkWidget *new_parent, bool pack_into_box);
   std::string generateHtml(const Document &document) const;
   std::string calculateBaseUri(const Document &document) const;
   PreviewPane &update(const Document &document);

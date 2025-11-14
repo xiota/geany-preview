@@ -51,8 +51,19 @@ function applyPatch(newHtml, root_id) {
 
 }  // namespace
 
-WebView::WebView(PreviewContext *context) noexcept
-    : context_(context), webview_settings_(webkit_settings_new()) {
+WebView::WebView(PreviewContext *context) noexcept : context_(context) {}
+
+void WebView::reset() {
+  if (GTK_IS_WIDGET(webview_)) {
+    gtk_widget_destroy(webview_);
+    webview_ = nullptr;
+  }
+  if (G_IS_OBJECT(webview_settings_)) {
+    g_object_unref(webview_settings_);
+    webview_settings_ = nullptr;
+  }
+
+  webview_settings_ = webkit_settings_new();
   webkit_settings_set_allow_file_access_from_file_urls(webview_settings_, true);
   webkit_settings_set_allow_universal_access_from_file_urls(webview_settings_, true);
 

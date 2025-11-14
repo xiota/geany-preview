@@ -21,6 +21,7 @@ class WebView final {
   ~WebView() noexcept;
 
   GtkWidget *widget() const;
+  void reset();
 
   WebView &injectPatcher();
   WebView &loadHtml(
