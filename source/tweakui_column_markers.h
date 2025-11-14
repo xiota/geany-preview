@@ -76,7 +76,7 @@ class TweakUiColumnMarkers {
 
     const auto count = std::min(cols.size(), colors.size());
 
-    scintilla_send_message(doc->editor->sci, SCI_SETEDGEMODE, 3, 3);
+    scintilla_send_message(doc->editor->sci, SCI_SETEDGEMODE, EDGE_MULTILINE, 0);
     scintilla_send_message(doc->editor->sci, SCI_MULTIEDGECLEARALL, 0, 0);
 
     for (size_t i = 0; i < count; ++i) {
