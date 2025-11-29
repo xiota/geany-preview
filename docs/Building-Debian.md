@@ -2,7 +2,7 @@
 
 ## Building on Debian or Ubuntu
 
-1. Open a terminal in a clean working directory.
+1. Open a terminal in a new empty working directory.
 
 2. (optional) Update the system.
 
@@ -18,19 +18,28 @@
     cd geany-preview
     ```
 
-4. Install dependencies, listed in `debian/control`.
+4. (optional) If rebuilding, can start by updating the source, skipping earlier steps.
+
+    ```
+    cd geany-preview
+    git clean -fdx
+    git reset --hard
+    git pull
+    ```
+
+5. Install dependencies.  The following command, as written, collects and installs them from `debian/control`.
 
     ```
     sudo apt-get build-dep ./
     ```
 
-5. Build the package.
+6. Build the package.
 
     ```
     dpkg-buildpackage -us -uc
     ```
 
-6. Install the package.
+7. Install the package.  The following command assumes starting with a clean working directory (step 1).  If rebuiding from updated source (step 4), use the exact filename of the `.deb` that was just built.
 
     ```
     sudo apt install ../geany-plugin-preview_*.deb
