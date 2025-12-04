@@ -103,7 +103,9 @@ class PreviewConfig {
 
     { "preview_base_path",
       setting_value_type{ std::string{ "sandbox" } },
-      "Base path for preview pane resources. Supports variable expansion ($PWD, $HOME, $XDG_DOCUMENTS_DIR)." },
+      "Base path for preview pane resources. "
+      "Affects interpretation of relative links. "
+      "Supports variable expansion ($PWD, $HOME, $XDG_DOCUMENTS_DIR)." },
 
     { "preview_zoom_default",
       setting_value_type{ 1.0 },
