@@ -23,35 +23,32 @@ class TweakUiFocusEditorOnRaise {
       return;
     }
 
-    g_signal_connect(geany_window, "focus-in-event", G_CALLBACK(onFocusIn), this);
+    g_signal_connect(geany_window, "notify::is-active", G_CALLBACK(onWindowActive), this);
   }
 
  private:
-  static gboolean onFocusIn(GtkWidget *, GdkEventFocus *, gpointer user_data) {
+  static void onWindowActive(GObject *object, GParamSpec *, gpointer user_data) {
     auto *self = static_cast<TweakUiFocusEditorOnRaise *>(user_data);
 
     if (!self->context_ || !self->context_->preview_config_) {
-      return false;
+      return;
     }
 
     if (!self->context_->preview_config_->get<bool>("focus_editor_on_raise", false)) {
-      return false;
+      return;
     }
 
-    while (gtk_events_pending()) {
-      gtk_main_iteration();
+    GtkWindow *window = GTK_WINDOW(object);
+    if (gtk_window_is_active(window)) {
+      g_timeout_add(
+          100,
+          [](gpointer) -> gboolean {
+            keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
+            return G_SOURCE_REMOVE;
+          },
+          nullptr
+      );
     }
-
-    g_timeout_add(
-        100,
-        [](gpointer) -> gboolean {
-          keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
-          return G_SOURCE_REMOVE;
-        },
-        nullptr
-    );
-
-    return false;
   }
 
   PreviewContext *context_ = nullptr;
