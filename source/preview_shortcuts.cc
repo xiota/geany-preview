@@ -71,10 +71,50 @@ std::string pickCommandForDe(const std::string &de, const DeCommand *cmds) {
   return {};
 }
 
+bool isPreviewVisible() {
+  if (!preview_context || !preview_context->preview_pane_) {
+    return false;
+  }
+
+  GtkWidget *preview = preview_context->preview_pane_->widget();
+  GtkWidget *sidebar = preview_context->geany_sidebar_;
+  if (!preview || !sidebar || !GTK_IS_NOTEBOOK(sidebar)) {
+    return false;
+  }
+
+  return GtkUtils::isWidgetOnVisibleNotebookPage(GTK_NOTEBOOK(sidebar), preview);
+}
 }  // namespace
+
+PreviewShortcuts::PreviewShortcuts(PreviewContext *context)
+    : context_(context), key_group_(context_->geany_key_group_) {
+  // Stash context for callbacks
+  preview_context = context_;
+
+  for (gsize i = 0; i < std::size(shortcut_defs_); ++i) {
+    if (!shortcut_defs_[i].label) {
+      break;  // stop at dummy entry
+    }
+    keybindings_set_item(
+        key_group_,
+        i,
+        shortcut_defs_[i].callback,
+        0,  // no default key
+        static_cast<GdkModifierType>(0),
+        shortcut_defs_[i].label,
+        shortcut_defs_[i].tooltip,
+        nullptr /* user_data unused here */
+    );
+  }
+}
 
 void PreviewShortcuts::onFocusPreview(guint /*key_id*/) {
   if (!preview_context || !preview_context->preview_pane_) {
+    return;
+  }
+
+  GtkWidget *sidebar = preview_context->geany_sidebar_;
+  if (!sidebar || !gtk_widget_get_visible(sidebar)) {
     return;
   }
 
@@ -86,14 +126,17 @@ void PreviewShortcuts::onFocusPreview(guint /*key_id*/) {
 
 void PreviewShortcuts::onFocusPreviewEditor(guint /*key_id*/) {
   if (!preview_context || !preview_context->preview_pane_) {
-    keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
+    return;
+  }
+
+  GtkWidget *sidebar = preview_context->geany_sidebar_;
+  if (!sidebar || !gtk_widget_get_visible(sidebar)) {
     return;
   }
 
   GeanyDocument *doc = document_get_current();
   GtkWidget *sci = (doc && doc->editor) ? GTK_WIDGET(doc->editor->sci) : nullptr;
   GtkWidget *preview = preview_context->preview_pane_->widget();
-  GtkWidget *sidebar = preview_context->geany_sidebar_;
 
   const bool inEditor = sci && gtk_widget_has_focus(sci);
   const bool inPreview =
@@ -120,8 +163,12 @@ void PreviewShortcuts::onFocusPreviewEditor(guint /*key_id*/) {
 }
 
 void PreviewShortcuts::onFocusSidebarEditor(guint /*key_id*/) {
-  if (!preview_context || !preview_context->geany_sidebar_) {
-    keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
+  if (!preview_context) {
+    return;
+  }
+
+  GtkWidget *sidebar = preview_context->geany_sidebar_;
+  if (!sidebar || !gtk_widget_get_visible(sidebar)) {
     return;
   }
 
@@ -129,8 +176,7 @@ void PreviewShortcuts::onFocusSidebarEditor(guint /*key_id*/) {
   GtkWidget *sci = (doc && doc->editor) ? GTK_WIDGET(doc->editor->sci) : nullptr;
 
   const bool inEditor = sci && gtk_widget_has_focus(sci);
-  const bool inSidebar = preview_context->geany_sidebar_ &&
-                         GtkUtils::hasFocusWithin(preview_context->geany_sidebar_);
+  const bool inSidebar = GtkUtils::hasFocusWithin(sidebar);
 
   if (!inEditor && !inSidebar) {
     bool strict =
@@ -143,8 +189,8 @@ void PreviewShortcuts::onFocusSidebarEditor(guint /*key_id*/) {
     }
   }
 
-  if (inEditor && preview_context->geany_sidebar_) {
-    GtkUtils::activateNotebookPageForWidget(preview_context->geany_sidebar_);
+  if (inEditor && sidebar) {
+    GtkUtils::activateNotebookPageForWidget(sidebar);
     return;
   }
 
@@ -313,9 +359,14 @@ void PreviewShortcuts::onFindWv(guint /*key_id*/) {
     return;
   }
 
-  preview_context->webview_->showFindPrompt(
-      GTK_WINDOW(preview_context->geany_data_->main_widgets->window)
-  );
+  GtkWidget *preview = preview_context->preview_pane_->widget();
+  GtkWidget *sidebar = preview_context->geany_sidebar_;
+
+  if (isPreviewVisible()) {
+    preview_context->webview_->showFindPrompt(
+        GTK_WINDOW(preview_context->geany_data_->main_widgets->window)
+    );
+  }
 }
 
 void PreviewShortcuts::onFindNextWv(guint /*key_id*/) {
@@ -323,7 +374,9 @@ void PreviewShortcuts::onFindNextWv(guint /*key_id*/) {
     return;
   }
 
-  preview_context->webview_->findNext();
+  if (isPreviewVisible()) {
+    preview_context->webview_->findNext();
+  }
 }
 
 void PreviewShortcuts::onFindPrevWv(guint /*key_id*/) {
@@ -331,28 +384,8 @@ void PreviewShortcuts::onFindPrevWv(guint /*key_id*/) {
     return;
   }
 
-  preview_context->webview_->findPrevious();
-}
-
-PreviewShortcuts::PreviewShortcuts(PreviewContext *context)
-    : context_(context), key_group_(context_->geany_key_group_) {
-  // Stash context for callbacks
-  preview_context = context_;
-
-  for (gsize i = 0; i < std::size(shortcut_defs_); ++i) {
-    if (!shortcut_defs_[i].label) {
-      break;  // stop at dummy entry
-    }
-    keybindings_set_item(
-        key_group_,
-        i,
-        shortcut_defs_[i].callback,
-        0,  // no default key
-        static_cast<GdkModifierType>(0),
-        shortcut_defs_[i].label,
-        shortcut_defs_[i].tooltip,
-        nullptr /* user_data unused here */
-    );
+  if (isPreviewVisible()) {
+    preview_context->webview_->findPrevious();
   }
 }
 
@@ -361,7 +394,9 @@ void PreviewShortcuts::onZoomInWv(guint) {
     return;
   }
 
-  preview_context->webview_->stepZoom(+1);
+  if (isPreviewVisible()) {
+    preview_context->webview_->stepZoom(+1);
+  }
 }
 
 void PreviewShortcuts::onZoomOutWv(guint) {
@@ -369,7 +404,9 @@ void PreviewShortcuts::onZoomOutWv(guint) {
     return;
   }
 
-  preview_context->webview_->stepZoom(-1);
+  if (isPreviewVisible()) {
+    preview_context->webview_->stepZoom(-1);
+  }
 }
 
 void PreviewShortcuts::onResetZoomWv(guint) {
@@ -377,7 +414,9 @@ void PreviewShortcuts::onResetZoomWv(guint) {
     return;
   }
 
-  preview_context->webview_->resetZoom();
+  if (isPreviewVisible()) {
+    preview_context->webview_->resetZoom();
+  }
 }
 
 void PreviewShortcuts::onZoomInBoth(guint) {
