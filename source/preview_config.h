@@ -89,6 +89,10 @@ class PreviewConfig {
       setting_value_type{ 3 },
       "Max number of incomplete header lines before treating all as body." },
 
+    { "keybinding_behavior_strict",
+      setting_value_type{ false },
+      "Change focus only if editor or preview/sidebar is active; otherwise do nothing." },
+
     { "mark_word",
       setting_value_type{ false },
       "Mark all occurrences of a word when double-clicking it." },

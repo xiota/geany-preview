@@ -93,13 +93,22 @@ void PreviewShortcuts::onFocusPreviewEditor(guint /*key_id*/) {
   GeanyDocument *doc = document_get_current();
   GtkWidget *sci = (doc && doc->editor) ? GTK_WIDGET(doc->editor->sci) : nullptr;
   GtkWidget *preview = preview_context->preview_pane_->widget();
+  GtkWidget *sidebar = preview_context->geany_sidebar_;
 
   const bool inEditor = sci && gtk_widget_has_focus(sci);
-  const bool inPreview = preview && gtk_widget_has_focus(preview);
+  const bool inPreview =
+      preview && GtkUtils::hasFocusWithin(preview) && sidebar &&
+      GtkUtils::isWidgetOnVisibleNotebookPage(GTK_NOTEBOOK(sidebar), preview);
 
   if (!inEditor && !inPreview) {
-    keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
-    return;
+    bool strict =
+        preview_context->preview_config_->get<bool>("keybinding_behavior_strict", false);
+    if (strict) {
+      return;
+    } else {
+      keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
+      return;
+    }
   }
 
   if (inEditor && preview) {
@@ -120,12 +129,18 @@ void PreviewShortcuts::onFocusSidebarEditor(guint /*key_id*/) {
   GtkWidget *sci = (doc && doc->editor) ? GTK_WIDGET(doc->editor->sci) : nullptr;
 
   const bool inEditor = sci && gtk_widget_has_focus(sci);
-  const bool inSidebar =
-      preview_context->geany_sidebar_ && gtk_widget_has_focus(preview_context->geany_sidebar_);
+  const bool inSidebar = preview_context->geany_sidebar_ &&
+                         GtkUtils::hasFocusWithin(preview_context->geany_sidebar_);
 
   if (!inEditor && !inSidebar) {
-    keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
-    return;
+    bool strict =
+        preview_context->preview_config_->get<bool>("keybinding_behavior_strict", false);
+    if (strict) {
+      return;
+    } else {
+      keybindings_send_command(GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR);
+      return;
+    }
   }
 
   if (inEditor && preview_context->geany_sidebar_) {
