@@ -91,7 +91,7 @@ class PreviewConfig {
 
     { "keybinding_behavior_strict",
       setting_value_type{ false },
-      "Change focus only if editor or preview/sidebar is active; otherwise do nothing." },
+      "Change focus only if editor or preview/sidebar has focus; otherwise do nothing." },
 
     { "mark_word",
       setting_value_type{ false },
