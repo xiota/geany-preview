@@ -56,39 +56,39 @@ class PreviewShortcuts {
 
   // clang-format off
   inline static const ShortcutDef shortcut_defs_[] = {
-    { "Copy (Preview) (1)",
-      "Copy selected text in Editor or Preview",
+    { "Copy (Editor + Preview) (1)",
+      "Copy selected text from Editor or Preview",
       onCopy },
 
-    { "Copy (Preview) (2)",
+    { "Copy (Editor + Preview) (2)",
       "Extra copy shortcut (1).",
       onCopy },
 
-    { "Copy (Preview) (3)",
+    { "Copy (Editor + Preview) (3)",
       "Extra copy shortcut (2)",
       onCopy },
 
-    { "Cut (Preview) (1)",
-      "Cut selected text in Editor or Preview",
+    { "Cut (Editor + Preview) (1)",
+      "Cut selected text from Editor or Preview",
       onCut },
 
-    { "Cut (Preview) (2)",
+    { "Cut (Editor + Preview) (2)",
       "Extra cut shortcut (1)",
       onCut },
 
-    { "Cut (Preview) (3)",
+    { "Cut (Editor + Preview) (3)",
       "Extra cut shortcut (2)",
       onCut },
 
-    { "Paste (Preview) (1)",
-      "Paste selected text in the Editor or Preview",
+    { "Paste (Editor + Preview) (1)",
+      "Paste selected text into Editor or Preview",
       onPaste },
 
-    { "Paste (Preview) (2)",
+    { "Paste (Editor + Preview) (2)",
       "Extra paste shortcut (1)",
       onPaste },
 
-    { "Paste (Preview) (3)",
+    { "Paste (Editor + Preview) (3)",
       "Extra paste shortcut (2)",
       onPaste },
 
@@ -120,14 +120,6 @@ class PreviewShortcuts {
       "Focus on Preview",
       onFocusPreview },
 
-    { "Focus (Preview + Editor)",
-      "Toggle focus between Preview and Editor",
-      onFocusPreviewEditor },
-
-    { "Focus (Sidebar + Editor)",
-      "Toggle focus between Sidebar and Editor",
-      onFocusSidebarEditor },
-
     { "Open Terminal",
       "Open Terminal at file location",
       onOpenTerminal },
@@ -135,6 +127,14 @@ class PreviewShortcuts {
     { "Open File Manager",
       "Open File Manager at file location",
       onOpenFileManager },
+
+    { "Toggle Focus (Editor + Preview)",
+      "Toggle focus between Editor and Preview",
+      onFocusPreviewEditor },
+
+    { "Toggle Focus (Editor + Sidebar)",
+      "Toggle focus between Editor and Sidebar",
+      onFocusSidebarEditor },
 
     { "Zoom In (Preview)",
       "Zoom In for Preview only",
@@ -148,16 +148,16 @@ class PreviewShortcuts {
       "Zoom Reset for Preview only",
       onResetZoomWv },
 
-    { "Zoom In (Preview + Editor)",
-      "Zoom In for Editor or Preview",
+    { "Zoom In (Editor + Preview)",
+      "Zoom In for Editor and Preview",
       onZoomInBoth },
 
-    { "Zoom Out (Preview + Editor)",
-      "Zoom Out for Editor or Preview",
+    { "Zoom Out (Editor + Preview)",
+      "Zoom Out for Editor and Preview",
       onZoomOutBoth },
 
-    { "Zoom Reset (Preview + Editor)",
-      "Zoom Reset for Editor or Preview",
+    { "Zoom Reset (Editor + Preview)",
+      "Zoom Reset for Editor and Preview",
       onResetZoomBoth },
 
     { nullptr, nullptr, nullptr },
