@@ -269,6 +269,24 @@ void PreviewShortcuts::onOpenFileManager(guint /*key_id*/) {
   }
 }
 
+void PreviewShortcuts::onToggleSidebar(guint /*key_id*/) {
+  if (!preview_context) {
+    return;
+  }
+
+  keybindings_send_command(GEANY_KEY_GROUP_VIEW, GEANY_KEYS_VIEW_SIDEBAR);
+
+  GtkWidget *sidebar = preview_context->geany_sidebar_;
+  if (!sidebar) {
+    return;
+  }
+
+  const bool visible = gtk_widget_get_visible(sidebar);
+  if (visible) {
+    GtkUtils::activateNotebookPageForWidget(sidebar);
+  }
+}
+
 void PreviewShortcuts::onCopy(guint /*key_id*/) {
   if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_) {
     return;

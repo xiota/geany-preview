@@ -40,6 +40,8 @@ class PreviewShortcuts {
   static void onOpenTerminal(guint /*key_id*/);
   static void onOpenFileManager(guint /*key_id*/);
 
+  static void onToggleSidebar(guint /*key_id*/);
+
   static void onZoomInWv(guint /*key_id*/);
   static void onZoomOutWv(guint /*key_id*/);
   static void onResetZoomWv(guint /*key_id*/);
@@ -135,6 +137,10 @@ class PreviewShortcuts {
     { "Toggle Focus (Editor + Sidebar)",
       "Toggle focus between Editor and Sidebar",
       onFocusSidebarEditor },
+
+    { "Toggle Sidebar",
+      "Toggle sidebar visibility and focus",
+      onToggleSidebar },
 
     { "Zoom In (Preview)",
       "Zoom In for Preview only",
