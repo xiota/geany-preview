@@ -359,9 +359,6 @@ void PreviewShortcuts::onFindWv(guint /*key_id*/) {
     return;
   }
 
-  GtkWidget *preview = preview_context->preview_pane_->widget();
-  GtkWidget *sidebar = preview_context->geany_sidebar_;
-
   if (isPreviewVisible()) {
     preview_context->webview_->showFindPrompt(
         GTK_WINDOW(preview_context->geany_data_->main_widgets->window)

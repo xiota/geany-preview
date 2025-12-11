@@ -104,14 +104,39 @@ bool isWidgetOnVisibleNotebookPage(GtkNotebook *notebook, GtkWidget *widget) {
     return false;
   }
 
-  // Find the page number for this widget
-  int page_num = gtk_notebook_page_num(notebook, widget);
-  if (page_num < 0) {
-    return false;  // widget not found in this notebook
+  // If the notebook itself is not visible, return false immediately
+  if (!gtk_widget_get_visible(GTK_WIDGET(notebook))) {
+    return false;
   }
 
-  // Compare with the currently visible page
-  return gtk_notebook_get_current_page(notebook) == page_num;
+  // Walk up the parent chain until we find a direct child of the notebook
+  GtkWidget *parent = widget;
+  while (parent && GTK_IS_WIDGET(parent)) {
+    GtkWidget *p = gtk_widget_get_parent(parent);
+    if (p == GTK_WIDGET(notebook)) {
+      int page_num = gtk_notebook_page_num(notebook, parent);
+      int current_page = gtk_notebook_get_current_page(notebook);
+
+      if (page_num < 0 || page_num != current_page) {
+        return false;
+      }
+
+      // Also check that the page widget itself is visible
+      if (!gtk_widget_is_visible(parent)) {
+        return false;
+      }
+
+      // Finally, check that the target widget itself is visible
+      if (!gtk_widget_is_visible(widget)) {
+        return false;
+      }
+
+      return true;
+    }
+    parent = p;
+  }
+
+  return false;  // widget not found in notebook
 }
 
 namespace {  // for enableFocusWithinTracking
