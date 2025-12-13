@@ -8,6 +8,9 @@ URL:            https://github.com/xiota/geany-preview
 
 Source0:        https://github.com/xiota/geany-preview/archive/refs/tags/v%{version}.tar.gz
 
+# Disable LTO (segfaults when loaded as plugin)
+%global _lto_cflags %{nil}
+
 # Build dependencies
 BuildRequires:  gcc-c++
 BuildRequires:  git
