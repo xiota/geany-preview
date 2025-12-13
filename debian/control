@@ -4,6 +4,7 @@ Priority: optional
 Maintainer: xiota <xiota@users.noreply.github.com>
 Build-Depends:
    debhelper-compat (= 13),
+   git,
    meson,
    geany,
    libcmark-gfm-dev,
