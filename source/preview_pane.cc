@@ -410,6 +410,9 @@ std::string PreviewPane::generateHtml(const Document &document) const {
     return pre.headersToHtml() + std::string{ converter->toHtml(pre.body()) };
   } else {
     std::string html = "<tt>";
+    html += std::string{ context_->geany_plugin_->info->name } + " ";
+    html += std::string{ context_->geany_plugin_->info->version } + "</br>";
+    html += "&nbsp;&nbsp;&nbsp;";
     if (!document.filetypeName().empty()) {
       html += document.filetypeName() + ", " + document.encodingName();
     } else {
