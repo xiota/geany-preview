@@ -2,7 +2,7 @@
 
 ## Building on Fedora
 
-1. Open a terminal in a clean working directory.
+1. Open a terminal in a new empty working directory.
 
 2. (optional) Update the system.
 

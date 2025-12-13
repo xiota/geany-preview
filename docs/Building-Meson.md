@@ -22,7 +22,7 @@
 
     The build system should display a notification for missing depends.  Install them as needed.
 
-2. Open a terminal in a clean working directory.
+2. Open a terminal in a new empty working directory.
 
 3. Clone the repo.
 
