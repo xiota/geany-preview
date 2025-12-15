@@ -67,8 +67,18 @@ void WebView::reset() {
   webkit_settings_set_allow_file_access_from_file_urls(webview_settings_, true);
   webkit_settings_set_allow_universal_access_from_file_urls(webview_settings_, true);
 
-  webview_ = webkit_web_view_new_with_settings(webview_settings_);
-  webview_context_ = webkit_web_view_get_context(WEBKIT_WEB_VIEW(webview_));
+  WebKitWebsiteDataManager *manager =
+      webkit_website_data_manager_new("disk-cache-directory", NULL, NULL);
+
+  // custom context with no disk cache directory
+  webview_context_ = webkit_web_context_new_with_website_data_manager(manager);
+
+  webview_ = webkit_web_view_new_with_context(webview_context_);
+  webkit_web_view_set_settings(WEBKIT_WEB_VIEW(webview_), webview_settings_);
+
+  // minimize caching (in‑memory only, no disk persistence)
+  webkit_web_context_set_cache_model(webview_context_, WEBKIT_CACHE_MODEL_DOCUMENT_VIEWER);
+
   webview_content_manager_ =
       webkit_web_view_get_user_content_manager(WEBKIT_WEB_VIEW(webview_));
 
