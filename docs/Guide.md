@@ -71,6 +71,49 @@ body {
 }
 ```
 
+> What is "Fountain"?
+
+Fountain is a text-based screenplay format that basically looks like a standard screenplay with everything flush-left.
+
+Preview uses [ftn2xml](https://github.com/xiota/ftn2xml) to convert screenplays for display.  The syntax it recognizes is described at [Fountain Syntax](https://github.com/xiota/ftn2xml/blob/main/Fountain_Syntax.md).
+
+> Can I add Fountain to filetypes recognized by Geany?
+
+You can, but the benefits are limited to showing the type in the status bar, showing the extensions in the Open/Save dialogs, and referencing the type from plugins, such as Geanylua.  I do not know how to add scenes to the Symbols tab without patching and recompiling Geany. 
+
+To add the Fountain document type:
+
+1. Make sure the following is contained in `~/.config/geany/filetype_extensions.conf`
+
+    ```ini
+    [Extensions]
+    Fountain=*.ftn;*.fountain;
+    ```
+
+2. Create `~/.config/geany/filedefs/filetypes.Fountain.conf`
+
+    ```ini
+    # For complete documentation of this file, please see Geany's main documentation
+    [styling]
+    # Edit these in the colorscheme .conf file instead
+
+    [settings]
+    lexer_filetype=none
+
+    # default extension used when saving files
+    extension=ftn
+
+    # MIME type
+    mime_type=text/x-fountain
+
+    # sort tags by appearance
+    symbol_list_sort_mode=1
+
+    # multiline comments
+    comment_open=/*
+    comment_close=*/
+    ```
+
 ### Usage
 
 > How can I preview other document formats?
