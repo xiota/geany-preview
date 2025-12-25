@@ -31,11 +31,11 @@ After installation, Preview can be enabled in the Plugin Manager (*Tools/Plugin 
 
 > Are there any configuration options?
 
-Many.
-
-Open *Edit/Plugin Preferences*, and select the Preview tab.  Each option has a brief description in a tooltip.
+Many.  Open *Tools/Preview/Preferences*.  Each option has a brief description in a tooltip.
 
 ![plugin preferences](screenshot-preferences.png)
+
+While `preview.conf` can be edited manually, doing so is not recommended after the 0.2.x rewrite.  To reset the plugin to default settings, delete the config file while Geany is not running.
 
 > Can I customize the way documents are rendered?
 
