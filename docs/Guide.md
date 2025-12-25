@@ -39,7 +39,7 @@ While `preview.conf` can be edited manually, doing so is not recommended after t
 
 > Can I customize the way documents are rendered?
 
-You can edit style sheets in the configuration folder.  Create them if they do not exist.
+You can edit style sheets in the configuration folder, accessible from *Tools/Preview/Open Config Folder*.  Create the files if they do not exist.
 
 * `preview.css` – Applies to all files.
 * Others are named after the corresponding format.
@@ -47,9 +47,13 @@ You can edit style sheets in the configuration folder.  Create them if they do n
   * `dokuwiki.css`
   * `markdown.css`
 
-They should be reloaded on demand.  Editing or switching documents may help trigger a refresh.
+Style sheets should be reloaded on demand.  Altering or switching documents may help trigger a refresh.
 
 W3Schools has a [CSS Tutorial](https://www.w3schools.com/css/) that may be helpful.
+
+> What if I want to tweak the existing style sheets?
+
+They are located in the source tree, in the [`data`](https://github.com/xiota/geany-preview/tree/main/data) folder.  Copy the ones you want to modify to the config folder.
 
 > Is there a dark theme?
 
