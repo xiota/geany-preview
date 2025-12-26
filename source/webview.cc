@@ -344,7 +344,7 @@ gboolean WebView::onContextMenu(
     WebKitWebView *view,
     WebKitContextMenu *menu,
     GdkEvent *,
-    WebKitHitTestResult *,
+    WebKitHitTestResult *hit_test,
     gpointer user_data
 ) {
   auto *self = static_cast<WebView *>(user_data);
@@ -368,20 +368,68 @@ gboolean WebView::onContextMenu(
     }
   }
 
-  webkit_context_menu_append(menu, webkit_context_menu_item_new_separator());
+  bool is_link = webkit_hit_test_result_context_is_link(hit_test);
+  bool is_image = webkit_hit_test_result_context_is_image(hit_test);
+  bool is_media = webkit_hit_test_result_context_is_media(hit_test);
+  bool is_select = webkit_hit_test_result_context_is_selection(hit_test);
+  bool is_edit = webkit_hit_test_result_context_is_editable(hit_test);
 
+  webkit_context_menu_append(menu, webkit_context_menu_item_new_separator());
   GSimpleAction *find_action = g_simple_action_new("find_in_page", nullptr);
   g_signal_connect(
       find_action,
       "activate",
       G_CALLBACK(+[](GSimpleAction *, GVariant *, gpointer data) {
         auto *wv = static_cast<WebView *>(data);
+
         GtkWidget *toplevel = gtk_widget_get_toplevel(wv->widget());
-        if (GTK_IS_WINDOW(toplevel)) {
-          wv->showFindPrompt(GTK_WINDOW(toplevel));
-        } else {
-          wv->showFindPrompt(nullptr);
-        }
+        GtkWindow *parent = GTK_IS_WINDOW(toplevel) ? GTK_WINDOW(toplevel) : nullptr;
+
+        // 1. Open dialog immediately (empty)
+        wv->showFindPrompt(parent);
+
+        // 2. Async JS to get selected text
+        webkit_web_view_evaluate_javascript(
+            WEBKIT_WEB_VIEW(wv->widget()),
+            "window.getSelection().toString();",
+            -1,
+            nullptr,  // GCancellable*
+            nullptr,  // WebKitJavascriptWorld*
+            nullptr,  // WebKitFrame*
+            [](GObject *obj, GAsyncResult *res, gpointer user_data) {
+              auto *wv = static_cast<WebView *>(user_data);
+
+              GError *err = nullptr;
+              JSCValue *value =
+                  webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(obj), res, &err);
+
+              if (err) {
+                g_error_free(err);
+                return;
+              }
+
+              gchar *selected = nullptr;
+              if (jsc_value_is_string(value)) {
+                selected = jsc_value_to_string(value);
+              }
+
+              if (wv->find_dialog_) {
+                GtkWidget *entry = wv->find_dialog_->entry();
+                if (entry && selected && *selected) {
+                  gtk_entry_set_text(GTK_ENTRY(entry), selected);
+                }
+              }
+
+              if (selected) {
+                g_free(selected);
+              }
+
+              if (G_IS_OBJECT(value)) {
+                g_object_unref(value);
+              }
+            },
+            wv
+        );
       }),
       self
   );

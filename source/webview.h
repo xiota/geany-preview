@@ -56,7 +56,7 @@ class WebView final {
   WebView &findPrevious();
   WebView &clearFind();
 
-  WebView &showFindPrompt(GtkWindow *parent_window);
+  WebView &showFindPrompt(GtkWindow *parent);
 
   WebView &getDomSnapshot(std::string_view root_id, std::function<void(std::string)> callback);
 
@@ -69,7 +69,7 @@ class WebView final {
       WebKitWebView *view,
       WebKitContextMenu *menu,
       GdkEvent *event,
-      WebKitHitTestResult *hit_test_result,
+      WebKitHitTestResult *hit_test,
       gpointer user_data
   );
 

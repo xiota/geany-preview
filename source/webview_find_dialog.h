@@ -17,6 +17,14 @@ class WebViewFindDialog {
   void show(GtkWindow *parent);
   void attachAutoDismissFor(GtkWidget *widget);
 
+  GtkWidget *dialog() const {
+    return dialog_;
+  }
+
+  GtkWidget *entry() const {
+    return entry_;
+  }
+
  private:
   void buildDialog(GtkWindow *parent);
 
