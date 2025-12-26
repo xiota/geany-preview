@@ -111,6 +111,7 @@ src_files = files(
   'source/util/gtk_utils.cc',
   'source/util/xdg_utils.cc',
   'source/webview.cc',
+  'source/webview_find_dialog.cc',
 )
 
 shared_module(

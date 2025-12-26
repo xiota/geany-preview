@@ -8,12 +8,13 @@
 #include <string>
 #include <string_view>
 
-#include <glib.h>
 #include <gtk/gtk.h>
 #include <webkit2/webkit2.h>
 
 #include "preview_context.h"
 #include "util/file_utils.h"
+
+class WebViewFindDialog;
 
 class WebView final {
  public:
@@ -86,4 +87,6 @@ class WebView final {
   GtkWidget *webview_ = nullptr;
   WebKitWebContext *webview_context_ = nullptr;
   WebKitUserContentManager *webview_content_manager_ = nullptr;
+
+  std::unique_ptr<WebViewFindDialog> find_dialog_;
 };

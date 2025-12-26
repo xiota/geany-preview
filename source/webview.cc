@@ -7,11 +7,15 @@
 #include <string>
 #include <string_view>
 
+#include <gtk/gtk.h>
+#include <webkit2/webkit2.h>
+
 #include "document_local.h"
 #include "preview_context.h"
 #include "preview_pane.h"
 #include "util/file_utils.h"
 #include "util/string_utils.h"
+#include "webview_find_dialog.h"
 
 // Anonymous namespace for internal constants
 namespace {
@@ -328,158 +332,11 @@ WebView &WebView::clearFind() {
   return *this;
 }
 
-WebView &WebView::showFindPrompt(GtkWindow *parent_window) {
-  static GtkWidget *active_find_window = nullptr;
-
-  // If already open, just present it
-  if (active_find_window && GTK_IS_WINDOW(active_find_window)) {
-    gtk_window_present(GTK_WINDOW(active_find_window));
-    return *this;
+WebView &WebView::showFindPrompt(GtkWindow *parent) {
+  if (!find_dialog_) {
+    find_dialog_ = std::make_unique<WebViewFindDialog>(this, context_);
   }
-
-  GtkWidget *find_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  active_find_window = find_window;
-
-  gtk_window_set_title(GTK_WINDOW(find_window), "Find in Page");
-  gtk_window_set_transient_for(GTK_WINDOW(find_window), parent_window);
-  gtk_window_set_modal(GTK_WINDOW(find_window), false);
-  gtk_container_set_border_width(GTK_CONTAINER(find_window), 6);
-
-  GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
-
-  GtkWidget *entry_search = gtk_entry_new();
-  gtk_entry_set_placeholder_text(GTK_ENTRY(entry_search), "Search text…");
-  gtk_entry_set_activates_default(GTK_ENTRY(entry_search), true);
-
-  GtkWidget *btn_next = gtk_button_new_with_label("Next");
-  GtkWidget *btn_prev = gtk_button_new_with_label("Previous");
-
-  gtk_box_pack_start(GTK_BOX(hbox), entry_search, true, true, 0);
-  gtk_box_pack_start(GTK_BOX(hbox), btn_next, false, false, 0);
-  gtk_box_pack_start(GTK_BOX(hbox), btn_prev, false, false, 0);
-
-  gtk_container_add(GTK_CONTAINER(find_window), hbox);
-
-  // Get the find controller from the WebView widget
-  WebKitFindController *fc = webkit_web_view_get_find_controller(WEBKIT_WEB_VIEW(webview_));
-
-  // Entry change → search or clear
-  g_signal_connect(
-      entry_search,
-      "changed",
-      G_CALLBACK(+[](GtkEntry *entry, gpointer data) {
-        auto *fc = static_cast<WebKitFindController *>(data);
-        const char *text = gtk_entry_get_text(entry);
-        if (text && *text) {
-          webkit_find_controller_search(
-              fc,
-              text,
-              static_cast<WebKitFindOptions>(
-                  WEBKIT_FIND_OPTIONS_CASE_INSENSITIVE | WEBKIT_FIND_OPTIONS_WRAP_AROUND
-              ),
-              G_MAXUINT
-          );
-        } else {
-          webkit_find_controller_search_finish(fc);
-        }
-      }),
-      fc
-  );
-
-  // Enter key → find next
-  g_signal_connect(
-      entry_search,
-      "activate",
-      G_CALLBACK(+[](GtkEntry *, gpointer data) {
-        webkit_find_controller_search_next(static_cast<WebKitFindController *>(data));
-      }),
-      fc
-  );
-
-  // Buttons
-  g_signal_connect(
-      btn_next,
-      "clicked",
-      G_CALLBACK(+[](GtkButton *, gpointer data) {
-        webkit_find_controller_search_next(static_cast<WebKitFindController *>(data));
-      }),
-      fc
-  );
-
-  g_signal_connect(
-      btn_prev,
-      "clicked",
-      G_CALLBACK(+[](GtkButton *, gpointer data) {
-        webkit_find_controller_search_previous(static_cast<WebKitFindController *>(data));
-      }),
-      fc
-  );
-
-  // Escape key closes
-  g_signal_connect(
-      find_window,
-      "key-press-event",
-      G_CALLBACK(+[](GtkWidget *widget, GdkEventKey *event, gpointer) -> gboolean {
-        if (event->keyval == GDK_KEY_Escape) {
-          gtk_widget_destroy(widget);
-          return true;
-        }
-        return false;
-      }),
-      nullptr
-  );
-
-  // Destroy → clear search + null the static pointer
-  g_signal_connect(
-      find_window,
-      "destroy",
-      G_CALLBACK(+[](GtkWidget *, gpointer data) {
-        webkit_find_controller_search_finish(static_cast<WebKitFindController *>(data));
-        active_find_window = nullptr;
-      }),
-      fc
-  );
-
-  // Ensure dialog is destroyed if WebView is destroyed
-  g_signal_connect(
-      webview_,
-      "destroy",
-      G_CALLBACK(+[](GtkWidget *, gpointer data) {
-        GtkWidget **p = static_cast<GtkWidget **>(data);
-        if (*p && GTK_IS_WIDGET(*p)) {
-          gtk_widget_destroy(*p);
-        }
-        *p = nullptr;
-      }),
-      &active_find_window
-  );
-
-  // Auto-null when dialog is finalized
-  g_object_add_weak_pointer(
-      G_OBJECT(find_window), reinterpret_cast<gpointer *>(&active_find_window)
-  );
-
-  gtk_widget_show_all(find_window);
-
-  // Center over the WebView
-  if (gtk_widget_get_window(webview_)) {
-    int wx = 0, wy = 0;
-    gdk_window_get_origin(gtk_widget_get_window(webview_), &wx, &wy);
-
-    int w_width = gtk_widget_get_allocated_width(webview_);
-    int w_height = gtk_widget_get_allocated_height(webview_);
-
-    GtkRequisition req;
-    gtk_widget_get_preferred_size(find_window, &req, nullptr);
-    int f_width = req.width;
-    int f_height = req.height;
-
-    int pos_x = wx + (w_width - f_width) / 2;
-    int pos_y = wy + (w_height - f_height) / 2;
-
-    gtk_window_move(GTK_WINDOW(find_window), pos_x, pos_y);
-  }
-
+  find_dialog_->show(parent);
   return *this;
 }
 
