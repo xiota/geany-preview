@@ -15,6 +15,7 @@ class WebViewFindDialog {
   ~WebViewFindDialog();
 
   void show(GtkWindow *parent);
+  void attachAutoDismissFor(GtkWidget *widget);
 
  private:
   void buildDialog(GtkWindow *parent);
@@ -24,4 +25,9 @@ class WebViewFindDialog {
 
   WebView *webview_ = nullptr;
   PreviewContext *context_ = nullptr;
+
+  gulong auto_dismiss_handler_ = 0;
+  gulong notebook_switch_handler_ = 0;
+
+  GtkWidget *notebook_ = nullptr;
 };

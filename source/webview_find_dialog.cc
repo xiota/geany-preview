@@ -7,12 +7,26 @@
 #include <webkit2/webkit2.h>
 
 #include "preview_context.h"
+#include "util/gtk_utils.h"
 #include "webview.h"
 
 WebViewFindDialog::WebViewFindDialog(WebView *wv, PreviewContext *ctx)
     : webview_(wv), context_(ctx) {}
 
 WebViewFindDialog::~WebViewFindDialog() {
+  // Disconnect sidebar/other widget auto-dismiss
+  if (auto_dismiss_handler_ && context_->geany_sidebar_) {
+    g_signal_handler_disconnect(context_->geany_sidebar_, auto_dismiss_handler_);
+    auto_dismiss_handler_ = 0;
+  }
+
+  // Disconnect notebook auto-dismiss
+  if (notebook_switch_handler_ && notebook_) {
+    g_signal_handler_disconnect(notebook_, notebook_switch_handler_);
+    notebook_switch_handler_ = 0;
+  }
+
+  // Destroy dialog if still alive
   if (dialog_) {
     gtk_widget_destroy(dialog_);
     dialog_ = nullptr;
@@ -165,6 +179,58 @@ void WebViewFindDialog::buildDialog(GtkWindow *parent) {
       &dialog_
   );
 
+  // Find the notebook ancestor of the WebView
+  notebook_ = GtkUtils::findAncestorOfType(webview_->widget(), GTK_TYPE_NOTEBOOK);
+
+  if (notebook_) {
+    notebook_switch_handler_ = g_signal_connect(
+        notebook_,
+        "switch-page",
+        G_CALLBACK(+[](GtkNotebook *nb, GtkWidget *, guint, gpointer data) {
+          auto *self = static_cast<WebViewFindDialog *>(data);
+
+          // If our WebView is NOT on the visible page → dismiss
+          if (!GtkUtils::isWidgetOnVisibleNotebookPage(nb, self->webview_->widget())) {
+            if (self->dialog_) {
+              gtk_widget_destroy(self->dialog_);
+              self->dialog_ = nullptr;
+            }
+          }
+        }),
+        this
+    );
+  }
+
+  // Auto-dismiss when sidebar hides
+  if (context_->geany_sidebar_) {
+    attachAutoDismissFor(context_->geany_sidebar_);
+  }
+
   // Auto-null when dialog is finalized
   g_object_add_weak_pointer(G_OBJECT(dialog_), reinterpret_cast<gpointer *>(&dialog_));
+}
+
+void WebViewFindDialog::attachAutoDismissFor(GtkWidget *widget) {
+  if (!widget) {
+    return;
+  }
+
+  // Disconnect previous handler if any
+  if (auto_dismiss_handler_) {
+    g_signal_handler_disconnect(widget, auto_dismiss_handler_);
+    auto_dismiss_handler_ = 0;
+  }
+
+  auto_dismiss_handler_ = g_signal_connect(
+      widget,
+      "hide",
+      G_CALLBACK(+[](GtkWidget *, gpointer data) {
+        auto *self = static_cast<WebViewFindDialog *>(data);
+        if (self->dialog_) {
+          gtk_widget_destroy(self->dialog_);
+          self->dialog_ = nullptr;
+        }
+      }),
+      this
+  );
 }
