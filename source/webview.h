@@ -89,4 +89,5 @@ class WebView final {
   WebKitUserContentManager *webview_content_manager_ = nullptr;
 
   std::unique_ptr<WebViewFindDialog> find_dialog_;
+  std::string hover_url_;
 };

@@ -86,6 +86,44 @@ void WebView::reset() {
   webview_content_manager_ =
       webkit_web_view_get_user_content_manager(WEBKIT_WEB_VIEW(webview_));
 
+  // enable tooltip handling
+  gtk_widget_set_has_tooltip(GTK_WIDGET(webview_), true);
+
+  g_signal_connect(
+      webview_,
+      "query-tooltip",
+      G_CALLBACK(
+          +[](GtkWidget *, gint, gint, gboolean, GtkTooltip *tooltip, gpointer user_data) {
+            auto *self = static_cast<WebView *>(user_data);
+
+            if (!self->hover_url_.empty()) {
+              gtk_tooltip_set_text(tooltip, self->hover_url_.c_str());
+              return true;
+            }
+
+            return false;
+          }
+      ),
+      this
+  );
+
+  g_signal_connect(
+      webview_,
+      "mouse-target-changed",
+      G_CALLBACK(+[](WebKitWebView *, WebKitHitTestResult *hit, guint, gpointer user_data) {
+        auto *self = static_cast<WebView *>(user_data);
+
+        if (webkit_hit_test_result_context_is_link(hit)) {
+          const gchar *uri = webkit_hit_test_result_get_link_uri(hit);
+          self->hover_url_ = uri ? uri : "";
+        } else {
+          self->hover_url_.clear();
+        }
+      }),
+      this
+  );
+
+  // enable zoom handling
   double zoom = 100;
   if (context_ && context_->preview_config_) {
     zoom = context_->preview_config_->get<int>("preview_zoom_default", 100);
