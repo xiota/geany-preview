@@ -354,8 +354,14 @@ gboolean WebView::onContextMenu(
       WebKitContextMenuItem *menu_item = static_cast<WebKitContextMenuItem *>(l->data);
       WebKitContextMenuAction action = webkit_context_menu_item_get_stock_action(menu_item);
       l = l->next;
-      if (action == WEBKIT_CONTEXT_MENU_ACTION_GO_BACK ||
+      if (action == WEBKIT_CONTEXT_MENU_ACTION_DOWNLOAD_IMAGE_TO_DISK ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_DOWNLOAD_LINK_TO_DISK ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_GO_BACK ||
           action == WEBKIT_CONTEXT_MENU_ACTION_GO_FORWARD ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_OPEN_IMAGE_IN_NEW_WINDOW ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_OPEN_LINK ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_OPEN_LINK_IN_NEW_WINDOW ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_RELOAD ||
           action == WEBKIT_CONTEXT_MENU_ACTION_STOP) {
         webkit_context_menu_remove(menu, menu_item);
       }
