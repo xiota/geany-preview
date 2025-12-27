@@ -326,6 +326,22 @@ void PreviewShortcuts::onPaste(guint /*key_id*/) {
   }
 }
 
+void PreviewShortcuts::onCopyFilePath(guint /*key_id*/) {
+  GeanyDocument *doc = document_get_current();
+  if (!DOC_VALID(doc) || !doc->real_path) {
+    return;
+  }
+
+  const char *path = doc->real_path;
+
+  GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+  if (!clipboard) {
+    return;
+  }
+
+  gtk_clipboard_set_text(clipboard, path, -1);
+}
+
 void PreviewShortcuts::onFind(guint /*key_id*/) {
   if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_ ||
       !preview_context->geany_data_ || !preview_context->geany_data_->main_widgets ||

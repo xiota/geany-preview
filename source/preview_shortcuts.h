@@ -25,6 +25,8 @@ class PreviewShortcuts {
   static void onCut(guint /*key_id*/);
   static void onPaste(guint /*key_id*/);
 
+  static void onCopyFilePath(guint /*key_id*/);
+
   static void onFind(guint /*key_id*/);
   static void onFindNext(guint /*key_id*/);
   static void onFindPrev(guint /*key_id*/);
@@ -93,6 +95,10 @@ class PreviewShortcuts {
     { "Paste (Editor + Preview) (3)",
       "Extra paste shortcut (2)",
       onPaste },
+
+    { "Copy Location",
+      "Copy location of current document to clipboard",
+      onCopyFilePath },
 
     { "Find (Editor + Preview)",
       "Open find prompt for Editor or Preview",
