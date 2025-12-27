@@ -96,6 +96,18 @@ default_css_h = configure_file(
   configuration: css_conf
 )
 
+# JavaScript
+apply_patch_js_content  = fs.read(meson.project_source_root() / 'data/apply_patch.js')
+
+js_conf = configuration_data()
+js_conf.set('APPLY_PATCH_JS',  apply_patch_js_content.strip())
+
+default_js_h = configure_file(
+  input: 'source/default_js.h.in',
+  output: 'default_js.h',
+  configuration: js_conf
+)
+
 src_files = files(
   markdown_src,
   'source/converter_ftn2xml.cc',

@@ -17,42 +17,8 @@
 #include "util/string_utils.h"
 #include "webview_find_dialog.h"
 
-// Anonymous namespace for internal constants
 namespace {
-
-constexpr const char *kApplyPatchJS = R"JS(
-// Minimal DOM patcher: replaces only changed children of #root
-function parseBody(html) {
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  return doc.body || document.createElement('body');
-}
-
-function applyPatch(newHtml, root_id) {
-  root = document.getElementById(root_id);
-  if (!root) return;
-
-  const nextBody = parseBody(newHtml);
-  const oldChildren = Array.from(root.children);
-  const newChildren = Array.from(nextBody.children);
-  const len = Math.max(oldChildren.length, newChildren.length);
-
-  for (let i = 0; i < len; i++) {
-    const oldNode = oldChildren[i];
-    const newNode = newChildren[i];
-
-    if (!oldNode && newNode) {
-      root.appendChild(newNode);
-    } else if (oldNode && !newNode) {
-      root.removeChild(oldNode);
-    } else if (oldNode && newNode) {
-      if (oldNode.outerHTML !== newNode.outerHTML) {
-        root.replaceChild(newNode, oldNode);
-      }
-    }
-  }
-}
-)JS";
-
+#include "default_js.h"
 }  // namespace
 
 WebView::WebView(PreviewContext *context) noexcept : context_(context) {}
@@ -159,7 +125,14 @@ GtkWidget *WebView::widget() const {
 
 WebView &WebView::injectPatcher() {
   webkit_web_view_evaluate_javascript(
-      WEBKIT_WEB_VIEW(webview_), kApplyPatchJS, -1, nullptr, nullptr, nullptr, nullptr, nullptr
+      WEBKIT_WEB_VIEW(webview_),
+      kApplyPatchJS.data(),
+      kApplyPatchJS.size(),
+      nullptr,
+      nullptr,
+      nullptr,
+      nullptr,
+      nullptr
   );
   return *this;
 }
@@ -173,16 +146,24 @@ WebView &WebView::loadHtml(
   double fraction = scroll_fraction_ptr ? *scroll_fraction_ptr : 0.0;
   fraction = std::clamp(fraction, 0.0, 1.0);
 
-  std::string head =
+  std::string html;
+  html.reserve(256 + kApplyPatchJS.size() + body_content.size() + root_id.size());
+
+  html.append(
       "<!DOCTYPE html><html><head>"
       "<meta charset=\"UTF-8\">"
       "<title>Preview</title>"
       "<style></style>"
-      "<script>" +
-      std::string(kApplyPatchJS) + "</script>";
+      "<script>"
+  );
 
-  std::string html = head + "</head><body><div id=\"" + StringUtils::escapeHtml(root_id) +
-                     "\">" + std::string(body_content) + "</div></body></html>";
+  html.append(kApplyPatchJS);
+
+  html.append("</script></head><body><div id=\"");
+  html.append(StringUtils::escapeHtml(root_id));
+  html.append("\">");
+  html.append(body_content);
+  html.append("</div></body></html>");
 
   webkit_web_view_load_html(WEBKIT_WEB_VIEW(webview_), html.c_str(), base_uri.c_str());
 
