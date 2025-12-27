@@ -166,6 +166,10 @@ class PreviewConfig {
     { "update_min_delay",
       setting_value_type{ 15 },
       "Delay (ms) before first preview update after a change." },
+
+    { "webview_resize_buffer",
+      setting_value_type{ 0 },
+      "Extra pixels to add when expanding the preview pane to avoid flicker." },
   };
   // clang-format on
 

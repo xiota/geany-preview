@@ -38,7 +38,7 @@ class PreviewPane final {
 
  private:
   void connectWebViewSignals();
-  void safeReparentWebView(GtkWidget *new_parent, bool pack_into_box);
+  void safeReparentWebView(GtkWidget *new_parent);
   std::string generateHtml(const Document &document) const;
   std::string calculateBaseUri(const Document &document) const;
   PreviewPane &update(const Document &document);
@@ -74,4 +74,16 @@ class PreviewPane final {
 
   bool webview_healthy_ = false;
   std::string root_id_;
+
+  // workaround for resize artifact
+  void connectPanedHandlers();
+  void onPanedButtonPress(GdkEventButton *event);
+  void onPanedButtonRelease(GdkEventButton *event);
+  void onPanedMotion();
+
+  GtkWidget *sidebar_paned_ = nullptr;
+  bool is_dragging_paned_ = false;
+  gulong paned_button_press_handler_id_ = 0;
+  gulong paned_button_release_handler_id_ = 0;
+  gulong paned_motion_handler_id_ = 0;
 };

@@ -67,7 +67,7 @@ PreviewPane::PreviewPane(PreviewContext *context)
     triggerUpdate(document);
   }
 
-  safeReparentWebView(page_box_, true);
+  safeReparentWebView(page_box_);
 
   // config callback
   preview_config_->connectChanged([this]() {
@@ -82,7 +82,7 @@ PreviewPane::PreviewPane(PreviewContext *context)
       triggerUpdate(document);
     }
 
-    safeReparentWebView(page_box_, true);
+    safeReparentWebView(page_box_);
   });
 
   sidebar_switch_page_handler_id_ = g_signal_connect(
@@ -94,7 +94,7 @@ PreviewPane::PreviewPane(PreviewContext *context)
             DocumentGeany document(document_get_current());
 
             if (page == self->page_box_) {
-              self->safeReparentWebView(self->page_box_, true);
+              self->safeReparentWebView(self->page_box_);
               self->triggerUpdate(document);
             } else {
               int w = gtk_widget_get_allocated_width(self->page_box_);
@@ -102,12 +102,18 @@ PreviewPane::PreviewPane(PreviewContext *context)
               if (w > 0 && h > 0) {
                 gtk_window_resize(GTK_WINDOW(self->offscreen_), w, h);
               }
-              self->safeReparentWebView(self->offscreen_, false);
+              self->safeReparentWebView(self->offscreen_);
             }
           }
       ),
       this
   );
+
+  // workaroound for resize artifact
+  sidebar_paned_ = GtkUtils::findAncestorOfType(sidebar_notebook_, GTK_TYPE_PANED);
+  if (sidebar_paned_) {
+    connectPanedHandlers();
+  }
 }
 
 PreviewPane::~PreviewPane() noexcept {
@@ -115,6 +121,21 @@ PreviewPane::~PreviewPane() noexcept {
     int idx = gtk_notebook_page_num(GTK_NOTEBOOK(sidebar_notebook_), page_box_);
     if (idx >= 0) {
       gtk_notebook_remove_page(GTK_NOTEBOOK(sidebar_notebook_), idx);
+    }
+  }
+
+  if (sidebar_paned_) {
+    if (paned_button_press_handler_id_) {
+      g_signal_handler_disconnect(sidebar_paned_, paned_button_press_handler_id_);
+      paned_button_press_handler_id_ = 0;
+    }
+    if (paned_button_release_handler_id_) {
+      g_signal_handler_disconnect(sidebar_paned_, paned_button_release_handler_id_);
+      paned_button_release_handler_id_ = 0;
+    }
+    if (paned_motion_handler_id_) {
+      g_signal_handler_disconnect(sidebar_paned_, paned_motion_handler_id_);
+      paned_motion_handler_id_ = 0;
     }
   }
 
@@ -356,7 +377,7 @@ bool PreviewPane::canPreviewFile(const Document &doc) const {
   return !registrar_.getConverterKey(doc).empty();
 }
 
-void PreviewPane::safeReparentWebView(GtkWidget *new_parent, bool pack_into_box) {
+void PreviewPane::safeReparentWebView(GtkWidget *new_parent) {
   GtkWidget *wv = webview_.widget();
   if (!GTK_IS_WIDGET(new_parent) || !GTK_IS_WIDGET(wv)) {
     return;
@@ -375,7 +396,7 @@ void PreviewPane::safeReparentWebView(GtkWidget *new_parent, bool pack_into_box)
     }
   }
 
-  if (pack_into_box && GTK_IS_BOX(new_parent)) {
+  if (GTK_IS_BOX(new_parent)) {
     gtk_box_pack_start(GTK_BOX(new_parent), wv, true, true, 0);
   } else {
     gtk_container_add(GTK_CONTAINER(new_parent), wv);
@@ -559,4 +580,81 @@ PreviewPane &PreviewPane::injectCssTheme() {
     webview_.injectCssFromString("html { color-scheme: light dark; }");
   }
   return *this;
+}
+
+void PreviewPane::connectPanedHandlers() {
+  gtk_widget_add_events(
+      sidebar_paned_, GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_POINTER_MOTION_MASK
+  );
+
+  paned_button_press_handler_id_ = g_signal_connect(
+      sidebar_paned_,
+      "button-press-event",
+      G_CALLBACK(+[](GtkWidget *widget, GdkEventButton *event, gpointer user_data) -> gboolean {
+        auto *self = static_cast<PreviewPane *>(user_data);
+        self->onPanedButtonPress(event);
+        return false;  // let GtkPaned still handle dragging
+      }),
+      this
+  );
+
+  paned_button_release_handler_id_ = g_signal_connect(
+      sidebar_paned_,
+      "button-release-event",
+      G_CALLBACK(+[](GtkWidget *widget, GdkEventButton *event, gpointer user_data) -> gboolean {
+        auto *self = static_cast<PreviewPane *>(user_data);
+        self->onPanedButtonRelease(event);
+        return false;
+      }),
+      this
+  );
+
+  paned_motion_handler_id_ = g_signal_connect(
+      sidebar_paned_,
+      "motion-notify-event",
+      G_CALLBACK(+[](GtkWidget *widget, GdkEventMotion *event, gpointer user_data) -> gboolean {
+        auto *self = static_cast<PreviewPane *>(user_data);
+        if (self->is_dragging_paned_) {
+          self->onPanedMotion();
+        }
+        return false;
+      }),
+      this
+  );
+}
+
+void PreviewPane::onPanedButtonPress(GdkEventButton *event) {
+  is_dragging_paned_ = true;
+  onPanedMotion();
+}
+
+void PreviewPane::onPanedButtonRelease(GdkEventButton *event) {
+  if (event->button != 1 || !is_dragging_paned_ || !GTK_IS_WIDGET(webview_.widget())) {
+    return;
+  }
+
+  is_dragging_paned_ = false;
+
+  // Clear the temporary size constraint
+  gtk_widget_set_size_request(webview_.widget(), -1, -1);
+  gtk_widget_queue_resize(webview_.widget());
+}
+
+void PreviewPane::onPanedMotion() {
+  if (!GTK_IS_WIDGET(webview_.widget()) || !sidebar_notebook_) {
+    return;
+  }
+
+  if (!is_dragging_paned_ || !preview_config_) {
+    return;
+  }
+
+  int resize_buffer = preview_config_->get<int>("webview_resize_buffer", 0);
+  int width = gtk_widget_get_allocated_width(sidebar_notebook_);
+
+  if (resize_buffer <= 0 || width <= 0) {
+    return;
+  }
+
+  gtk_widget_set_size_request(webview_.widget(), width + resize_buffer, -1);
 }
