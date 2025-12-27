@@ -1,12 +1,45 @@
-// Minimal DOM patcher: replaces only changed children of #root
+// Minimal DOM patcher: replaces only changed components
+function parseHTML(html) {
+  return new DOMParser().parseFromString(html, 'text/html');
+}
+
+function applyUserStyles(doc) {
+  doc.querySelectorAll('style').forEach(s => {
+    document.head.appendChild(s.cloneNode(true));
+  });
+
+  doc.querySelectorAll('link[rel="stylesheet"]').forEach(l => {
+    document.head.appendChild(l.cloneNode(true));
+  });
+}
+
+function applyUserMeta(doc) {
+  const viewport = doc.querySelector('meta[name="viewport"]');
+  if (viewport) {
+    document.head.appendChild(viewport.cloneNode(true));
+  }
+}
+
+function applyUserTitle(doc) {
+  const title = doc.querySelector('title');
+  if (title) {
+    document.title = title.textContent;
+  }
+}
+
 function parseBody(html) {
-  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const doc = parseHTML(html);
+  applyUserStyles(doc);
+  applyUserMeta(doc);
+  applyUserTitle(doc);
   return doc.body || document.createElement('body');
 }
 
 function applyPatch(newHtml, root_id) {
-  root = document.getElementById(root_id);
-  if (!root) return;
+  const root = document.getElementById(root_id);
+  if (!root) {
+    return;
+  }
 
   const nextBody = parseBody(newHtml);
   const oldChildren = Array.from(root.children);
