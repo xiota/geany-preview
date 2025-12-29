@@ -108,6 +108,139 @@ PreviewShortcuts::PreviewShortcuts(PreviewContext *context)
   }
 }
 
+void PreviewShortcuts::onCopy(guint /*key_id*/) {
+  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_) {
+    return;
+  }
+
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
+    auto *wv = preview_context->webview_->widget();
+    webkit_web_view_execute_editing_command(WEBKIT_WEB_VIEW(wv), WEBKIT_EDITING_COMMAND_COPY);
+  } else {
+    keybindings_send_command(GEANY_KEY_GROUP_CLIPBOARD, GEANY_KEYS_CLIPBOARD_COPY);
+  }
+}
+
+void PreviewShortcuts::onCut(guint /*key_id*/) {
+  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_) {
+    return;
+  }
+
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
+    auto *wv = preview_context->webview_->widget();
+    webkit_web_view_execute_editing_command(WEBKIT_WEB_VIEW(wv), WEBKIT_EDITING_COMMAND_CUT);
+  } else {
+    keybindings_send_command(GEANY_KEY_GROUP_CLIPBOARD, GEANY_KEYS_CLIPBOARD_CUT);
+  }
+}
+
+void PreviewShortcuts::onPaste(guint /*key_id*/) {
+  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_) {
+    return;
+  }
+
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
+    auto *wv = preview_context->webview_->widget();
+    webkit_web_view_execute_editing_command(WEBKIT_WEB_VIEW(wv), WEBKIT_EDITING_COMMAND_PASTE);
+  } else {
+    keybindings_send_command(GEANY_KEY_GROUP_CLIPBOARD, GEANY_KEYS_CLIPBOARD_PASTE);
+  }
+}
+
+void PreviewShortcuts::onCopyFilePath(guint /*key_id*/) {
+  GeanyDocument *doc = document_get_current();
+  if (!DOC_VALID(doc) || !doc->real_path) {
+    return;
+  }
+
+  const char *path = doc->real_path;
+
+  GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+  if (!clipboard) {
+    return;
+  }
+
+  gtk_clipboard_set_text(clipboard, path, -1);
+}
+
+void PreviewShortcuts::onFind(guint /*key_id*/) {
+  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_ ||
+      !preview_context->geany_data_ || !preview_context->geany_data_->main_widgets ||
+      !preview_context->geany_data_->main_widgets->window) {
+    return;
+  }
+
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
+    preview_context->webview_->showFindPrompt(
+        GTK_WINDOW(preview_context->geany_data_->main_widgets->window)
+    );
+  } else {
+    keybindings_send_command(GEANY_KEY_GROUP_SEARCH, GEANY_KEYS_SEARCH_FIND);
+  }
+}
+
+void PreviewShortcuts::onFindNext(guint /*key_id*/) {
+  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_ ||
+      !preview_context->geany_data_ || !preview_context->geany_data_->main_widgets ||
+      !preview_context->geany_data_->main_widgets->window) {
+    return;
+  }
+
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
+    preview_context->webview_->findNext();
+  } else {
+    keybindings_send_command(GEANY_KEY_GROUP_SEARCH, GEANY_KEYS_SEARCH_FINDNEXTSEL);
+  }
+}
+
+void PreviewShortcuts::onFindPrev(guint /*key_id*/) {
+  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_ ||
+      !preview_context->geany_data_ || !preview_context->geany_data_->main_widgets ||
+      !preview_context->geany_data_->main_widgets->window) {
+    return;
+  }
+
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
+    preview_context->webview_->findPrevious();
+  } else {
+    keybindings_send_command(GEANY_KEY_GROUP_SEARCH, GEANY_KEYS_SEARCH_FINDPREVSEL);
+  }
+}
+
+void PreviewShortcuts::onFindWv(guint /*key_id*/) {
+  if (!preview_context || !preview_context->webview_ || !preview_context->geany_data_ ||
+      !preview_context->geany_data_->main_widgets ||
+      !preview_context->geany_data_->main_widgets->window) {
+    return;
+  }
+
+  if (isPreviewVisible()) {
+    preview_context->webview_->showFindPrompt(
+        GTK_WINDOW(preview_context->geany_data_->main_widgets->window)
+    );
+  }
+}
+
+void PreviewShortcuts::onFindNextWv(guint /*key_id*/) {
+  if (!preview_context || !preview_context->webview_) {
+    return;
+  }
+
+  if (isPreviewVisible()) {
+    preview_context->webview_->findNext();
+  }
+}
+
+void PreviewShortcuts::onFindPrevWv(guint /*key_id*/) {
+  if (!preview_context || !preview_context->webview_) {
+    return;
+  }
+
+  if (isPreviewVisible()) {
+    preview_context->webview_->findPrevious();
+  }
+}
+
 void PreviewShortcuts::onFocusPreview(guint /*key_id*/) {
   if (!preview_context || !preview_context->preview_pane_) {
     return;
@@ -287,140 +420,7 @@ void PreviewShortcuts::onToggleSidebar(guint /*key_id*/) {
   }
 }
 
-void PreviewShortcuts::onCopy(guint /*key_id*/) {
-  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_) {
-    return;
-  }
-
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
-    auto *wv = preview_context->webview_->widget();
-    webkit_web_view_execute_editing_command(WEBKIT_WEB_VIEW(wv), WEBKIT_EDITING_COMMAND_COPY);
-  } else {
-    keybindings_send_command(GEANY_KEY_GROUP_CLIPBOARD, GEANY_KEYS_CLIPBOARD_COPY);
-  }
-}
-
-void PreviewShortcuts::onCut(guint /*key_id*/) {
-  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_) {
-    return;
-  }
-
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
-    auto *wv = preview_context->webview_->widget();
-    webkit_web_view_execute_editing_command(WEBKIT_WEB_VIEW(wv), WEBKIT_EDITING_COMMAND_CUT);
-  } else {
-    keybindings_send_command(GEANY_KEY_GROUP_CLIPBOARD, GEANY_KEYS_CLIPBOARD_CUT);
-  }
-}
-
-void PreviewShortcuts::onPaste(guint /*key_id*/) {
-  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_) {
-    return;
-  }
-
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
-    auto *wv = preview_context->webview_->widget();
-    webkit_web_view_execute_editing_command(WEBKIT_WEB_VIEW(wv), WEBKIT_EDITING_COMMAND_PASTE);
-  } else {
-    keybindings_send_command(GEANY_KEY_GROUP_CLIPBOARD, GEANY_KEYS_CLIPBOARD_PASTE);
-  }
-}
-
-void PreviewShortcuts::onCopyFilePath(guint /*key_id*/) {
-  GeanyDocument *doc = document_get_current();
-  if (!DOC_VALID(doc) || !doc->real_path) {
-    return;
-  }
-
-  const char *path = doc->real_path;
-
-  GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
-  if (!clipboard) {
-    return;
-  }
-
-  gtk_clipboard_set_text(clipboard, path, -1);
-}
-
-void PreviewShortcuts::onFind(guint /*key_id*/) {
-  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_ ||
-      !preview_context->geany_data_ || !preview_context->geany_data_->main_widgets ||
-      !preview_context->geany_data_->main_widgets->window) {
-    return;
-  }
-
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
-    preview_context->webview_->showFindPrompt(
-        GTK_WINDOW(preview_context->geany_data_->main_widgets->window)
-    );
-  } else {
-    keybindings_send_command(GEANY_KEY_GROUP_SEARCH, GEANY_KEYS_SEARCH_FIND);
-  }
-}
-
-void PreviewShortcuts::onFindNext(guint /*key_id*/) {
-  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_ ||
-      !preview_context->geany_data_ || !preview_context->geany_data_->main_widgets ||
-      !preview_context->geany_data_->main_widgets->window) {
-    return;
-  }
-
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
-    preview_context->webview_->findNext();
-  } else {
-    keybindings_send_command(GEANY_KEY_GROUP_SEARCH, GEANY_KEYS_SEARCH_FINDNEXTSEL);
-  }
-}
-
-void PreviewShortcuts::onFindPrev(guint /*key_id*/) {
-  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_ ||
-      !preview_context->geany_data_ || !preview_context->geany_data_->main_widgets ||
-      !preview_context->geany_data_->main_widgets->window) {
-    return;
-  }
-
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
-    preview_context->webview_->findPrevious();
-  } else {
-    keybindings_send_command(GEANY_KEY_GROUP_SEARCH, GEANY_KEYS_SEARCH_FINDPREVSEL);
-  }
-}
-
-void PreviewShortcuts::onFindWv(guint /*key_id*/) {
-  if (!preview_context || !preview_context->webview_ || !preview_context->geany_data_ ||
-      !preview_context->geany_data_->main_widgets ||
-      !preview_context->geany_data_->main_widgets->window) {
-    return;
-  }
-
-  if (isPreviewVisible()) {
-    preview_context->webview_->showFindPrompt(
-        GTK_WINDOW(preview_context->geany_data_->main_widgets->window)
-    );
-  }
-}
-
-void PreviewShortcuts::onFindNextWv(guint /*key_id*/) {
-  if (!preview_context || !preview_context->webview_) {
-    return;
-  }
-
-  if (isPreviewVisible()) {
-    preview_context->webview_->findNext();
-  }
-}
-
-void PreviewShortcuts::onFindPrevWv(guint /*key_id*/) {
-  if (!preview_context || !preview_context->webview_) {
-    return;
-  }
-
-  if (isPreviewVisible()) {
-    preview_context->webview_->findPrevious();
-  }
-}
-
-void PreviewShortcuts::onZoomInWv(guint) {
+void PreviewShortcuts::onZoomInWv(guint /*key_id*/) {
   if (!preview_context || !preview_context->webview_) {
     return;
   }
@@ -430,7 +430,7 @@ void PreviewShortcuts::onZoomInWv(guint) {
   }
 }
 
-void PreviewShortcuts::onZoomOutWv(guint) {
+void PreviewShortcuts::onZoomOutWv(guint /*key_id*/) {
   if (!preview_context || !preview_context->webview_) {
     return;
   }
@@ -440,7 +440,7 @@ void PreviewShortcuts::onZoomOutWv(guint) {
   }
 }
 
-void PreviewShortcuts::onResetZoomWv(guint) {
+void PreviewShortcuts::onResetZoomWv(guint /*key_id*/) {
   if (!preview_context || !preview_context->webview_) {
     return;
   }
@@ -450,7 +450,7 @@ void PreviewShortcuts::onResetZoomWv(guint) {
   }
 }
 
-void PreviewShortcuts::onZoomInBoth(guint) {
+void PreviewShortcuts::onZoomInBoth(guint /*key_id*/) {
   if (!preview_context) {
     return;
   }
@@ -469,7 +469,7 @@ void PreviewShortcuts::onZoomInBoth(guint) {
   }
 }
 
-void PreviewShortcuts::onZoomOutBoth(guint) {
+void PreviewShortcuts::onZoomOutBoth(guint /*key_id*/) {
   if (!preview_context) {
     return;
   }
@@ -488,7 +488,7 @@ void PreviewShortcuts::onZoomOutBoth(guint) {
   }
 }
 
-void PreviewShortcuts::onResetZoomBoth(guint) {
+void PreviewShortcuts::onResetZoomBoth(guint /*key_id*/) {
   if (!preview_context || !preview_context->webview_) {
     return;
   }
