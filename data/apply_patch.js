@@ -49,22 +49,52 @@ function applyPatch(newHtml, root_id) {
   }
 
   const nextBody = parseBody(newHtml);
-  const oldChildren = Array.from(root.children);
-  const newChildren = Array.from(nextBody.children);
-  const len = Math.max(oldChildren.length, newChildren.length);
+
+  const oldNodes = Array.from(root.childNodes);
+  const newNodes = Array.from(nextBody.childNodes);
+
+  const len = Math.max(oldNodes.length, newNodes.length);
 
   for (let i = 0; i < len; i++) {
-    const oldNode = oldChildren[i];
-    const newNode = newChildren[i];
+    const oldNode = oldNodes[i];
+    const newNode = newNodes[i];
 
     if (!oldNode && newNode) {
-      root.appendChild(newNode);
+      root.appendChild(newNode.cloneNode(true));
     } else if (oldNode && !newNode) {
       root.removeChild(oldNode);
     } else if (oldNode && newNode) {
-      if (oldNode.outerHTML !== newNode.outerHTML) {
-        root.replaceChild(newNode, oldNode);
+      if (!nodesEqual(oldNode, newNode)) {
+        root.replaceChild(newNode.cloneNode(true), oldNode);
       }
     }
   }
+}
+
+function nodesEqual(a, b) {
+  if (a.nodeType !== b.nodeType) {
+    return false;
+  }
+
+  if (a.nodeType === Node.TEXT_NODE) {
+    return a.textContent === b.textContent;
+  }
+
+  if (a.tagName !== b.tagName) {
+    return false;
+  }
+
+  const aAttrs = a.getAttributeNames();
+  const bAttrs = b.getAttributeNames();
+  if (aAttrs.length !== bAttrs.length) {
+    return false;
+  }
+
+  for (const name of aAttrs) {
+    if (a.getAttribute(name) !== b.getAttribute(name)) {
+      return false;
+    }
+  }
+
+  return a.textContent === b.textContent;
 }
