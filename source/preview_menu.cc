@@ -8,11 +8,6 @@
 #include <gtk/gtk.h>
 #include <msgwindow.h>
 
-#ifndef HAVE_PLUGINS
-#  define HAVE_PLUGINS 1
-#endif
-#include <geany/pluginutils.h>
-
 #include "document_geany.h"
 #include "preview_config.h"
 #include "preview_context.h"
@@ -37,7 +32,7 @@ PreviewMenu::PreviewMenu(PreviewContext *context) : context_(context) {
     if (def.tooltip) {
       gtk_widget_set_tooltip_text(item, def.tooltip);
     }
-    g_signal_connect(item, "activate", def.callback, context_);
+    g_signal_connect(item, "activate", G_CALLBACK(def.callback), context_);
     gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
   }
 
@@ -156,10 +151,7 @@ void PreviewMenu::onOpenConfigFolder(GtkMenuItem *, gpointer user_data) {
 }
 
 void PreviewMenu::onPreferences(GtkMenuItem *, gpointer user_data) {
-  auto *ctx = static_cast<PreviewContext *>(user_data);
-  if (!ctx || !ctx->geany_plugin_) {
-    return;
+  if (auto *ctx = static_cast<PreviewContext *>(user_data)) {
+    ctx->openPreferences();
   }
-
-  plugin_show_configure(ctx->geany_plugin_);
 }
