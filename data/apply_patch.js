@@ -21,16 +21,33 @@ function applyUserStyles(doc) {
 }
 
 function applyUserMeta(doc) {
-  const viewport = doc.querySelector('meta[name="viewport"]');
-  if (viewport) {
-    document.head.appendChild(viewport.cloneNode(true));
+  const head = document.head;
+
+  // Remove existing viewport meta
+  head.querySelectorAll('meta[name="viewport"]').forEach(m => m.remove());
+
+  // Add new viewport meta if present
+  const newViewport = doc.querySelector('meta[name="viewport"]');
+  if (newViewport) {
+    head.appendChild(newViewport.cloneNode(true));
   }
 }
 
 function applyUserTitle(doc) {
-  const title = doc.querySelector('title');
-  if (title) {
-    document.title = title.textContent;
+  const head = document.head;
+
+  // Remove existing <title> tags
+  head.querySelectorAll('title').forEach(t => t.remove());
+
+  // Add new title if present
+  const newTitle = doc.querySelector('title');
+  if (newTitle) {
+    head.appendChild(newTitle.cloneNode(true));
+  }
+
+  // Also update document.title for good measure
+  if (newTitle) {
+    document.title = newTitle.textContent;
   }
 }
 
