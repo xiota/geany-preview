@@ -42,6 +42,8 @@ class PreviewShortcuts {
   static void onOpenTerminal(guint /*key_id*/);
   static void onOpenFileManager(guint /*key_id*/);
 
+  static void onPreferences(guint /*key_id*/);
+
   static void onToggleSidebar(guint /*key_id*/);
 
   static void onZoomInWv(guint /*key_id*/);
@@ -135,6 +137,10 @@ class PreviewShortcuts {
     { "Open File Manager",
       "Open File Manager at file location",
       onOpenFileManager },
+
+    { "Preferences",
+      "Preferences",
+      onPreferences },
 
     { "Toggle Focus (Editor + Preview)",
       "Toggle focus between Editor and Preview",

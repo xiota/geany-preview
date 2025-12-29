@@ -402,6 +402,12 @@ void PreviewShortcuts::onOpenFileManager(guint /*key_id*/) {
   }
 }
 
+void PreviewShortcuts::onPreferences(guint /*key_id*/) {
+  if (preview_context) {
+    preview_context->openPreferences();
+  }
+}
+
 void PreviewShortcuts::onToggleSidebar(guint /*key_id*/) {
   if (!preview_context) {
     return;
