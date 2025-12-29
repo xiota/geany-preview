@@ -387,12 +387,15 @@ gboolean WebView::onContextMenu(
     }
   }
 
+  /*
   bool is_link = webkit_hit_test_result_context_is_link(hit_test);
   bool is_image = webkit_hit_test_result_context_is_image(hit_test);
   bool is_media = webkit_hit_test_result_context_is_media(hit_test);
   bool is_select = webkit_hit_test_result_context_is_selection(hit_test);
   bool is_edit = webkit_hit_test_result_context_is_editable(hit_test);
+  */
 
+  // --- Find in Page ---
   webkit_context_menu_append(menu, webkit_context_menu_item_new_separator());
   GSimpleAction *find_action = g_simple_action_new("find_in_page", nullptr);
   g_signal_connect(
@@ -459,6 +462,30 @@ gboolean WebView::onContextMenu(
   webkit_context_menu_append(menu, find_item);
 
   g_object_unref(find_action);
+
+  // --- Preferences ---
+  GSimpleAction *prefs_action = g_simple_action_new("open_preferences", nullptr);
+
+  g_signal_connect(
+      prefs_action,
+      "activate",
+      G_CALLBACK(+[](GSimpleAction *, GVariant *, gpointer data) {
+        auto *wv = static_cast<WebView *>(data);
+        if (!wv || !wv->context_) {
+          return;
+        }
+        wv->context_->openPreferences();
+      }),
+      self
+  );
+
+  WebKitContextMenuItem *prefs_item = webkit_context_menu_item_new_from_gaction(
+      G_ACTION(prefs_action), "Preferences…", nullptr
+  );
+
+  webkit_context_menu_append(menu, prefs_item);
+  g_object_unref(prefs_action);
+
   return false;
 }
 
