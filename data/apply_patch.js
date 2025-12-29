@@ -4,12 +4,19 @@ function parseHTML(html) {
 }
 
 function applyUserStyles(doc) {
+  const head = document.head;
+
+  // Remove all existing <link rel="stylesheet"> and <style> tags
+  head.querySelectorAll('link[rel="stylesheet"], style').forEach(el => el.remove());
+
+  // Add new <style> tags
   doc.querySelectorAll('style').forEach(s => {
-    document.head.appendChild(s.cloneNode(true));
+    head.appendChild(s.cloneNode(true));
   });
 
+  // Add new <link rel="stylesheet"> tags
   doc.querySelectorAll('link[rel="stylesheet"]').forEach(l => {
-    document.head.appendChild(l.cloneNode(true));
+    head.appendChild(l.cloneNode(true));
   });
 }
 
