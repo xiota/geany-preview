@@ -480,7 +480,7 @@ gboolean WebView::onContextMenu(
   );
 
   WebKitContextMenuItem *prefs_item = webkit_context_menu_item_new_from_gaction(
-      G_ACTION(prefs_action), "Preferences…", nullptr
+      G_ACTION(prefs_action), "Preferences", nullptr
   );
 
   webkit_context_menu_append(menu, prefs_item);

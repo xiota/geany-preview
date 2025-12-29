@@ -36,17 +36,17 @@ class PreviewMenu {
 
   // clang-format off
   inline static const MenuItemDef menu_defs_[] = {
-    { "Export to HTML",
+    { "Export to HTML…",
       "Export the current preview to an HTML file",
       onExportToHtml },
 
-    { "Export to PDF",
+    { "Export to PDF…",
       "Export the current preview to a PDF file",
       onExportToPdf },
 
     { nullptr, nullptr, nullptr }, // separator
 
-    { "Print",
+    { "Print…",
       "Print the current preview",
       onPrint },
 
