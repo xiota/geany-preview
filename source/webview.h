@@ -47,6 +47,11 @@ class WebView final {
   WebView &injectCssFromString(const std::string &css);
   WebView &injectCssFromFile(const std::filesystem::path &file);
   WebView &print(GtkWindow *parent = nullptr);
+
+  WebViewFindDialog *getFindDialog() {
+    return find_dialog_.get();
+  }
+
   WebView &findText(
       const std::string &text,
       WebKitFindOptions options = WEBKIT_FIND_OPTIONS_CASE_INSENSITIVE,

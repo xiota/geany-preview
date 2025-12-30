@@ -15,6 +15,7 @@
 #include "preview_pane.h"
 #include "util/file_utils.h"
 #include "util/string_utils.h"
+#include "webview_context_menu.h"
 #include "webview_find_dialog.h"
 
 namespace {
@@ -108,7 +109,10 @@ void WebView::reset() {
       this
   );
 
-  g_signal_connect_after(webview_, "context-menu", G_CALLBACK(onContextMenu), this);
+  g_signal_connect(
+      webview_, "context-menu", G_CALLBACK(WebViewContextMenu::onContextMenu), context_
+  );
+
   g_signal_connect(webview_, "decide-policy", G_CALLBACK(onDecidePolicy), this);
   g_signal_connect(webview_, "scroll-event", G_CALLBACK(onScrollEvent), this);
 }
@@ -357,159 +361,6 @@ WebView &WebView::showFindPrompt(GtkWindow *parent) {
   }
   find_dialog_->show(parent);
   return *this;
-}
-
-gboolean WebView::onContextMenu(
-    WebKitWebView *view,
-    WebKitContextMenu *menu,
-    GdkEvent *,
-    WebKitHitTestResult *hit_test,
-    gpointer user_data
-) {
-  auto *self = static_cast<WebView *>(user_data);
-
-  if (GList *items = webkit_context_menu_get_items(menu)) {
-    for (GList *l = items; l != nullptr;) {
-      WebKitContextMenuItem *menu_item = static_cast<WebKitContextMenuItem *>(l->data);
-      WebKitContextMenuAction action = webkit_context_menu_item_get_stock_action(menu_item);
-      l = l->next;
-      if (action == WEBKIT_CONTEXT_MENU_ACTION_DOWNLOAD_IMAGE_TO_DISK ||
-          action == WEBKIT_CONTEXT_MENU_ACTION_DOWNLOAD_LINK_TO_DISK ||
-          action == WEBKIT_CONTEXT_MENU_ACTION_GO_BACK ||
-          action == WEBKIT_CONTEXT_MENU_ACTION_GO_FORWARD ||
-          action == WEBKIT_CONTEXT_MENU_ACTION_OPEN_IMAGE_IN_NEW_WINDOW ||
-          action == WEBKIT_CONTEXT_MENU_ACTION_OPEN_LINK ||
-          action == WEBKIT_CONTEXT_MENU_ACTION_OPEN_LINK_IN_NEW_WINDOW ||
-          action == WEBKIT_CONTEXT_MENU_ACTION_RELOAD ||
-          action == WEBKIT_CONTEXT_MENU_ACTION_STOP) {
-        webkit_context_menu_remove(menu, menu_item);
-      }
-    }
-  }
-
-  /*
-  bool is_link = webkit_hit_test_result_context_is_link(hit_test);
-  bool is_image = webkit_hit_test_result_context_is_image(hit_test);
-  bool is_media = webkit_hit_test_result_context_is_media(hit_test);
-  bool is_select = webkit_hit_test_result_context_is_selection(hit_test);
-  bool is_edit = webkit_hit_test_result_context_is_editable(hit_test);
-  */
-
-  // --- Separator ---
-  webkit_context_menu_append(menu, webkit_context_menu_item_new_separator());
-
-  // --- Reload File ---
-  GSimpleAction *reload_action = g_simple_action_new("reload_file", nullptr);
-
-  g_signal_connect(
-      reload_action,
-      "activate",
-      G_CALLBACK(+[](GSimpleAction *, GVariant *, gpointer data) {
-        auto *wv = static_cast<WebView *>(data);
-        // Trigger Geany's reload command
-        keybindings_send_command(GEANY_KEY_GROUP_FILE, GEANY_KEYS_FILE_RELOAD);
-      }),
-      self
-  );
-
-  WebKitContextMenuItem *reload_item = webkit_context_menu_item_new_from_gaction(
-      G_ACTION(reload_action), "Reload File", nullptr
-  );
-
-  webkit_context_menu_append(menu, reload_item);
-
-  g_object_unref(reload_action);
-
-  // --- Find in Page ---
-  GSimpleAction *find_action = g_simple_action_new("find_in_page", nullptr);
-  g_signal_connect(
-      find_action,
-      "activate",
-      G_CALLBACK(+[](GSimpleAction *, GVariant *, gpointer data) {
-        auto *wv = static_cast<WebView *>(data);
-
-        GtkWidget *toplevel = gtk_widget_get_toplevel(wv->widget());
-        GtkWindow *parent = GTK_IS_WINDOW(toplevel) ? GTK_WINDOW(toplevel) : nullptr;
-
-        // 1. Open dialog immediately (empty)
-        wv->showFindPrompt(parent);
-
-        // 2. Async JS to get selected text
-        webkit_web_view_evaluate_javascript(
-            WEBKIT_WEB_VIEW(wv->widget()),
-            "window.getSelection().toString();",
-            -1,
-            nullptr,  // GCancellable*
-            nullptr,  // WebKitJavascriptWorld*
-            nullptr,  // WebKitFrame*
-            [](GObject *obj, GAsyncResult *res, gpointer user_data) {
-              auto *wv = static_cast<WebView *>(user_data);
-
-              GError *err = nullptr;
-              JSCValue *value =
-                  webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(obj), res, &err);
-
-              if (err) {
-                g_error_free(err);
-                return;
-              }
-
-              gchar *selected = nullptr;
-              if (jsc_value_is_string(value)) {
-                selected = jsc_value_to_string(value);
-              }
-
-              if (wv->find_dialog_) {
-                GtkWidget *entry = wv->find_dialog_->entry();
-                if (entry && selected && *selected) {
-                  gtk_entry_set_text(GTK_ENTRY(entry), selected);
-                }
-              }
-
-              if (selected) {
-                g_free(selected);
-              }
-
-              if (G_IS_OBJECT(value)) {
-                g_object_unref(value);
-              }
-            },
-            wv
-        );
-      }),
-      self
-  );
-
-  WebKitContextMenuItem *find_item = webkit_context_menu_item_new_from_gaction(
-      G_ACTION(find_action), "Find in Page…", nullptr
-  );
-  webkit_context_menu_append(menu, find_item);
-
-  g_object_unref(find_action);
-
-  // --- Preferences ---
-  GSimpleAction *prefs_action = g_simple_action_new("open_preferences", nullptr);
-
-  g_signal_connect(
-      prefs_action,
-      "activate",
-      G_CALLBACK(+[](GSimpleAction *, GVariant *, gpointer data) {
-        auto *wv = static_cast<WebView *>(data);
-        if (!wv || !wv->context_) {
-          return;
-        }
-        wv->context_->openPreferences();
-      }),
-      self
-  );
-
-  WebKitContextMenuItem *prefs_item =
-      webkit_context_menu_item_new_from_gaction(G_ACTION(prefs_action), "Preferences", nullptr);
-
-  webkit_context_menu_append(menu, prefs_item);
-  g_object_unref(prefs_action);
-
-  return false;
 }
 
 void WebView::onDecidePolicy(
