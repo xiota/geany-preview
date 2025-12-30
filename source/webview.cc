@@ -395,8 +395,32 @@ gboolean WebView::onContextMenu(
   bool is_edit = webkit_hit_test_result_context_is_editable(hit_test);
   */
 
-  // --- Find in Page ---
+  // --- Separator ---
   webkit_context_menu_append(menu, webkit_context_menu_item_new_separator());
+
+  // --- Reload File ---
+  GSimpleAction *reload_action = g_simple_action_new("reload_file", nullptr);
+
+  g_signal_connect(
+      reload_action,
+      "activate",
+      G_CALLBACK(+[](GSimpleAction *, GVariant *, gpointer data) {
+        auto *wv = static_cast<WebView *>(data);
+        // Trigger Geany's reload command
+        keybindings_send_command(GEANY_KEY_GROUP_FILE, GEANY_KEYS_FILE_RELOAD);
+      }),
+      self
+  );
+
+  WebKitContextMenuItem *reload_item = webkit_context_menu_item_new_from_gaction(
+      G_ACTION(reload_action), "Reload File", nullptr
+  );
+
+  webkit_context_menu_append(menu, reload_item);
+
+  g_object_unref(reload_action);
+
+  // --- Find in Page ---
   GSimpleAction *find_action = g_simple_action_new("find_in_page", nullptr);
   g_signal_connect(
       find_action,
@@ -479,9 +503,8 @@ gboolean WebView::onContextMenu(
       self
   );
 
-  WebKitContextMenuItem *prefs_item = webkit_context_menu_item_new_from_gaction(
-      G_ACTION(prefs_action), "Preferences", nullptr
-  );
+  WebKitContextMenuItem *prefs_item =
+      webkit_context_menu_item_new_from_gaction(G_ACTION(prefs_action), "Preferences", nullptr);
 
   webkit_context_menu_append(menu, prefs_item);
   g_object_unref(prefs_action);
