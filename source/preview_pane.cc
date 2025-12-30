@@ -47,9 +47,6 @@ PreviewPane::PreviewPane(PreviewContext *context)
 
     // for styling with geany.css
     gtk_widget_set_name(GTK_WIDGET(page_box_), "geany-preview-sidebar-page");
-
-    // simulated :focus-within tracking for CSS styling
-    GtkUtils::enableFocusWithinTracking(page_box_);
   }
 
   addWatchIfNeeded(preview_config_->configDir() / "preview.css");
