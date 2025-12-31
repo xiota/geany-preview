@@ -83,7 +83,7 @@ Preview uses [ftn2xml](https://github.com/xiota/ftn2xml) to convert screenplays 
 
 > Can I add Fountain to filetypes recognized by Geany?
 
-You can, but the benefits are limited to showing the type in the status bar, showing the extensions in the Open/Save dialogs, and referencing the type from plugins, such as Geanylua.  I do not know how to add scenes to the Symbols tab without patching and recompiling Geany. 
+You can, but the benefits are limited to showing the type in the status bar, showing the extensions in the Open/Save dialogs, and referencing the type from plugins, such as Geanylua.  I do not know how to add scenes to the Symbols tab without patching and recompiling Geany.
 
 To add the Fountain document type:
 
@@ -143,7 +143,7 @@ Auto saving documents is outside the scope of this plugin.  However, another plu
 
 > Can Preview be used for web design?
 
-While the Preview plugin can show HTML, it does not have features that web designers might want, like the devtools console. It is intended as an authoring tool for use with light-weight markup languages, like Markdown.
+Preview is intended for use with light-weight markup languages, like Markdown.  While HTML can be displayed, Preview does not have features that web designers might want, like the devtools console.
 
 > Will Preview become part of geany-plugins?
 
@@ -155,12 +155,21 @@ Altering the sidebar's general behavior is outside the scope of this plugin.
 
 However, changing sidebar behavior based on document type may be possible with a GeanyLua script.
 
-> Is it possible to change the appearance of the sidebar tabs so that it is visibly recognizable when they have focus?
+> Can the appearance of the sidebar tabs be changed so they are visibly recognizable when they have focus?
 
-Altering the sidebar's general behavior is outside the scope of this plugin.
+Altering the general behavior of the sidebar is outside the scope of this plugin.
 
-Changing widget appearance in response to focus changes is very difficult with GTK3.
+Changing widget appearance in response to focus changes is very difficult with GTK3.  Past attempts have been unsuccessful, so I will no longer attempt to add this feature or anything remotely similar.
 
+> What if I want to style the Preview tab differently from other tabs?
+
+You can add something similar to the following to `geany.css`.  This is a fixed style that will *not* change with focus.
+
+```CSS
+#geany-preview-sidebar-page {
+  border: 2px solid black;
+}
+```
 
 ### Troubleshooting
 
@@ -176,8 +185,16 @@ The default stylesheet and "quirks" modes may be different from web browsers.  T
 
 That is probably the color of the window before the WebView is fully loaded.
 
-I do not know how to change it.
+Besides changing system theme, I do not know how to change the window color.
 
-> Can Preview show changes without having to scroll?
+> Can Preview update without changing the scroll position?
 
-Scroll position should be stable after version 0.2.1.
+The scroll position should be stable during editing after version 0.2.1.
+
+> When I rapidly resize the sidebar, a gray area appears next to the scrollbar.
+
+The webview is a complicated widget that takes time to redraw.  If the glitch bothers you, try setting `webview_resize_buffer` to a value that reduces appearance of the artifact to a tolerable level.  Values between 50 and 250 should work well, depending on computing resources and runtime conditions.  When this workaround is enabled, formatting during resize may not be accurate.
+
+> When I rapidly resize the sidebar, the gray area sometimes becomes black.  There are also black triangles in the corners of tooltips.
+
+This is most likely a problem with the GTK theme.
