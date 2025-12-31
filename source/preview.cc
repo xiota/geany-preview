@@ -40,8 +40,6 @@ std::unique_ptr<TweakUiRedetectFileType> tweakui_redetect_filetype;
 std::unique_ptr<TweakUiSidebarAutoResize> tweakui_sidebar_auto_resize;
 std::unique_ptr<TweakUiUnchangeDocument> tweakui_unchange_document;
 
-PreviewContext preview_context;
-
 gboolean onEditorNotify(
     GObject * /*object*/,
     GeanyEditor *editor,
@@ -83,14 +81,15 @@ gboolean previewInit(
   preview_config->load();
 
   // context
-  preview_context.geany_plugin_ = plugin;
-  preview_context.geany_data_ = plugin->geany_data;
-  preview_context.geany_sidebar_ = plugin->geany_data->main_widgets->sidebar_notebook;
-  preview_context.preview_config_ = preview_config.get();
+  auto &ctx = PreviewContext::instance();
+  ctx.geany_plugin_ = plugin;
+  ctx.geany_data_ = plugin->geany_data;
+  ctx.geany_sidebar_ = plugin->geany_data->main_widgets->sidebar_notebook;
+  ctx.preview_config_ = preview_config.get();
 
   // preview pane
-  preview_pane = std::make_unique<PreviewPane>(&preview_context);
-  preview_context.preview_pane_ = preview_pane.get();
+  preview_pane = std::make_unique<PreviewPane>();
+  ctx.preview_pane_ = preview_pane.get();
 
   // signals
   plugin_signal_connect(
@@ -106,25 +105,25 @@ gboolean previewInit(
   );
 
   // tweaks
-  tweakui_auto_set_pwd = std::make_unique<TweakUiAutoSetPwd>(&preview_context);
-  tweakui_auto_set_read_only = std::make_unique<TweakUiAutoSetReadOnly>(&preview_context);
-  tweakui_color_tip = std::make_unique<TweakUiColorTip>(&preview_context);
-  tweakui_column_markers = std::make_unique<TweakUiColumnMarkers>(&preview_context);
+  tweakui_auto_set_pwd = std::make_unique<TweakUiAutoSetPwd>();
+  tweakui_auto_set_read_only = std::make_unique<TweakUiAutoSetReadOnly>();
+  tweakui_color_tip = std::make_unique<TweakUiColorTip>();
+  tweakui_column_markers = std::make_unique<TweakUiColumnMarkers>();
   tweakui_disable_editor_ctrl_wheel_zoom =
-      std::make_unique<TweakUiDisableEditorCtrlWheelZoom>(&preview_context);
-  tweakui_focus_editor_on_raise = std::make_unique<TweakUiFocusEditorOnRaise>(&preview_context);
-  tweakui_mark_word = std::make_unique<TweakUiMarkWord>(&preview_context);
-  tweakui_redetect_filetype = std::make_unique<TweakUiRedetectFileType>(&preview_context);
-  tweakui_sidebar_auto_resize = std::make_unique<TweakUiSidebarAutoResize>(&preview_context);
-  tweakui_unchange_document = std::make_unique<TweakUiUnchangeDocument>(&preview_context);
+      std::make_unique<TweakUiDisableEditorCtrlWheelZoom>();
+  tweakui_focus_editor_on_raise = std::make_unique<TweakUiFocusEditorOnRaise>();
+  tweakui_mark_word = std::make_unique<TweakUiMarkWord>();
+  tweakui_redetect_filetype = std::make_unique<TweakUiRedetectFileType>();
+  tweakui_sidebar_auto_resize = std::make_unique<TweakUiSidebarAutoResize>();
+  tweakui_unchange_document = std::make_unique<TweakUiUnchangeDocument>();
 
   // menu
-  preview_menu = std::make_unique<PreviewMenu>(&preview_context);
+  preview_menu = std::make_unique<PreviewMenu>();
 
   // shortcuts
-  preview_context.geany_key_group_ =
+  ctx.geany_key_group_ =
       plugin_set_key_group(plugin, "Preview", PreviewShortcuts::shortcutCount(), nullptr);
-  preview_shortcuts = std::make_unique<PreviewShortcuts>(&preview_context);
+  preview_shortcuts = std::make_unique<PreviewShortcuts>();
 
   return true;
 }

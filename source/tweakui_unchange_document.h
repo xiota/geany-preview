@@ -13,9 +13,13 @@
 
 class TweakUiUnchangeDocument {
  public:
-  explicit TweakUiUnchangeDocument(PreviewContext *ctx) : context_(ctx) {
+  explicit TweakUiUnchangeDocument() {
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.geany_plugin_) {
+      return;
+    }
     plugin_signal_connect(
-        context_->geany_plugin_, nullptr, "editor-notify", false, G_CALLBACK(editorNotify), this
+        ctx.geany_plugin_, nullptr, "editor-notify", false, G_CALLBACK(editorNotify), this
     );
   }
 
@@ -32,8 +36,13 @@ class TweakUiUnchangeDocument {
       return;
     }
 
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.preview_config_) {
+      return;
+    }
+
     // Read enable flag from plugin config
-    if (!context_->preview_config_->get<bool>("unchange_document", false)) {
+    if (!ctx.preview_config_->get<bool>("unchange_document", false)) {
       return;
     }
 
@@ -43,6 +52,4 @@ class TweakUiUnchangeDocument {
       document_set_text_changed(doc, false);
     }
   }
-
-  PreviewContext *context_;
 };

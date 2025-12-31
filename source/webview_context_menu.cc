@@ -55,6 +55,9 @@ WebKitContextMenuItem *createReloadItem() {
 // Find in Page
 void onFindActivate(GSimpleAction *, GVariant *, gpointer data) {
   auto *wv = static_cast<WebView *>(data);
+  if (!wv) {
+    return;
+  }
 
   GtkWidget *toplevel = gtk_widget_get_toplevel(wv->widget());
   GtkWindow *parent = GTK_IS_WINDOW(toplevel) ? GTK_WINDOW(toplevel) : nullptr;
@@ -105,13 +108,15 @@ void onFindActivate(GSimpleAction *, GVariant *, gpointer data) {
   );
 }
 
-WebKitContextMenuItem *createFindItem(PreviewContext *ctx) {
-  if (!ctx || !ctx->webview_) {
+WebKitContextMenuItem *createFindItem() {
+  auto &ctx = PreviewContext::instance();
+
+  if (!ctx.webview_) {
     return nullptr;
   }
 
   GSimpleAction *action = g_simple_action_new("find_in_page", nullptr);
-  g_signal_connect(action, "activate", G_CALLBACK(onFindActivate), ctx->webview_);
+  g_signal_connect(action, "activate", G_CALLBACK(onFindActivate), ctx.webview_);
 
   WebKitContextMenuItem *item =
       webkit_context_menu_item_new_from_gaction(G_ACTION(action), "Find in Page…", nullptr);
@@ -122,15 +127,13 @@ WebKitContextMenuItem *createFindItem(PreviewContext *ctx) {
 
 // Preferences
 void onPrefsActivate(GSimpleAction *, GVariant *, gpointer data) {
-  auto *ctx = static_cast<PreviewContext *>(data);
-  if (ctx) {
-    ctx->openPreferences();
-  }
+  auto &ctx = PreviewContext::instance();
+  ctx.openPreferences();
 }
 
-WebKitContextMenuItem *createPreferencesItem(PreviewContext *ctx) {
+WebKitContextMenuItem *createPreferencesItem() {
   GSimpleAction *action = g_simple_action_new("open_preferences", nullptr);
-  g_signal_connect(action, "activate", G_CALLBACK(onPrefsActivate), ctx);
+  g_signal_connect(action, "activate", G_CALLBACK(onPrefsActivate), nullptr);
 
   WebKitContextMenuItem *item =
       webkit_context_menu_item_new_from_gaction(G_ACTION(action), "Preferences", nullptr);
@@ -150,11 +153,6 @@ gboolean onContextMenu(
     WebKitHitTestResult *,
     gpointer user_data
 ) {
-  auto *ctx = static_cast<PreviewContext *>(user_data);
-  if (!ctx) {
-    return false;
-  }
-
   /*
   bool is_link = webkit_hit_test_result_context_is_link(hit_test);
   bool is_image = webkit_hit_test_result_context_is_image(hit_test);
@@ -168,9 +166,9 @@ gboolean onContextMenu(
   webkit_context_menu_append(menu, webkit_context_menu_item_new_separator());
   webkit_context_menu_append(menu, createReloadItem());
 
-  webkit_context_menu_append(menu, createFindItem(ctx));
+  webkit_context_menu_append(menu, createFindItem());
 
-  webkit_context_menu_append(menu, createPreferencesItem(ctx));
+  webkit_context_menu_append(menu, createPreferencesItem());
 
   return false;
 }

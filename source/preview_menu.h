@@ -11,14 +11,13 @@
 
 class PreviewMenu {
  public:
-  explicit PreviewMenu(PreviewContext *context);
+  explicit PreviewMenu();
 
   static constexpr gsize menuItemCount() {
     return std::size(menu_defs_);
   }
 
  private:
-  PreviewContext *context_;
   GtkWidget *submenu_root_ = nullptr;
 
   static void onExportToHtml(GtkMenuItem *, gpointer user_data);

@@ -17,7 +17,7 @@
 
 class PreviewPane final {
  public:
-  explicit PreviewPane(PreviewContext *context);
+  explicit PreviewPane();
   ~PreviewPane() noexcept;
 
   GtkWidget *widget() const;
@@ -48,7 +48,6 @@ class PreviewPane final {
   PreviewPane &clearAndReloadCss();
   PreviewPane &injectCssTheme();
 
-  PreviewContext *context_;
   gulong init_handler_id_ = 0;
 
   GtkWidget *sidebar_notebook_;

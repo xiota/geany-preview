@@ -18,7 +18,7 @@ class WebViewFindDialog;
 
 class WebView final {
  public:
-  explicit WebView(PreviewContext *context) noexcept;
+  explicit WebView() noexcept;
   ~WebView() noexcept;
 
   GtkWidget *widget() const;
@@ -87,7 +87,6 @@ class WebView final {
 
   static gboolean onScrollEvent(GtkWidget *widget, GdkEventScroll *event, gpointer user_data);
 
-  PreviewContext *context_;
   WebKitSettings *webview_settings_ = nullptr;
   GtkWidget *webview_ = nullptr;
   WebKitWebContext *webview_context_ = nullptr;

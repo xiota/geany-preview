@@ -19,10 +19,15 @@
 
 class TweakUiColorTip {
  public:
-  explicit TweakUiColorTip(PreviewContext *context) : context_(context) {
+  explicit TweakUiColorTip() {
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.geany_data_ || ctx.geany_plugin_) {
+      return;
+    }
+
     // Connect button-press for already-open docs if chooser enabled
     if (colorChooserEnabled() && main_is_realized()) {
-      auto *docs = context_->geany_data_->documents_array;
+      auto *docs = ctx.geany_data_->documents_array;
       for (guint i = 0; i < docs->len; ++i) {
         auto *doc = static_cast<GeanyDocument *>(g_ptr_array_index(docs, i));
         if (DOC_VALID(doc)) {
@@ -33,26 +38,16 @@ class TweakUiColorTip {
 
     // Hook into document/editor signals
     plugin_signal_connect(
-        context_->geany_plugin_,
-        nullptr,
-        "document-open",
-        true,
-        G_CALLBACK(documentSignal),
-        this
+        ctx.geany_plugin_, nullptr, "document-open", true, G_CALLBACK(documentSignal), this
     );
     plugin_signal_connect(
-        context_->geany_plugin_, nullptr, "document-new", true, G_CALLBACK(documentSignal), this
+        ctx.geany_plugin_, nullptr, "document-new", true, G_CALLBACK(documentSignal), this
     );
     plugin_signal_connect(
-        context_->geany_plugin_,
-        nullptr,
-        "document-close",
-        false,
-        G_CALLBACK(documentClose),
-        this
+        ctx.geany_plugin_, nullptr, "document-close", false, G_CALLBACK(documentClose), this
     );
     plugin_signal_connect(
-        context_->geany_plugin_, nullptr, "editor-notify", false, G_CALLBACK(editorNotify), this
+        ctx.geany_plugin_, nullptr, "editor-notify", false, G_CALLBACK(editorNotify), this
     );
 
     setSize();
@@ -79,12 +74,12 @@ class TweakUiColorTip {
 
  private:
   bool colorTooltipEnabled() const {
-    return context_ && context_->preview_config_ &&
-           context_->preview_config_->get<bool>("color_tooltip", false);
+    auto &ctx = PreviewContext::instance();
+    return ctx.preview_config_ && ctx.preview_config_->get<bool>("color_tooltip", false);
   }
   bool colorChooserEnabled() const {
-    return context_ && context_->preview_config_ &&
-           context_->preview_config_->get<bool>("color_chooser", false);
+    auto &ctx = PreviewContext::instance();
+    return ctx.preview_config_ && ctx.preview_config_->get<bool>("color_chooser", false);
   }
 
   static int containsColorValue(char *string, int position, int maxdist) {
@@ -180,9 +175,14 @@ class TweakUiColorTip {
   }
 
   void connectDocumentButtonPressSignalHandler(GeanyDocument *doc) {
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.geany_plugin_) {
+      return;
+    }
+
     g_return_if_fail(DOC_VALID(doc));
     plugin_signal_connect(
-        context_->geany_plugin_,
+        ctx.geany_plugin_,
         G_OBJECT(doc->editor->sci),
         "button-press-event",
         false,
@@ -264,7 +264,6 @@ class TweakUiColorTip {
     return out;
   }
 
-  PreviewContext *context_ = nullptr;
   std::string color_tooltip_size_{ "small" };
   std::string colortip_template_{ "    " };
 };

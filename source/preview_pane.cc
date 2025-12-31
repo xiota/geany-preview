@@ -27,12 +27,11 @@
 #include "util/xdg_utils.h"
 #include "webview.h"
 
-PreviewPane::PreviewPane(PreviewContext *context)
-    : context_(context),
-      sidebar_notebook_(context_->geany_sidebar_),
-      preview_config_(context_->preview_config_),
-      webview_(context) {
-  context_->webview_ = &webview_;
+PreviewPane::PreviewPane() {
+  auto &ctx = PreviewContext::instance();
+  sidebar_notebook_ = ctx.geany_sidebar_;
+  preview_config_ = ctx.preview_config_;
+  ctx.webview_ = &webview_;
 
   page_box_ = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
   offscreen_ = gtk_offscreen_window_new();
@@ -424,12 +423,13 @@ std::string PreviewPane::generateHtml(const Document &document) const {
     return std::string{ s };
   };
 
+  auto &ctx = PreviewContext::instance();
   if (converter) {
     return pre.headersToHtml() + std::string{ converter->toHtml(pre.body()) };
-  } else {
+  } else if (ctx.geany_plugin_) {
     std::string html = "<tt>";
-    html += std::string{ context_->geany_plugin_->info->name } + " ";
-    html += std::string{ context_->geany_plugin_->info->version } + "</br>";
+    html += std::string{ ctx.geany_plugin_->info->name } + " ";
+    html += std::string{ ctx.geany_plugin_->info->version } + "</br>";
     html += "&nbsp;&nbsp;&nbsp;";
     if (!document.filetypeName().empty()) {
       html += document.filetypeName() + ", " + document.encodingName();
@@ -441,6 +441,8 @@ std::string PreviewPane::generateHtml(const Document &document) const {
     }
     html += "</tt>";
     return html;
+  } else {
+    return {};
   }
 }
 

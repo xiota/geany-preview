@@ -11,14 +11,13 @@
 
 class PreviewShortcuts {
  public:
-  explicit PreviewShortcuts(PreviewContext *context);
+  explicit PreviewShortcuts();
 
   static constexpr gsize shortcutCount() {
     return std::size(shortcut_defs_) - 1;
   }
 
  private:
-  PreviewContext *context_;
   GeanyKeyGroup *key_group_;
 
   static void onCopy(guint /*key_id*/);

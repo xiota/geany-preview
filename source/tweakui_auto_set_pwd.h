@@ -18,33 +18,26 @@
 
 class TweakUiAutoSetPwd {
  public:
-  explicit TweakUiAutoSetPwd(PreviewContext *context) : context_(context) {
-    if (!context_) {
+  explicit TweakUiAutoSetPwd() {
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.geany_plugin_ || !ctx.preview_config_) {
       return;
     }
 
-    context_->preview_config_->connectChanged([this]() {
-      documentSignal(nullptr, nullptr, this);
-    });
+    ctx.preview_config_->connectChanged([this]() { documentSignal(nullptr, nullptr, this); });
 
     // Hook into document activation (fires on open/new/switch)
     plugin_signal_connect(
-        context_->geany_plugin_,
-        nullptr,
-        "document-activate",
-        true,
-        G_CALLBACK(documentSignal),
-        this
+        ctx.geany_plugin_, nullptr, "document-activate", true, G_CALLBACK(documentSignal), this
     );
   }
 
  private:
   static void documentSignal(GObject *, GeanyDocument *doc, gpointer user_data) {
     auto *self = static_cast<TweakUiAutoSetPwd *>(user_data);
-    if (!self->context_ || !self->context_->preview_config_) {
-      return;
-    }
-    if (!self->context_->preview_config_->get<bool>("auto_set_pwd", false)) {
+    auto &ctx = PreviewContext::instance();
+
+    if (!ctx.preview_config_ || !ctx.preview_config_->get<bool>("auto_set_pwd", false)) {
       return;
     }
 
@@ -77,6 +70,4 @@ class TweakUiAutoSetPwd {
       }
     }
   }
-
-  PreviewContext *context_ = nullptr;
 };

@@ -29,13 +29,14 @@ struct DelayedApplyData {
 
 class TweakUiSidebarAutoResize {
  public:
-  explicit TweakUiSidebarAutoResize(PreviewContext *context) : context_(context) {
-    if (!context_ || !context_->geany_data_ || !context_->geany_data_->main_widgets) {
+  explicit TweakUiSidebarAutoResize() {
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.geany_data_ || !ctx.geany_data_->main_widgets) {
       return;
     }
 
-    geany_window_ = context_->geany_data_->main_widgets->window;
-    geany_sidebar_ = context_->geany_data_->main_widgets->sidebar_notebook;
+    geany_window_ = ctx.geany_data_->main_widgets->window;
+    geany_sidebar_ = ctx.geany_data_->main_widgets->sidebar_notebook;
     geany_hpane_ = ui_lookup_widget(GTK_WIDGET(geany_window_), "hpaned1");
 
     if (!geany_window_ || !geany_sidebar_ || !geany_hpane_) {
@@ -95,12 +96,17 @@ class TweakUiSidebarAutoResize {
   }
 
   void adjustSidebar() {
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.preview_config_) {
+      return;
+    }
+
     // Core widget/type guards (cheap, before we set pending)
     if (!geany_hpane_ || !geany_window_ || !geany_sidebar_) {
       return;
     }
 
-    bool enabled = context_->preview_config_->get<bool>("sidebar_auto_resize", false);
+    bool enabled = ctx.preview_config_->get<bool>("sidebar_auto_resize", false);
     if (!enabled) {
       return;
     }
@@ -136,10 +142,9 @@ class TweakUiSidebarAutoResize {
       maximized = false;
     }
 
-    int cols_normal = context_->preview_config_->get<int>("sidebar_columns_normal", 80);
-    int cols_maximized = context_->preview_config_->get<int>("sidebar_columns_maximized", 100);
-    int cols_fullscreen =
-        context_->preview_config_->get<int>("sidebar_columns_fullscreen", 100);
+    int cols_normal = ctx.preview_config_->get<int>("sidebar_columns_normal", 80);
+    int cols_maximized = ctx.preview_config_->get<int>("sidebar_columns_maximized", 100);
+    int cols_fullscreen = ctx.preview_config_->get<int>("sidebar_columns_fullscreen", 100);
 
     int target_cols = cols_normal;
     if (fullscreen) {
@@ -148,7 +153,7 @@ class TweakUiSidebarAutoResize {
       target_cols = cols_maximized;
     }
 
-    int delay_ms = context_->preview_config_->get<int>("sidebar_resize_delay", 50);
+    int delay_ms = ctx.preview_config_->get<int>("sidebar_resize_delay", 50);
     if (delay_ms < 0) {
       delay_ms = 0;
     }
@@ -186,8 +191,12 @@ class TweakUiSidebarAutoResize {
             return G_SOURCE_REMOVE;
           }
 
-          int min_sidebar_width =
-              d->self->context_->preview_config_->get<int>("sidebar_size_min", 50);
+          int min_sidebar_width = 50;
+          auto &ctx = PreviewContext::instance();
+          if (ctx.preview_config_) {
+            min_sidebar_width = ctx.preview_config_->get<int>("sidebar_size_min", 50);
+          }
+
           int max_editor_width = paned_w - min_sidebar_width;
 
           if (target_editor_width < kEditorMinWidth) {
@@ -214,7 +223,6 @@ class TweakUiSidebarAutoResize {
     );
   }
 
-  PreviewContext *context_ = nullptr;
   GtkWidget *geany_window_ = nullptr;
   GtkWidget *geany_hpane_ = nullptr;
   GtkWidget *geany_sidebar_ = nullptr;

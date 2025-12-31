@@ -15,7 +15,7 @@
 #include "subprocess.h"
 #include "webview.h"
 
-PreviewMenu::PreviewMenu(PreviewContext *context) : context_(context) {
+PreviewMenu::PreviewMenu() {
   // Create the "Preview" submenu root
   submenu_root_ = gtk_menu_item_new_with_label("Preview");
   GtkWidget *submenu = gtk_menu_new();
@@ -32,15 +32,21 @@ PreviewMenu::PreviewMenu(PreviewContext *context) : context_(context) {
     if (def.tooltip) {
       gtk_widget_set_tooltip_text(item, def.tooltip);
     }
-    g_signal_connect(item, "activate", G_CALLBACK(def.callback), context_);
+    g_signal_connect(item, "activate", G_CALLBACK(def.callback), nullptr);
     gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
   }
 
   // Attach submenu to Geany's Tools menu
-  GtkWidget *tools_menu = context_->geany_data_->main_widgets->tools_menu;
-  gtk_menu_shell_append(GTK_MENU_SHELL(tools_menu), submenu_root_);
-
-  gtk_widget_show_all(submenu_root_);
+  auto &ctx = PreviewContext::instance();
+  if (ctx.geany_data_ && ctx.geany_data_->main_widgets &&
+      ctx.geany_data_->main_widgets->tools_menu) {
+    GtkWidget *tools_menu = ctx.geany_data_->main_widgets->tools_menu;
+    gtk_menu_shell_append(GTK_MENU_SHELL(tools_menu), submenu_root_);
+    gtk_widget_show_all(submenu_root_);
+  } else {
+    gtk_widget_destroy(submenu_root_);
+    submenu_root_ = nullptr;
+  }
 }
 
 // --- Callbacks ---
@@ -48,9 +54,9 @@ namespace {
 
 // Show a save dialog and return the chosen destination path.
 // Returns empty path if user cancels.
-std::filesystem::path
-getExportDestination(PreviewContext *ctx, const char *dialog_title, const char *default_ext) {
-  if (!ctx || !ctx->preview_pane_) {
+std::filesystem::path getExportDestination(const char *dialog_title, const char *default_ext) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.preview_pane_) {
     return {};
   }
 
@@ -62,7 +68,7 @@ getExportDestination(PreviewContext *ctx, const char *dialog_title, const char *
     default_name.replace_extension(default_ext);
   }
 
-  GtkWindow *parent = GTK_WINDOW(ctx->geany_data_->main_widgets->window);
+  GtkWindow *parent = GTK_WINDOW(ctx.geany_data_->main_widgets->window);
   GtkWidget *dlg = gtk_file_chooser_dialog_new(
       dialog_title,
       parent,
@@ -92,13 +98,17 @@ getExportDestination(PreviewContext *ctx, const char *dialog_title, const char *
 }  // anonymous namespace
 
 void PreviewMenu::onExportToHtml(GtkMenuItem *, gpointer user_data) {
-  auto *ctx = static_cast<PreviewContext *>(user_data);
-  auto dest_path = getExportDestination(ctx, "Export Preview to HTML", ".html");
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.preview_pane_) {
+    return;
+  }
+
+  auto dest_path = getExportDestination("Export Preview to HTML", ".html");
   if (dest_path.empty()) {
     return;
   }
 
-  ctx->preview_pane_->exportHtmlToFileAsync(dest_path, [dest_path](bool ok) {
+  ctx.preview_pane_->exportHtmlToFileAsync(dest_path, [dest_path](bool ok) {
     if (ok) {
       msgwin_status_add("Preview: Exported HTML to: %s", dest_path.string().c_str());
     } else {
@@ -108,13 +118,17 @@ void PreviewMenu::onExportToHtml(GtkMenuItem *, gpointer user_data) {
 }
 
 void PreviewMenu::onExportToPdf(GtkMenuItem *, gpointer user_data) {
-  auto *ctx = static_cast<PreviewContext *>(user_data);
-  auto dest_path = getExportDestination(ctx, "Export Preview to PDF", ".pdf");
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.preview_pane_) {
+    return;
+  }
+
+  auto dest_path = getExportDestination("Export Preview to PDF", ".pdf");
   if (dest_path.empty()) {
     return;
   }
 
-  ctx->preview_pane_->exportPdfToFileAsync(dest_path, [dest_path](bool ok) {
+  ctx.preview_pane_->exportPdfToFileAsync(dest_path, [dest_path](bool ok) {
     if (ok) {
       msgwin_status_add("Preview: Exported PDF to: %s", dest_path.string().c_str());
     } else {
@@ -124,19 +138,19 @@ void PreviewMenu::onExportToPdf(GtkMenuItem *, gpointer user_data) {
 }
 
 void PreviewMenu::onPrint(GtkMenuItem *, gpointer user_data) {
-  auto *ctx = static_cast<PreviewContext *>(user_data);
-  if (ctx && ctx->webview_) {
-    ctx->webview_->print(GTK_WINDOW(ctx->geany_data_->main_widgets->window));
+  auto &ctx = PreviewContext::instance();
+  if (ctx.webview_) {
+    ctx.webview_->print(GTK_WINDOW(ctx.geany_data_->main_widgets->window));
   }
 }
 
 void PreviewMenu::onOpenConfigFolder(GtkMenuItem *, gpointer user_data) {
-  auto *ctx = static_cast<PreviewContext *>(user_data);
-  if (!ctx || !ctx->preview_config_) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.preview_config_) {
     return;
   }
 
-  const auto &path = ctx->preview_config_->configDir();
+  const auto &path = ctx.preview_config_->configDir();
   if (!std::filesystem::exists(path)) {
     msgwin_status_add("Preview: Config folder does not exist.");
     return;
@@ -151,7 +165,6 @@ void PreviewMenu::onOpenConfigFolder(GtkMenuItem *, gpointer user_data) {
 }
 
 void PreviewMenu::onPreferences(GtkMenuItem *, gpointer user_data) {
-  if (auto *ctx = static_cast<PreviewContext *>(user_data)) {
-    ctx->openPreferences();
-  }
+  auto &ctx = PreviewContext::instance();
+  ctx.openPreferences();
 }

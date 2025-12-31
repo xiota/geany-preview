@@ -26,8 +26,6 @@
 
 namespace {
 
-PreviewContext *preview_context = nullptr;
-
 struct DeCommand {
   const char *key;      // substring to look for in DE string
   const char *command;  // associated command template
@@ -72,12 +70,13 @@ std::string pickCommandForDe(const std::string &de, const DeCommand *cmds) {
 }
 
 bool isPreviewVisible() {
-  if (!preview_context || !preview_context->preview_pane_) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.preview_pane_) {
     return false;
   }
 
-  GtkWidget *preview = preview_context->preview_pane_->widget();
-  GtkWidget *sidebar = preview_context->geany_sidebar_;
+  GtkWidget *preview = ctx.preview_pane_->widget();
+  GtkWidget *sidebar = ctx.geany_sidebar_;
   if (!preview || !sidebar || !GTK_IS_NOTEBOOK(sidebar)) {
     return false;
   }
@@ -86,10 +85,9 @@ bool isPreviewVisible() {
 }
 }  // namespace
 
-PreviewShortcuts::PreviewShortcuts(PreviewContext *context)
-    : context_(context), key_group_(context_->geany_key_group_) {
-  // Stash context for callbacks
-  preview_context = context_;
+PreviewShortcuts::PreviewShortcuts() {
+  auto &ctx = PreviewContext::instance();
+  key_group_ = ctx.geany_key_group_;
 
   for (gsize i = 0; i < std::size(shortcut_defs_); ++i) {
     if (!shortcut_defs_[i].label) {
@@ -109,12 +107,13 @@ PreviewShortcuts::PreviewShortcuts(PreviewContext *context)
 }
 
 void PreviewShortcuts::onCopy(guint /*key_id*/) {
-  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.preview_pane_ || !ctx.webview_) {
     return;
   }
 
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
-    auto *wv = preview_context->webview_->widget();
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(ctx.preview_pane_->widget()))) {
+    auto *wv = ctx.webview_->widget();
     webkit_web_view_execute_editing_command(WEBKIT_WEB_VIEW(wv), WEBKIT_EDITING_COMMAND_COPY);
   } else {
     keybindings_send_command(GEANY_KEY_GROUP_CLIPBOARD, GEANY_KEYS_CLIPBOARD_COPY);
@@ -122,12 +121,13 @@ void PreviewShortcuts::onCopy(guint /*key_id*/) {
 }
 
 void PreviewShortcuts::onCut(guint /*key_id*/) {
-  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.preview_pane_ || !ctx.webview_) {
     return;
   }
 
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
-    auto *wv = preview_context->webview_->widget();
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(ctx.preview_pane_->widget()))) {
+    auto *wv = ctx.webview_->widget();
     webkit_web_view_execute_editing_command(WEBKIT_WEB_VIEW(wv), WEBKIT_EDITING_COMMAND_CUT);
   } else {
     keybindings_send_command(GEANY_KEY_GROUP_CLIPBOARD, GEANY_KEYS_CLIPBOARD_CUT);
@@ -135,12 +135,13 @@ void PreviewShortcuts::onCut(guint /*key_id*/) {
 }
 
 void PreviewShortcuts::onPaste(guint /*key_id*/) {
-  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.preview_pane_ || !ctx.webview_) {
     return;
   }
 
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
-    auto *wv = preview_context->webview_->widget();
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(ctx.preview_pane_->widget()))) {
+    auto *wv = ctx.webview_->widget();
     webkit_web_view_execute_editing_command(WEBKIT_WEB_VIEW(wv), WEBKIT_EDITING_COMMAND_PASTE);
   } else {
     keybindings_send_command(GEANY_KEY_GROUP_CLIPBOARD, GEANY_KEYS_CLIPBOARD_PASTE);
@@ -164,112 +165,112 @@ void PreviewShortcuts::onCopyFilePath(guint /*key_id*/) {
 }
 
 void PreviewShortcuts::onFind(guint /*key_id*/) {
-  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_ ||
-      !preview_context->geany_data_ || !preview_context->geany_data_->main_widgets ||
-      !preview_context->geany_data_->main_widgets->window) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.preview_pane_ || !ctx.webview_ || !ctx.geany_data_ ||
+      !ctx.geany_data_->main_widgets || !ctx.geany_data_->main_widgets->window) {
     return;
   }
 
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
-    preview_context->webview_->showFindPrompt(
-        GTK_WINDOW(preview_context->geany_data_->main_widgets->window)
-    );
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(ctx.preview_pane_->widget()))) {
+    ctx.webview_->showFindPrompt(GTK_WINDOW(ctx.geany_data_->main_widgets->window));
   } else {
     keybindings_send_command(GEANY_KEY_GROUP_SEARCH, GEANY_KEYS_SEARCH_FIND);
   }
 }
 
 void PreviewShortcuts::onFindNext(guint /*key_id*/) {
-  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_ ||
-      !preview_context->geany_data_ || !preview_context->geany_data_->main_widgets ||
-      !preview_context->geany_data_->main_widgets->window) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.preview_pane_ || !ctx.webview_ || !ctx.geany_data_ ||
+      !ctx.geany_data_->main_widgets || !ctx.geany_data_->main_widgets->window) {
     return;
   }
 
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
-    preview_context->webview_->findNext();
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(ctx.preview_pane_->widget()))) {
+    ctx.webview_->findNext();
   } else {
     keybindings_send_command(GEANY_KEY_GROUP_SEARCH, GEANY_KEYS_SEARCH_FINDNEXTSEL);
   }
 }
 
 void PreviewShortcuts::onFindPrev(guint /*key_id*/) {
-  if (!preview_context || !preview_context->preview_pane_ || !preview_context->webview_ ||
-      !preview_context->geany_data_ || !preview_context->geany_data_->main_widgets ||
-      !preview_context->geany_data_->main_widgets->window) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.preview_pane_ || !ctx.webview_ || !ctx.geany_data_ ||
+      !ctx.geany_data_->main_widgets || !ctx.geany_data_->main_widgets->window) {
     return;
   }
 
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(preview_context->preview_pane_->widget()))) {
-    preview_context->webview_->findPrevious();
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(ctx.preview_pane_->widget()))) {
+    ctx.webview_->findPrevious();
   } else {
     keybindings_send_command(GEANY_KEY_GROUP_SEARCH, GEANY_KEYS_SEARCH_FINDPREVSEL);
   }
 }
 
 void PreviewShortcuts::onFindWv(guint /*key_id*/) {
-  if (!preview_context || !preview_context->webview_ || !preview_context->geany_data_ ||
-      !preview_context->geany_data_->main_widgets ||
-      !preview_context->geany_data_->main_widgets->window) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.webview_ || !ctx.geany_data_ || !ctx.geany_data_->main_widgets ||
+      !ctx.geany_data_->main_widgets->window) {
     return;
   }
 
   if (isPreviewVisible()) {
-    preview_context->webview_->showFindPrompt(
-        GTK_WINDOW(preview_context->geany_data_->main_widgets->window)
-    );
+    ctx.webview_->showFindPrompt(GTK_WINDOW(ctx.geany_data_->main_widgets->window));
   }
 }
 
 void PreviewShortcuts::onFindNextWv(guint /*key_id*/) {
-  if (!preview_context || !preview_context->webview_) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.webview_) {
     return;
   }
 
   if (isPreviewVisible()) {
-    preview_context->webview_->findNext();
+    ctx.webview_->findNext();
   }
 }
 
 void PreviewShortcuts::onFindPrevWv(guint /*key_id*/) {
-  if (!preview_context || !preview_context->webview_) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.webview_) {
     return;
   }
 
   if (isPreviewVisible()) {
-    preview_context->webview_->findPrevious();
+    ctx.webview_->findPrevious();
   }
 }
 
 void PreviewShortcuts::onFocusPreview(guint /*key_id*/) {
-  if (!preview_context || !preview_context->preview_pane_) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.preview_pane_) {
     return;
   }
 
-  GtkWidget *sidebar = preview_context->geany_sidebar_;
+  GtkWidget *sidebar = ctx.geany_sidebar_;
   if (!sidebar || !gtk_widget_get_visible(sidebar)) {
     return;
   }
 
-  GtkWidget *preview = preview_context->preview_pane_->widget();
+  GtkWidget *preview = ctx.preview_pane_->widget();
   if (preview) {
     GtkUtils::activateNotebookPageForWidget(preview);
   }
 }
 
 void PreviewShortcuts::onFocusPreviewEditor(guint /*key_id*/) {
-  if (!preview_context || !preview_context->preview_pane_) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.preview_pane_) {
     return;
   }
 
-  GtkWidget *sidebar = preview_context->geany_sidebar_;
+  GtkWidget *sidebar = ctx.geany_sidebar_;
   if (!sidebar || !gtk_widget_get_visible(sidebar)) {
     return;
   }
 
   GeanyDocument *doc = document_get_current();
   GtkWidget *sci = (doc && doc->editor) ? GTK_WIDGET(doc->editor->sci) : nullptr;
-  GtkWidget *preview = preview_context->preview_pane_->widget();
+  GtkWidget *preview = ctx.preview_pane_->widget();
 
   const bool inEditor = sci && gtk_widget_has_focus(sci);
   const bool inPreview =
@@ -277,8 +278,7 @@ void PreviewShortcuts::onFocusPreviewEditor(guint /*key_id*/) {
       GtkUtils::isWidgetOnVisibleNotebookPage(GTK_NOTEBOOK(sidebar), preview);
 
   if (!inEditor && !inPreview) {
-    bool strict =
-        preview_context->preview_config_->get<bool>("keybinding_behavior_strict", false);
+    bool strict = ctx.preview_config_->get<bool>("keybinding_behavior_strict", false);
     if (strict) {
       return;
     } else {
@@ -296,11 +296,8 @@ void PreviewShortcuts::onFocusPreviewEditor(guint /*key_id*/) {
 }
 
 void PreviewShortcuts::onFocusSidebarEditor(guint /*key_id*/) {
-  if (!preview_context) {
-    return;
-  }
-
-  GtkWidget *sidebar = preview_context->geany_sidebar_;
+  auto &ctx = PreviewContext::instance();
+  GtkWidget *sidebar = ctx.geany_sidebar_;
   if (!sidebar || !gtk_widget_get_visible(sidebar)) {
     return;
   }
@@ -312,8 +309,7 @@ void PreviewShortcuts::onFocusSidebarEditor(guint /*key_id*/) {
   const bool inSidebar = GtkUtils::hasFocusWithin(sidebar);
 
   if (!inEditor && !inSidebar) {
-    bool strict =
-        preview_context->preview_config_->get<bool>("keybinding_behavior_strict", false);
+    bool strict = ctx.preview_config_->get<bool>("keybinding_behavior_strict", false);
     if (strict) {
       return;
     } else {
@@ -331,14 +327,15 @@ void PreviewShortcuts::onFocusSidebarEditor(guint /*key_id*/) {
 }
 
 void PreviewShortcuts::onOpenTerminal(guint /*key_id*/) {
+  auto &ctx = PreviewContext::instance();
   GeanyDocument *doc = document_get_current();
-  if (!DOC_VALID(doc) || !doc->real_path) {
+  if (!DOC_VALID(doc) || !doc->real_path || !ctx.preview_config_) {
     return;
   }
 
   auto dirPath = std::filesystem::path(doc->real_path).parent_path();
 
-  std::string cmd = preview_context->preview_config_->get<std::string>("terminal_command");
+  std::string cmd = ctx.preview_config_->get<std::string>("terminal_command");
 
   if (!Subprocess::commandExists(cmd)) {
     if (Subprocess::commandExists("xdg-terminal-exec")) {
@@ -367,14 +364,15 @@ void PreviewShortcuts::onOpenTerminal(guint /*key_id*/) {
 }
 
 void PreviewShortcuts::onOpenFileManager(guint /*key_id*/) {
+  auto &ctx = PreviewContext::instance();
   GeanyDocument *doc = document_get_current();
-  if (!DOC_VALID(doc) || !doc->real_path) {
+  if (!DOC_VALID(doc) || !doc->real_path || !ctx.preview_config_) {
     return;
   }
 
   auto dirPath = std::filesystem::path(doc->real_path).parent_path();
 
-  std::string cmd = preview_context->preview_config_->get<std::string>("file_manager_command");
+  std::string cmd = ctx.preview_config_->get<std::string>("file_manager_command");
 
   if (!Subprocess::commandExists(cmd)) {
     if (Subprocess::commandExists("xdg-open")) {
@@ -403,19 +401,15 @@ void PreviewShortcuts::onOpenFileManager(guint /*key_id*/) {
 }
 
 void PreviewShortcuts::onPreferences(guint /*key_id*/) {
-  if (preview_context) {
-    preview_context->openPreferences();
-  }
+  auto &ctx = PreviewContext::instance();
+  ctx.openPreferences();
 }
 
 void PreviewShortcuts::onToggleSidebar(guint /*key_id*/) {
-  if (!preview_context) {
-    return;
-  }
-
   keybindings_send_command(GEANY_KEY_GROUP_VIEW, GEANY_KEYS_VIEW_SIDEBAR);
 
-  GtkWidget *sidebar = preview_context->geany_sidebar_;
+  auto &ctx = PreviewContext::instance();
+  GtkWidget *sidebar = ctx.geany_sidebar_;
   if (!sidebar) {
     return;
   }
@@ -427,89 +421,89 @@ void PreviewShortcuts::onToggleSidebar(guint /*key_id*/) {
 }
 
 void PreviewShortcuts::onZoomInWv(guint /*key_id*/) {
-  if (!preview_context || !preview_context->webview_) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.webview_) {
     return;
   }
 
   if (isPreviewVisible()) {
-    preview_context->webview_->stepZoom(+1);
+    ctx.webview_->stepZoom(+1);
   }
 }
 
 void PreviewShortcuts::onZoomOutWv(guint /*key_id*/) {
-  if (!preview_context || !preview_context->webview_) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.webview_) {
     return;
   }
 
   if (isPreviewVisible()) {
-    preview_context->webview_->stepZoom(-1);
+    ctx.webview_->stepZoom(-1);
   }
 }
 
 void PreviewShortcuts::onResetZoomWv(guint /*key_id*/) {
-  if (!preview_context || !preview_context->webview_) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.webview_) {
     return;
   }
 
   if (isPreviewVisible()) {
-    preview_context->webview_->resetZoom();
+    ctx.webview_->resetZoom();
   }
 }
 
 void PreviewShortcuts::onZoomInBoth(guint /*key_id*/) {
-  if (!preview_context) {
-    return;
-  }
-  bool sync = preview_context->preview_config_->get<bool>("preview_zoom_sync", false);
+  auto &ctx = PreviewContext::instance();
+  bool sync = ctx.preview_config_->get<bool>("preview_zoom_sync", false);
 
   GeanyDocument *doc = document_get_current();
   ScintillaObject *sci = (DOC_VALID(doc) && doc->editor) ? doc->editor->sci : nullptr;
 
   if (sync && sci) {
     scintilla_send_message(sci, SCI_ZOOMIN, 0, 0);
-    preview_context->webview_->stepZoom(+1);
+    ctx.webview_->stepZoom(+1);
   } else if (sci && gtk_widget_has_focus(GTK_WIDGET(sci))) {
     scintilla_send_message(sci, SCI_ZOOMIN, 0, 0);
-  } else if (gtk_widget_has_focus(preview_context->webview_->widget())) {
-    preview_context->webview_->stepZoom(+1);
+  } else if (gtk_widget_has_focus(ctx.webview_->widget())) {
+    ctx.webview_->stepZoom(+1);
   }
 }
 
 void PreviewShortcuts::onZoomOutBoth(guint /*key_id*/) {
-  if (!preview_context) {
-    return;
-  }
-  bool sync = preview_context->preview_config_->get<bool>("preview_zoom_sync", false);
+  auto &ctx = PreviewContext::instance();
+  bool sync = ctx.preview_config_->get<bool>("preview_zoom_sync", false);
 
   GeanyDocument *doc = document_get_current();
   ScintillaObject *sci = (DOC_VALID(doc) && doc->editor) ? doc->editor->sci : nullptr;
 
   if (sync && sci) {
     scintilla_send_message(sci, SCI_ZOOMOUT, 0, 0);
-    preview_context->webview_->stepZoom(-1);
+    ctx.webview_->stepZoom(-1);
   } else if (sci && gtk_widget_has_focus(GTK_WIDGET(sci))) {
     scintilla_send_message(sci, SCI_ZOOMOUT, 0, 0);
-  } else if (gtk_widget_has_focus(preview_context->webview_->widget())) {
-    preview_context->webview_->stepZoom(-1);
+  } else if (gtk_widget_has_focus(ctx.webview_->widget())) {
+    ctx.webview_->stepZoom(-1);
   }
 }
 
 void PreviewShortcuts::onResetZoomBoth(guint /*key_id*/) {
-  if (!preview_context || !preview_context->webview_) {
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.webview_) {
     return;
   }
 
-  bool sync = preview_context->preview_config_->get<bool>("preview_zoom_sync", false);
+  bool sync = ctx.preview_config_->get<bool>("preview_zoom_sync", false);
 
   GeanyDocument *doc = document_get_current();
   ScintillaObject *sci = (DOC_VALID(doc) && doc->editor) ? doc->editor->sci : nullptr;
 
   if (sync && sci) {
     scintilla_send_message(sci, SCI_SETZOOM, 0, 0);
-    preview_context->webview_->resetZoom();
+    ctx.webview_->resetZoom();
   } else if (sci && gtk_widget_has_focus(GTK_WIDGET(sci))) {
     scintilla_send_message(sci, SCI_SETZOOM, 0, 0);
-  } else if (gtk_widget_has_focus(preview_context->webview_->widget())) {
-    preview_context->webview_->resetZoom();
+  } else if (gtk_widget_has_focus(ctx.webview_->widget())) {
+    ctx.webview_->resetZoom();
   }
 }

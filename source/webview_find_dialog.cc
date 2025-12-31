@@ -10,13 +10,14 @@
 #include "util/gtk_utils.h"
 #include "webview.h"
 
-WebViewFindDialog::WebViewFindDialog(WebView *wv, PreviewContext *ctx)
-    : webview_(wv), context_(ctx) {}
+WebViewFindDialog::WebViewFindDialog(WebView *wv) : webview_(wv) {}
 
 WebViewFindDialog::~WebViewFindDialog() {
+  auto &ctx = PreviewContext::instance();
+
   // Disconnect sidebar/other widget auto-dismiss
-  if (auto_dismiss_handler_ && context_->geany_sidebar_) {
-    g_signal_handler_disconnect(context_->geany_sidebar_, auto_dismiss_handler_);
+  if (auto_dismiss_handler_ && ctx.geany_sidebar_) {
+    g_signal_handler_disconnect(ctx.geany_sidebar_, auto_dismiss_handler_);
     auto_dismiss_handler_ = 0;
   }
 
@@ -202,8 +203,9 @@ void WebViewFindDialog::buildDialog(GtkWindow *parent) {
   }
 
   // Auto-dismiss when sidebar hides
-  if (context_->geany_sidebar_) {
-    attachAutoDismissFor(context_->geany_sidebar_);
+  auto &ctx = PreviewContext::instance();
+  if (ctx.geany_sidebar_) {
+    attachAutoDismissFor(ctx.geany_sidebar_);
   }
 
   // Auto-null when dialog is finalized

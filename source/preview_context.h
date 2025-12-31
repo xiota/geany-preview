@@ -23,6 +23,11 @@ class WebView;
 
 class PreviewContext {
  public:
+  static PreviewContext &instance() {
+    static PreviewContext ctx;
+    return ctx;
+  }
+
   GeanyPlugin *geany_plugin_ = nullptr;
   GeanyData *geany_data_ = nullptr;
   GtkWidget *geany_sidebar_ = nullptr;
@@ -37,4 +42,14 @@ class PreviewContext {
       plugin_show_configure(geany_plugin_);
     }
   }
+
+ private:
+  // Prevent construction, copying, and moving
+  PreviewContext() = default;
+  ~PreviewContext() = default;
+
+  PreviewContext(const PreviewContext &) = delete;
+  PreviewContext &operator=(const PreviewContext &) = delete;
+  PreviewContext(PreviewContext &&) = delete;
+  PreviewContext &operator=(PreviewContext &&) = delete;
 };

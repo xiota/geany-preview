@@ -11,14 +11,13 @@
 
 class TweakUiRedetectFileType {
  public:
-  explicit TweakUiRedetectFileType(PreviewContext *context) : context_(context) {
+  explicit TweakUiRedetectFileType() {
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.geany_plugin_) {
+      return;
+    }
     plugin_signal_connect(
-        context_->geany_plugin_,
-        nullptr,
-        "document-reload",
-        true,
-        G_CALLBACK(documentSignal),
-        this
+        ctx.geany_plugin_, nullptr, "document-reload", true, G_CALLBACK(documentSignal), this
     );
   }
 
@@ -64,14 +63,12 @@ class TweakUiRedetectFileType {
  private:
   static void documentSignal(GObject *, GeanyDocument *doc, gpointer user_data) {
     auto *self = static_cast<TweakUiRedetectFileType *>(user_data);
-
-    if (!DOC_VALID(doc) || !doc->file_name || !self->context_ ||
-        !self->context_->preview_config_->get<bool>("redetect_filetype_on_reload", false)) {
+    auto &ctx = PreviewContext::instance();
+    if (!DOC_VALID(doc) || !doc->file_name || !ctx.preview_config_ ||
+        !ctx.preview_config_->get<bool>("redetect_filetype_on_reload", false)) {
       return;
     }
 
     self->redetectFileType(doc);
   }
-
-  PreviewContext *context_ = nullptr;
 };

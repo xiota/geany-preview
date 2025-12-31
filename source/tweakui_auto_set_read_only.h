@@ -17,15 +17,20 @@
 
 class TweakUiAutoSetReadOnly {
  public:
-  explicit TweakUiAutoSetReadOnly(PreviewContext *context) : context_(context) {
-    if (context_ && context_->geany_data_ && context_->geany_data_->main_widgets->window) {
+  explicit TweakUiAutoSetReadOnly() {
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.geany_data_ || !ctx.geany_plugin_) {
+      return;
+    }
+
+    if (ctx.geany_data_->main_widgets->window) {
       read_only_menu_item_ = GTK_CHECK_MENU_ITEM(ui_lookup_widget(
-          GTK_WIDGET(context_->geany_data_->main_widgets->window), "set_file_readonly1"
+          GTK_WIDGET(ctx.geany_data_->main_widgets->window), "set_file_readonly1"
       ));
     }
 
     plugin_signal_connect(
-        context_->geany_plugin_,
+        ctx.geany_plugin_,
         nullptr,
         "document-activate",
         true,  // after
@@ -57,9 +62,10 @@ class TweakUiAutoSetReadOnly {
  private:
   static void documentSignal(GObject *, GeanyDocument *doc, gpointer user_data) {
     auto *self = static_cast<TweakUiAutoSetReadOnly *>(user_data);
+    auto &ctx = PreviewContext::instance();
 
-    if (!DOC_VALID(doc) || !self->context_ || !self->context_->preview_config_ ||
-        !self->context_->preview_config_->get<bool>("auto_set_read_only", false)) {
+    if (!DOC_VALID(doc) || !ctx.preview_config_ ||
+        !ctx.preview_config_->get<bool>("auto_set_read_only", false)) {
       return;
     }
 
@@ -68,6 +74,5 @@ class TweakUiAutoSetReadOnly {
     }
   }
 
-  PreviewContext *context_ = nullptr;
   GtkCheckMenuItem *read_only_menu_item_ = nullptr;
 };

@@ -22,7 +22,7 @@ namespace {
 #include "default_js.h"
 }  // namespace
 
-WebView::WebView(PreviewContext *context) noexcept : context_(context) {}
+WebView::WebView() noexcept {}
 
 void WebView::reset() {
   if (GTK_IS_WIDGET(webview_)) {
@@ -91,9 +91,10 @@ void WebView::reset() {
   );
 
   // enable zoom handling
+  auto &ctx = PreviewContext::instance();
   double zoom = 100;
-  if (context_ && context_->preview_config_) {
-    zoom = context_->preview_config_->get<int>("preview_zoom_default", 100);
+  if (ctx.preview_config_) {
+    zoom = ctx.preview_config_->get<int>("preview_zoom_default", 100);
   }
   zoom = std::max(zoom / 100.0, 0.01);
   webkit_web_view_set_zoom_level(WEBKIT_WEB_VIEW(webview_), zoom);
@@ -110,7 +111,7 @@ void WebView::reset() {
   );
 
   g_signal_connect(
-      webview_, "context-menu", G_CALLBACK(WebViewContextMenu::onContextMenu), context_
+      webview_, "context-menu", G_CALLBACK(WebViewContextMenu::onContextMenu), nullptr
   );
 
   g_signal_connect(webview_, "decide-policy", G_CALLBACK(onDecidePolicy), this);
@@ -357,7 +358,7 @@ WebView &WebView::clearFind() {
 
 WebView &WebView::showFindPrompt(GtkWindow *parent) {
   if (!find_dialog_) {
-    find_dialog_ = std::make_unique<WebViewFindDialog>(this, context_);
+    find_dialog_ = std::make_unique<WebViewFindDialog>(this);
   }
   find_dialog_->show(parent);
   return *this;
@@ -391,9 +392,10 @@ void WebView::onDecidePolicy(
         if (filename) {
           DocumentLocal doc(filename);
 
-          if (self->context_ && self->context_->preview_pane_) {
-            if (self->context_->preview_pane_->canPreviewFile(doc)) {
-              self->context_->preview_pane_->initWebView(doc);
+          auto &ctx = PreviewContext::instance();
+          if (ctx.preview_pane_) {
+            if (ctx.preview_pane_->canPreviewFile(doc)) {
+              ctx.preview_pane_->initWebView(doc);
               webkit_policy_decision_ignore(decision);
               g_free(filename);
               return;
@@ -419,12 +421,10 @@ void WebView::onDecidePolicy(
 }
 
 gboolean WebView::onScrollEvent(GtkWidget *widget, GdkEventScroll *event, gpointer user_data) {
-  auto *self = static_cast<WebView *>(user_data);
-
-  if (self->context_ && self->context_->preview_config_) {
-    if (self->context_->preview_config_->get<bool>("disable_preview_ctrl_wheel_zoom", false)) {
-      return false;
-    }
+  auto &ctx = PreviewContext::instance();
+  if (!ctx.preview_config_ || !ctx.webview_ || !ctx.webview_->widget() ||
+      !ctx.preview_config_->get<bool>("disable_preview_ctrl_wheel_zoom", false)) {
+    return false;
   }
 
   if ((event->state & GDK_CONTROL_MASK) == 0) {
@@ -432,13 +432,13 @@ gboolean WebView::onScrollEvent(GtkWidget *widget, GdkEventScroll *event, gpoint
   }
 
   if (event->direction == GDK_SCROLL_SMOOTH) {
-    double zoom = webkit_web_view_get_zoom_level(WEBKIT_WEB_VIEW(self->webview_));
+    double zoom = webkit_web_view_get_zoom_level(WEBKIT_WEB_VIEW(ctx.webview_->widget()));
     zoom = std::max(zoom - event->delta_y * 0.1, 0.01);
-    webkit_web_view_set_zoom_level(WEBKIT_WEB_VIEW(self->webview_), zoom);
+    webkit_web_view_set_zoom_level(WEBKIT_WEB_VIEW(ctx.webview_->widget()), zoom);
   } else if (event->direction == GDK_SCROLL_UP) {
-    self->stepZoom(+1);
+    ctx.webview_->stepZoom(+1);
   } else if (event->direction == GDK_SCROLL_DOWN) {
-    self->stepZoom(-1);
+    ctx.webview_->stepZoom(-1);
   } else {
     return false;
   }
@@ -502,9 +502,10 @@ constexpr int SCINTILLA_MAX_OFFSET = 20;
 }  // namespace
 
 WebView &WebView::resetZoom() {
+  auto &ctx = PreviewContext::instance();
   double zoom = 1.0;
-  if (context_ && context_->preview_config_) {
-    zoom = context_->preview_config_->get<double>("preview_zoom_default", 1.0);
+  if (ctx.preview_config_) {
+    zoom = ctx.preview_config_->get<double>("preview_zoom_default", 1.0);
   }
   return setZoom(zoom);
 }

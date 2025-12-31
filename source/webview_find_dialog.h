@@ -11,7 +11,7 @@
 
 class WebViewFindDialog {
  public:
-  WebViewFindDialog(WebView *wv, PreviewContext *ctx);
+  WebViewFindDialog(WebView *wv);
   ~WebViewFindDialog();
 
   void show(GtkWindow *parent);
@@ -32,7 +32,6 @@ class WebViewFindDialog {
   GtkWidget *entry_ = nullptr;
 
   WebView *webview_ = nullptr;
-  PreviewContext *context_ = nullptr;
 
   gulong auto_dismiss_handler_ = 0;
   gulong notebook_switch_handler_ = 0;

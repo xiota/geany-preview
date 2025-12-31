@@ -15,8 +15,13 @@
 
 class TweakUiColumnMarkers {
  public:
-  explicit TweakUiColumnMarkers(PreviewContext *ctx) : context_(ctx) {
-    auto *docs = context_->geany_data_->documents_array;
+  explicit TweakUiColumnMarkers() {
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.geany_data_ || !ctx.geany_plugin_ || !ctx.preview_config_) {
+      return;
+    }
+
+    auto *docs = ctx.geany_data_->documents_array;
     for (guint i = 0; i < docs->len; ++i) {
       auto *doc = static_cast<GeanyDocument *>(g_ptr_array_index(docs, i));
       if (DOC_VALID(doc)) {
@@ -24,39 +29,25 @@ class TweakUiColumnMarkers {
       }
     }
 
-    context_->preview_config_->connectChanged([this]() { show(); });
+    ctx.preview_config_->connectChanged([this]() { show(); });
 
     plugin_signal_connect(
-        context_->geany_plugin_,
-        nullptr,
-        "document-activate",
-        true,
-        G_CALLBACK(documentSignal),
-        this
+        ctx.geany_plugin_, nullptr, "document-activate", true, G_CALLBACK(documentSignal), this
     );
     plugin_signal_connect(
-        context_->geany_plugin_, nullptr, "document-new", true, G_CALLBACK(documentSignal), this
+        ctx.geany_plugin_, nullptr, "document-new", true, G_CALLBACK(documentSignal), this
     );
     plugin_signal_connect(
-        context_->geany_plugin_,
-        nullptr,
-        "document-open",
-        true,
-        G_CALLBACK(documentSignal),
-        this
+        ctx.geany_plugin_, nullptr, "document-open", true, G_CALLBACK(documentSignal), this
     );
     plugin_signal_connect(
-        context_->geany_plugin_,
-        nullptr,
-        "document-reload",
-        true,
-        G_CALLBACK(documentSignal),
-        this
+        ctx.geany_plugin_, nullptr, "document-reload", true, G_CALLBACK(documentSignal), this
     );
   }
 
   void show(GeanyDocument *doc = nullptr) {
-    if (!context_->preview_config_->get<bool>("column_markers", false)) {
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.preview_config_ || !ctx.preview_config_->get<bool>("column_markers", false)) {
       clear();
       return;
     }
@@ -66,10 +57,10 @@ class TweakUiColumnMarkers {
       g_return_if_fail(DOC_VALID(doc));
     }
 
-    auto cols = context_->preview_config_->get<std::vector<int>>(
+    auto cols = ctx.preview_config_->get<std::vector<int>>(
         "column_markers_columns", { 60, 72, 80, 88, 96, 104, 112, 120, 128 }
     );
-    auto colors = context_->preview_config_->get<std::vector<std::string>>(
+    auto colors = ctx.preview_config_->get<std::vector<std::string>>(
         "column_markers_colors",
         { "#ccc", "#bdf", "#fcf", "#ccc", "#fba", "#ccc", "#ccc", "#ccc", "#ccc" }
     );
@@ -150,6 +141,5 @@ class TweakUiColumnMarkers {
     return 0;
   }
 
-  PreviewContext *context_;
   bool show_idle_in_progress_ = false;
 };

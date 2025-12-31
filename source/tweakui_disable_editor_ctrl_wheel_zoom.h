@@ -12,13 +12,14 @@
 
 class TweakUiDisableEditorCtrlWheelZoom {
  public:
-  explicit TweakUiDisableEditorCtrlWheelZoom(PreviewContext *context) : context_(context) {
-    if (!context_ || !context_->geany_data_) {
+  explicit TweakUiDisableEditorCtrlWheelZoom() {
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.geany_data_ || !ctx.geany_plugin_) {
       return;
     }
 
     // Attach to already-open documents
-    auto *docs = context_->geany_data_->documents_array;
+    auto *docs = ctx.geany_data_->documents_array;
     for (guint i = 0; i < docs->len; ++i) {
       auto *doc = static_cast<GeanyDocument *>(g_ptr_array_index(docs, i));
       if (DOC_VALID(doc)) {
@@ -28,34 +29,21 @@ class TweakUiDisableEditorCtrlWheelZoom {
 
     // Hook into new documents
     plugin_signal_connect(
-        context_->geany_plugin_,
-        nullptr,
-        "document-open",
-        true,
-        G_CALLBACK(documentSignal),
-        this
+        ctx.geany_plugin_, nullptr, "document-open", true, G_CALLBACK(documentSignal), this
     );
     plugin_signal_connect(
-        context_->geany_plugin_, nullptr, "document-new", true, G_CALLBACK(documentSignal), this
+        ctx.geany_plugin_, nullptr, "document-new", true, G_CALLBACK(documentSignal), this
     );
     plugin_signal_connect(
-        context_->geany_plugin_,
-        nullptr,
-        "document-close",
-        false,
-        G_CALLBACK(documentClose),
-        this
+        ctx.geany_plugin_, nullptr, "document-close", false, G_CALLBACK(documentClose), this
     );
   }
 
  private:
   static gboolean onScrollEvent(GtkWidget *, GdkEventScroll *event, gpointer user_data) {
-    auto *self = static_cast<TweakUiDisableEditorCtrlWheelZoom *>(user_data);
-    if (!self->context_ || !self->context_->preview_config_) {
-      return false;
-    }
-
-    if (!self->context_->preview_config_->get<bool>("disable_editor_ctrl_wheel_zoom", true)) {
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.preview_config_ ||
+        ctx.preview_config_->get<bool>("disable_editor_ctrl_wheel_zoom", true)) {
       return false;
     }
 
@@ -69,9 +57,14 @@ class TweakUiDisableEditorCtrlWheelZoom {
   }
 
   void connectScrollHandler(GeanyDocument *doc) {
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.geany_plugin_) {
+      return;
+    }
+
     g_return_if_fail(DOC_VALID(doc));
     plugin_signal_connect(
-        context_->geany_plugin_,
+        ctx.geany_plugin_,
         G_OBJECT(doc->editor->sci),
         "scroll-event",
         false,
@@ -90,6 +83,4 @@ class TweakUiDisableEditorCtrlWheelZoom {
     g_return_if_fail(DOC_VALID(doc));
     g_signal_handlers_disconnect_by_func(doc->editor->sci, gpointer(onScrollEvent), self);
   }
-
-  PreviewContext *context_ = nullptr;
 };

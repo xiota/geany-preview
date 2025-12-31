@@ -13,28 +13,25 @@
 
 class TweakUiFocusEditorOnRaise {
  public:
-  explicit TweakUiFocusEditorOnRaise(PreviewContext *context) : context_(context) {
-    if (!context_ || !context_->geany_data_ || !context_->geany_data_->main_widgets) {
+  explicit TweakUiFocusEditorOnRaise() {
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.geany_data_ || !ctx.geany_data_->main_widgets) {
       return;
     }
 
-    GtkWidget *geany_window = context_->geany_data_->main_widgets->window;
+    GtkWidget *geany_window = ctx.geany_data_->main_widgets->window;
     if (!geany_window) {
       return;
     }
 
-    g_signal_connect(geany_window, "notify::is-active", G_CALLBACK(onWindowActive), this);
+    g_signal_connect(geany_window, "notify::is-active", G_CALLBACK(onWindowActive), nullptr);
   }
 
  private:
   static void onWindowActive(GObject *object, GParamSpec *, gpointer user_data) {
-    auto *self = static_cast<TweakUiFocusEditorOnRaise *>(user_data);
-
-    if (!self->context_ || !self->context_->preview_config_) {
-      return;
-    }
-
-    if (!self->context_->preview_config_->get<bool>("focus_editor_on_raise", false)) {
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.preview_config_ ||
+        !ctx.preview_config_->get<bool>("focus_editor_on_raise", false)) {
       return;
     }
 
@@ -50,6 +47,4 @@ class TweakUiFocusEditorOnRaise {
       );
     }
   }
-
-  PreviewContext *context_ = nullptr;
 };

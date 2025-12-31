@@ -16,9 +16,13 @@
 
 class TweakUiMarkWord {
  public:
-  explicit TweakUiMarkWord(PreviewContext *context) : context_(context) {
+  explicit TweakUiMarkWord() {
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.geany_data_ || !ctx.geany_plugin_) {
+      return;
+    }
     // Connect the button-press event for open documents
-    auto *docs = context_->geany_data_->documents_array;
+    auto *docs = ctx.geany_data_->documents_array;
     for (guint i = 0; i < docs->len; ++i) {
       auto *doc = static_cast<GeanyDocument *>(g_ptr_array_index(docs, i));
       if (DOC_VALID(doc)) {
@@ -28,41 +32,32 @@ class TweakUiMarkWord {
 
     // Hook into document and editor signals
     plugin_signal_connect(
-        context_->geany_plugin_,
-        nullptr,
-        "document-open",
-        true,
-        G_CALLBACK(documentSignal),
-        this
+        ctx.geany_plugin_, nullptr, "document-open", true, G_CALLBACK(documentSignal), this
     );
 
     plugin_signal_connect(
-        context_->geany_plugin_, nullptr, "document-new", true, G_CALLBACK(documentSignal), this
+        ctx.geany_plugin_, nullptr, "document-new", true, G_CALLBACK(documentSignal), this
     );
 
     plugin_signal_connect(
-        context_->geany_plugin_,
-        nullptr,
-        "document-close",
-        false,
-        G_CALLBACK(documentClose),
-        this
+        ctx.geany_plugin_, nullptr, "document-close", false, G_CALLBACK(documentClose), this
     );
 
     plugin_signal_connect(
-        context_->geany_plugin_, nullptr, "editor-notify", false, G_CALLBACK(editorNotify), this
+        ctx.geany_plugin_, nullptr, "editor-notify", false, G_CALLBACK(editorNotify), this
     );
   }
 
  private:
   bool isEnabled() const {
-    return context_ && context_->preview_config_ &&
-           context_->preview_config_->get<bool>("mark_word", false);
+    auto &ctx = PreviewContext::instance();
+    return ctx.preview_config_ && ctx.preview_config_->get<bool>("mark_word", false);
   }
 
   bool singleClickDeselect() const {
-    return context_ && context_->preview_config_ &&
-           context_->preview_config_->get<bool>("mark_word_single_click_deselect", true);
+    auto &ctx = PreviewContext::instance();
+    return ctx.preview_config_ &&
+           ctx.preview_config_->get<bool>("mark_word_single_click_deselect", true);
   }
 
   static void clearMarker(GeanyDocument *doc = nullptr) {
@@ -94,9 +89,9 @@ class TweakUiMarkWord {
         }
       } else if (event->type == GDK_2BUTTON_PRESS) {
         if (self->double_click_timer_id_ == 0) {
-          if (self->context_ && self->context_->preview_config_) {
-            int val =
-                self->context_->preview_config_->get<int>("mark_word_double_click_delay", 50);
+          auto &ctx = PreviewContext::instance();
+          if (ctx.preview_config_) {
+            int val = ctx.preview_config_->get<int>("mark_word_double_click_delay", 50);
             self->double_click_delay_ms_ = val;
           }
 
@@ -109,9 +104,13 @@ class TweakUiMarkWord {
   }
 
   void connectDocumentButtonPressSignalHandler(GeanyDocument *doc) {
+    auto &ctx = PreviewContext::instance();
+    if (!ctx.geany_plugin_) {
+      return;
+    }
     g_return_if_fail(DOC_VALID(doc));
     plugin_signal_connect(
-        context_->geany_plugin_,
+        ctx.geany_plugin_,
         G_OBJECT(doc->editor->sci),
         "button-press-event",
         false,
@@ -151,7 +150,6 @@ class TweakUiMarkWord {
     return false;
   }
 
-  PreviewContext *context_ = nullptr;
   gulong double_click_timer_id_ = 0;
   int double_click_delay_ms_ = 50;
 };
