@@ -2,3 +2,6 @@
 directory = ftn2xml
 url = https://github.com/xiota/ftn2xml.git
 revision = main
+
+[provide]
+ftn2xml = ftn2xml_dep
