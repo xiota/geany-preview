@@ -20,16 +20,39 @@ void removeUnwantedItems(WebKitContextMenu *menu) {
       WebKitContextMenuAction action = webkit_context_menu_item_get_stock_action(item);
 
       l = l->next;
-
-      if (action == WEBKIT_CONTEXT_MENU_ACTION_DOWNLOAD_IMAGE_TO_DISK ||
+      if (action == WEBKIT_CONTEXT_MENU_ACTION_BOLD ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_CUSTOM ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_DOWNLOAD_AUDIO_TO_DISK ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_DOWNLOAD_IMAGE_TO_DISK ||
           action == WEBKIT_CONTEXT_MENU_ACTION_DOWNLOAD_LINK_TO_DISK ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_DOWNLOAD_VIDEO_TO_DISK ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_ENTER_VIDEO_FULLSCREEN ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_FONT_MENU ||
           action == WEBKIT_CONTEXT_MENU_ACTION_GO_BACK ||
           action == WEBKIT_CONTEXT_MENU_ACTION_GO_FORWARD ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_IGNORE_GRAMMAR ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_IGNORE_SPELLING ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_INPUT_METHODS ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_INSPECT_ELEMENT ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_ITALIC ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_LEARN_SPELLING ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_MEDIA_MUTE ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_MEDIA_PAUSE ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_MEDIA_PLAY ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_NO_GUESSES_FOUND ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_OPEN_AUDIO_IN_NEW_WINDOW ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_OPEN_FRAME_IN_NEW_WINDOW ||
           action == WEBKIT_CONTEXT_MENU_ACTION_OPEN_IMAGE_IN_NEW_WINDOW ||
-          action == WEBKIT_CONTEXT_MENU_ACTION_OPEN_LINK ||
           action == WEBKIT_CONTEXT_MENU_ACTION_OPEN_LINK_IN_NEW_WINDOW ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_OPEN_VIDEO_IN_NEW_WINDOW ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_OUTLINE ||
           action == WEBKIT_CONTEXT_MENU_ACTION_RELOAD ||
-          action == WEBKIT_CONTEXT_MENU_ACTION_STOP) {
+          action == WEBKIT_CONTEXT_MENU_ACTION_SPELLING_GUESS ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_STOP ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_TOGGLE_MEDIA_CONTROLS ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_TOGGLE_MEDIA_LOOP ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_UNDERLINE ||
+          action == WEBKIT_CONTEXT_MENU_ACTION_UNICODE) {
         webkit_context_menu_remove(menu, item);
       }
     }
