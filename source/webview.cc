@@ -114,8 +114,8 @@ void WebView::reset() {
       webview_, "context-menu", G_CALLBACK(WebViewContextMenu::onContextMenu), nullptr
   );
 
-  g_signal_connect(webview_, "decide-policy", G_CALLBACK(onDecidePolicy), this);
-  g_signal_connect(webview_, "scroll-event", G_CALLBACK(onScrollEvent), this);
+  g_signal_connect(webview_, "decide-policy", G_CALLBACK(onDecidePolicy), nullptr);
+  g_signal_connect(webview_, "scroll-event", G_CALLBACK(onScrollEvent), nullptr);
 }
 
 WebView::~WebView() noexcept {
@@ -370,8 +370,6 @@ void WebView::onDecidePolicy(
     WebKitPolicyDecisionType type,
     gpointer user_data
 ) {
-  WebView *self = static_cast<WebView *>(user_data);
-
   switch (type) {
     case WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION: {
       auto *nav = WEBKIT_NAVIGATION_POLICY_DECISION(decision);
