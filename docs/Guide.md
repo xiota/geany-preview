@@ -198,3 +198,24 @@ The webview is a complicated widget that takes time to redraw.  If the glitch bo
 > When I rapidly resize the sidebar, the gray area sometimes becomes black.  There are also black triangles in the corners of tooltips.
 
 This is most likely a problem with the GTK theme.
+
+> Why aren't saved tabs restored when opening the file manager with shortcut (PCManFM‑Qt)?
+
+PCManFM‑Qt does not restore saved tabs when launched with a specific folder.  A workaround is to restore tabs before opening the folder.
+
+* Ensure the following PCManFM‑Qt settings are enabled:
+
+    * *Single window mode*
+    * *Reopen last window tabs in a new window*.
+
+* Set `file_manager_command`:
+
+    ```bash
+    sh -c 'if ! pgrep pcmanfm-qt ; then pcmanfm-qt & sleep 1 ; fi && pcmanfm-qt %d &'
+    ```
+
+* If PCManFM-Qt is used to manage the desktop, a more complicated command is needed.  The following is for X11.
+
+    ```bash
+    sh -c 'if ! wmctrl -lx | grep -i pcmanfm-qt | grep -vq pcmanfm-desktop ; then pcmanfm-qt & sleep 1 ; fi && pcmanfm-qt %d &'
+    ```
