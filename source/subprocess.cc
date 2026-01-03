@@ -17,6 +17,7 @@
 
 #include <glib.h>
 #include <msgwindow.h>
+#include <sys/types.h>  // for pid_t
 
 std::unordered_map<std::string, Subprocess::CacheEntry> Subprocess::binary_cache_;
 
@@ -66,7 +67,9 @@ bool writeAll(int fd, std::string_view data) noexcept {
 static void cleanupProcess(AsyncContext *ctx) {
   if (ctx->streams_remaining == 0 && ctx->exit_status != -1) {
     Subprocess::Result res{ ctx->outbuf.str(), ctx->errbuf.str(), ctx->exit_status };
-    ctx->handler(res);
+    if (ctx->handler) {
+      ctx->handler(res);
+    }
     if (ctx->out_ch) {
       g_io_channel_unref(ctx->out_ch);
     }
@@ -178,25 +181,38 @@ bool Subprocess::commandExists(std::string_view binary) noexcept {
   return found;
 }
 
-bool Subprocess::runAsync(const std::string &command) noexcept {
+pid_t Subprocess::runAsync(const std::string &command) noexcept {
   GError *error = nullptr;
-  if (!g_spawn_command_line_async(command.c_str(), &error)) {
+  GPid pid = 0;
+
+  const gchar *argv[] = { "/usr/bin/env", "sh", "-c", command.c_str(), nullptr };
+
+  if (!g_spawn_async(
+          nullptr,
+          const_cast<gchar **>(argv),
+          nullptr,
+          G_SPAWN_SEARCH_PATH,
+          nullptr,
+          nullptr,
+          &pid,
+          &error
+      )) {
     if (error) {
-      // msgwin_status_add("Preview: runAsync failed: %s", , error->message);
       g_error_free(error);
     }
-    return false;
+    return 0;
   }
-  return true;
+
+  return pid;
 }
 
-bool Subprocess::runWithPipes(
+pid_t Subprocess::runWithPipes(
     const std::vector<std::string> &args,
     std::string_view input,
     CompletionHandler handler
 ) const {
   if (args.empty()) {
-    return false;
+    return 0;
   }
 
   auto now = std::chrono::steady_clock::now();
@@ -263,8 +279,10 @@ bool Subprocess::runWithPipes(
     Subprocess::Result res;
     res.stderr_data = "spawn failed: " + msg;
     res.exit_status = 127;
-    handler(res);
-    return false;
+    if (handler) {
+      handler(res);
+    }
+    return 0;
   }
 
   // Feed stdin
@@ -272,8 +290,10 @@ bool Subprocess::runWithPipes(
     Subprocess::Result res;
     res.stderr_data = "stdin write failed";
     res.exit_status = 1;
-    handler(res);
-    return false;
+    if (handler) {
+      handler(res);
+    }
+    return 0;
   }
 
   // Prepare async context
@@ -298,7 +318,7 @@ bool Subprocess::runWithPipes(
   ctx->child_watch_id = g_child_watch_add(pid, onChildExit, ctx);
 
   active_contexts.insert(ctx);
-  return true;
+  return pid;
 }
 
 // Cancel all active jobs, e.g. from plugin cleanup
