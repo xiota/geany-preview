@@ -23,6 +23,29 @@ This plugin is developed and tested on Linux.  It does not work on Windows and h
 
 * Users who are interested in building directly from source, see [Building from Source with Meson](Building-Meson.md).
 
+> Which Markdown library should I choose when building the plugin?
+
+The default build option `markdown_backend=auto` looks for the "best available" in order:
+
+* `cmark-gfm` is preferred because it has full compatibility with GitHub-Flavored Markdown (GFM).
+
+* `md4c` lacks some GFM features and has slightly stricter formatting.  It serves as a fallback when `cmark-gfm` isn't available.
+
+* `cmark` is the last resort fallback library.  It supports CommonMark only.
+
+Here is a feature matrix:
+
+| Feature | cmark‑gfm | md4c | cmark |
+|---------|:---------:|:----:|:-----:|
+| **Tables** | ✔ | ✔ | ✘ |
+| **Strikethrough** | ✔ | ✔ | ✘ |
+| **Task lists** | ✔ | ✔ | ✘ |
+| **Autolinks** | ✔ | ~ | ~ |
+| **Tagfilter (HTML blacklist)** | ✔ | ✘ | ✘ |
+| **Footnotes** | ✔ | ✘ | ✘ |
+| **Table style options** | ✔ | ✘ | ✘ |
+| **Underline** | ✘ | ✔ | ✘ |
+
 > How do I start the Preview plugin?
 
 After installation, Preview can be enabled in the Plugin Manager (*Tools/Plugin Manager*).  The sidebar must be visible (*View/Show Sidebar*).
