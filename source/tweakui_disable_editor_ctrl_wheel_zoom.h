@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2025 xiota
+// SPDX-FileCopyrightText: Copyright 2025-2026 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #pragma once
@@ -9,8 +9,10 @@
 #include <scintilla/Scintilla.h>
 
 #include "preview_context.h"
+#include "tweakui_base.h"
 
-class TweakUiDisableEditorCtrlWheelZoom {
+class TweakUiDisableEditorCtrlWheelZoom
+    : public TweakUiBase<TweakUiDisableEditorCtrlWheelZoom> {
  public:
   explicit TweakUiDisableEditorCtrlWheelZoom() {
     auto &ctx = PreviewContext::instance();
@@ -84,3 +86,5 @@ class TweakUiDisableEditorCtrlWheelZoom {
     g_signal_handlers_disconnect_by_func(doc->editor->sci, gpointer(onScrollEvent), self);
   }
 };
+
+template class TweakUiBase<TweakUiDisableEditorCtrlWheelZoom>;

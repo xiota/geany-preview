@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2021, 2025 xiota
+// SPDX-FileCopyrightText: Copyright 2021, 2025-2026 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #pragma once
@@ -14,8 +14,9 @@
 
 #include "preview_config.h"
 #include "preview_context.h"
+#include "tweakui_base.h"
 
-class TweakUiAutoSetReadOnly {
+class TweakUiAutoSetReadOnly : public TweakUiBase<TweakUiAutoSetReadOnly> {
  public:
   explicit TweakUiAutoSetReadOnly() {
     auto &ctx = PreviewContext::instance();
@@ -76,3 +77,5 @@ class TweakUiAutoSetReadOnly {
 
   GtkCheckMenuItem *read_only_menu_item_ = nullptr;
 };
+
+template class TweakUiBase<TweakUiAutoSetReadOnly>;

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2021, 2025 xiota
+// SPDX-FileCopyrightText: Copyright 2021, 2025-2026 xiota
 // SPDX-FileCopyrightText: Copyright 2009-2011 Enrico Tröger <enrico(dot)troeger(at)uvena(dot)de>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -13,8 +13,9 @@
 
 #include "preview_config.h"
 #include "preview_context.h"
+#include "tweakui_base.h"
 
-class TweakUiMarkWord {
+class TweakUiMarkWord : public TweakUiBase<TweakUiMarkWord> {
  public:
   explicit TweakUiMarkWord() {
     auto &ctx = PreviewContext::instance();
@@ -153,3 +154,5 @@ class TweakUiMarkWord {
   gulong double_click_timer_id_ = 0;
   int double_click_delay_ms_ = 50;
 };
+
+template class TweakUiBase<TweakUiMarkWord>;

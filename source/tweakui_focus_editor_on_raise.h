@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2025 xiota
+// SPDX-FileCopyrightText: Copyright 2025-2026 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #pragma once
@@ -10,8 +10,9 @@
 
 #include "preview_config.h"
 #include "preview_context.h"
+#include "tweakui_base.h"
 
-class TweakUiFocusEditorOnRaise {
+class TweakUiFocusEditorOnRaise : public TweakUiBase<TweakUiFocusEditorOnRaise> {
  public:
   explicit TweakUiFocusEditorOnRaise() {
     auto &ctx = PreviewContext::instance();
@@ -48,3 +49,5 @@ class TweakUiFocusEditorOnRaise {
     }
   }
 };
+
+template class TweakUiBase<TweakUiFocusEditorOnRaise>;

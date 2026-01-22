@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2021, 2025 xiota
+// SPDX-FileCopyrightText: Copyright 2021, 2025-2026 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #pragma once
@@ -16,6 +16,7 @@
 
 #include "preview_config.h"
 #include "preview_context.h"
+#include "tweakui_base.h"
 
 class TweakUiSidebarAutoResize;
 
@@ -27,7 +28,7 @@ struct DelayedApplyData {
 };
 }  // anonymous namespace
 
-class TweakUiSidebarAutoResize {
+class TweakUiSidebarAutoResize : public TweakUiBase<TweakUiSidebarAutoResize> {
  public:
   explicit TweakUiSidebarAutoResize() {
     auto &ctx = PreviewContext::instance();
@@ -230,3 +231,5 @@ class TweakUiSidebarAutoResize {
   bool adjustment_pending_ = false;
   static constexpr int kEditorMinWidth = 200;
 };
+
+template class TweakUiBase<TweakUiSidebarAutoResize>;

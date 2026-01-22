@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2025 xiota
+// SPDX-FileCopyrightText: Copyright 2025-2026 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #pragma once
@@ -15,8 +15,9 @@
 
 #include "preview_config.h"
 #include "preview_context.h"
+#include "tweakui_base.h"
 
-class TweakUiAutoSetPwd {
+class TweakUiAutoSetPwd : public TweakUiBase<TweakUiAutoSetPwd> {
  public:
   explicit TweakUiAutoSetPwd() {
     auto &ctx = PreviewContext::instance();
@@ -71,3 +72,5 @@ class TweakUiAutoSetPwd {
     }
   }
 };
+
+template class TweakUiBase<TweakUiAutoSetPwd>;

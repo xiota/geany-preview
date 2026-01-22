@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2025 xiota
+// SPDX-FileCopyrightText: Copyright 2025-2026 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <filesystem>
@@ -28,17 +28,6 @@ std::unique_ptr<PreviewPane> preview_pane;
 std::unique_ptr<PreviewConfig> preview_config;
 std::unique_ptr<PreviewMenu> preview_menu;
 std::unique_ptr<PreviewShortcuts> preview_shortcuts;
-
-std::unique_ptr<TweakUiAutoSetPwd> tweakui_auto_set_pwd;
-std::unique_ptr<TweakUiAutoSetReadOnly> tweakui_auto_set_read_only;
-std::unique_ptr<TweakUiColorTip> tweakui_color_tip;
-std::unique_ptr<TweakUiColumnMarkers> tweakui_column_markers;
-std::unique_ptr<TweakUiDisableEditorCtrlWheelZoom> tweakui_disable_editor_ctrl_wheel_zoom;
-std::unique_ptr<TweakUiFocusEditorOnRaise> tweakui_focus_editor_on_raise;
-std::unique_ptr<TweakUiMarkWord> tweakui_mark_word;
-std::unique_ptr<TweakUiRedetectFileType> tweakui_redetect_filetype;
-std::unique_ptr<TweakUiSidebarAutoResize> tweakui_sidebar_auto_resize;
-std::unique_ptr<TweakUiUnchangeDocument> tweakui_unchange_document;
 
 gboolean onEditorNotify(
     GObject * /*object*/,
@@ -105,17 +94,9 @@ gboolean previewInit(
   );
 
   // tweaks
-  tweakui_auto_set_pwd = std::make_unique<TweakUiAutoSetPwd>();
-  tweakui_auto_set_read_only = std::make_unique<TweakUiAutoSetReadOnly>();
-  tweakui_color_tip = std::make_unique<TweakUiColorTip>();
-  tweakui_column_markers = std::make_unique<TweakUiColumnMarkers>();
-  tweakui_disable_editor_ctrl_wheel_zoom =
-      std::make_unique<TweakUiDisableEditorCtrlWheelZoom>();
-  tweakui_focus_editor_on_raise = std::make_unique<TweakUiFocusEditorOnRaise>();
-  tweakui_mark_word = std::make_unique<TweakUiMarkWord>();
-  tweakui_redetect_filetype = std::make_unique<TweakUiRedetectFileType>();
-  tweakui_sidebar_auto_resize = std::make_unique<TweakUiSidebarAutoResize>();
-  tweakui_unchange_document = std::make_unique<TweakUiUnchangeDocument>();
+  for (auto &tweakui_init : tweakui_registry()) {
+    tweakui_init();
+  }
 
   // menu
   preview_menu = std::make_unique<PreviewMenu>();
@@ -139,17 +120,6 @@ void previewCleanup(
   preview_config.reset();
   preview_menu.reset();
   preview_shortcuts.reset();
-
-  tweakui_auto_set_pwd.reset();
-  tweakui_auto_set_read_only.reset();
-  tweakui_color_tip.reset();
-  tweakui_column_markers.reset();
-  tweakui_disable_editor_ctrl_wheel_zoom.reset();
-  tweakui_focus_editor_on_raise.reset();
-  tweakui_mark_word.reset();
-  tweakui_redetect_filetype.reset();
-  tweakui_sidebar_auto_resize.reset();
-  tweakui_unchange_document.reset();
 }
 }  // namespace
 

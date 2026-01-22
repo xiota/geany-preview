@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2021, 2025 xiota
+// SPDX-FileCopyrightText: Copyright 2021, 2025-2026 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #pragma once
@@ -8,8 +8,9 @@
 #include <pluginutils.h>
 
 #include "preview_context.h"
+#include "tweakui_base.h"
 
-class TweakUiRedetectFileType {
+class TweakUiRedetectFileType : public TweakUiBase<TweakUiRedetectFileType> {
  public:
   explicit TweakUiRedetectFileType() {
     auto &ctx = PreviewContext::instance();
@@ -72,3 +73,5 @@ class TweakUiRedetectFileType {
     self->redetectFileType(doc);
   }
 };
+
+template class TweakUiBase<TweakUiRedetectFileType>;

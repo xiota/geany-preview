@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2021, 2025 xiota
+// SPDX-FileCopyrightText: Copyright 2021, 2025-2026 xiota
 // SPDX-FileCopyrightText: Copyright 2017 LarsGit223
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -16,8 +16,9 @@
 
 #include "preview_config.h"
 #include "preview_context.h"
+#include "tweakui_base.h"
 
-class TweakUiColorTip {
+class TweakUiColorTip : public TweakUiBase<TweakUiColorTip> {
  public:
   explicit TweakUiColorTip() {
     auto &ctx = PreviewContext::instance();
@@ -267,3 +268,5 @@ class TweakUiColorTip {
   std::string color_tooltip_size_{ "small" };
   std::string colortip_template_{ "    " };
 };
+
+template class TweakUiBase<TweakUiColorTip>;
