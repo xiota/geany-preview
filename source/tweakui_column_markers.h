@@ -18,7 +18,7 @@ class TweakUiColumnMarkers : public TweakUiBase<TweakUiColumnMarkers> {
  public:
   explicit TweakUiColumnMarkers() {
     auto &ctx = PreviewContext::instance();
-    if (!ctx.geany_data_ || !ctx.geany_plugin_ || !ctx.preview_config_) {
+    if (!ctx.geany_data_ || !ctx.geany_plugin_) {
       return;
     }
 
@@ -30,7 +30,8 @@ class TweakUiColumnMarkers : public TweakUiBase<TweakUiColumnMarkers> {
       }
     }
 
-    ctx.preview_config_->connectChanged([this]() { show(); });
+    auto &cfg = PreviewConfig::instance();
+    cfg.connectChanged([this]() { show(); });
 
     plugin_signal_connect(
         ctx.geany_plugin_, nullptr, "document-activate", true, G_CALLBACK(documentSignal), this
@@ -47,8 +48,8 @@ class TweakUiColumnMarkers : public TweakUiBase<TweakUiColumnMarkers> {
   }
 
   void show(GeanyDocument *doc = nullptr) {
-    auto &ctx = PreviewContext::instance();
-    if (!ctx.preview_config_ || !ctx.preview_config_->get<bool>("column_markers", false)) {
+    auto &cfg = PreviewConfig::instance();
+    if (!cfg.get<bool>("column_markers", false)) {
       clear();
       return;
     }
@@ -58,10 +59,10 @@ class TweakUiColumnMarkers : public TweakUiBase<TweakUiColumnMarkers> {
       g_return_if_fail(DOC_VALID(doc));
     }
 
-    auto cols = ctx.preview_config_->get<std::vector<int>>(
+    auto cols = cfg.get<std::vector<int>>(
         "column_markers_columns", { 60, 72, 80, 88, 96, 104, 112, 120, 128 }
     );
-    auto colors = ctx.preview_config_->get<std::vector<std::string>>(
+    auto colors = cfg.get<std::vector<std::string>>(
         "column_markers_colors",
         { "#ccc", "#bdf", "#fcf", "#ccc", "#fba", "#ccc", "#ccc", "#ccc", "#ccc" }
     );

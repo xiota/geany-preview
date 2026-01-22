@@ -64,9 +64,9 @@ class TweakUiRedetectFileType : public TweakUiBase<TweakUiRedetectFileType> {
  private:
   static void documentSignal(GObject *, GeanyDocument *doc, gpointer user_data) {
     auto *self = static_cast<TweakUiRedetectFileType *>(user_data);
-    auto &ctx = PreviewContext::instance();
-    if (!DOC_VALID(doc) || !doc->file_name || !ctx.preview_config_ ||
-        !ctx.preview_config_->get<bool>("redetect_filetype_on_reload", false)) {
+    auto &cfg = PreviewConfig::instance();
+    if (!DOC_VALID(doc) || !doc->file_name ||
+        !cfg.get<bool>("redetect_filetype_on_reload", false)) {
       return;
     }
 

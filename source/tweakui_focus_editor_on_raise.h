@@ -30,9 +30,8 @@ class TweakUiFocusEditorOnRaise : public TweakUiBase<TweakUiFocusEditorOnRaise> 
 
  private:
   static void onWindowActive(GObject *object, GParamSpec *, gpointer user_data) {
-    auto &ctx = PreviewContext::instance();
-    if (!ctx.preview_config_ ||
-        !ctx.preview_config_->get<bool>("focus_editor_on_raise", false)) {
+    auto &cfg = PreviewConfig::instance();
+    if (!cfg.get<bool>("focus_editor_on_raise", false)) {
       return;
     }
 

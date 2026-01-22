@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2025 xiota
+// SPDX-FileCopyrightText: Copyright 2025-2026 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #pragma once
@@ -55,8 +55,6 @@ class PreviewPane final {
   GtkWidget *offscreen_ = nullptr;
   guint sidebar_page_number_ = 0;
   gulong sidebar_switch_page_handler_id_ = 0;
-
-  PreviewConfig *preview_config_;
 
   WebView webview_;
   ConverterRegistrar registrar_;

@@ -25,7 +25,6 @@
 
 namespace {
 std::unique_ptr<PreviewPane> preview_pane;
-std::unique_ptr<PreviewConfig> preview_config;
 std::unique_ptr<PreviewMenu> preview_menu;
 std::unique_ptr<PreviewShortcuts> preview_shortcuts;
 
@@ -56,7 +55,8 @@ GtkWidget *previewConfigure(
     GtkDialog *dialog,
     gpointer /*user_data*/
 ) {
-  return preview_config->buildConfigWidget(dialog);
+  auto &cfg = PreviewConfig::instance();
+  return cfg.buildConfigWidget(dialog);
 }
 
 gboolean previewInit(
@@ -64,17 +64,16 @@ gboolean previewInit(
     gpointer /*user_data*/
 ) {
   // config
-  auto preview_config_path =
+  auto config_path =
       std::filesystem::path(plugin->geany_data->app->configdir) / "plugins" / "preview";
-  preview_config = std::make_unique<PreviewConfig>(preview_config_path, "preview.conf");
-  preview_config->load();
+
+  PreviewConfig::init(config_path, "preview.conf").load();
 
   // context
   auto &ctx = PreviewContext::instance();
   ctx.geany_plugin_ = plugin;
   ctx.geany_data_ = plugin->geany_data;
   ctx.geany_sidebar_ = plugin->geany_data->main_widgets->sidebar_notebook;
-  ctx.preview_config_ = preview_config.get();
 
   // preview pane
   preview_pane = std::make_unique<PreviewPane>();
@@ -113,11 +112,9 @@ void previewCleanup(
     GeanyPlugin *plugin,
     gpointer /*user_data*/
 ) {
-  if (preview_config) {
-    preview_config->save();
-  }
+  PreviewConfig::instance().save();
+
   preview_pane.reset();
-  preview_config.reset();
   preview_menu.reset();
   preview_shortcuts.reset();
 }

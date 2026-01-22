@@ -37,13 +37,8 @@ class TweakUiUnchangeDocument : public TweakUiBase<TweakUiUnchangeDocument> {
       return;
     }
 
-    auto &ctx = PreviewContext::instance();
-    if (!ctx.preview_config_) {
-      return;
-    }
-
-    // Read enable flag from plugin config
-    if (!ctx.preview_config_->get<bool>("unchange_document", false)) {
+    auto &cfg = PreviewConfig::instance();
+    if (!cfg.get<bool>("unchange_document", false)) {
       return;
     }
 

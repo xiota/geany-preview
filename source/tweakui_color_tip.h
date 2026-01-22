@@ -75,12 +75,13 @@ class TweakUiColorTip : public TweakUiBase<TweakUiColorTip> {
 
  private:
   bool colorTooltipEnabled() const {
-    auto &ctx = PreviewContext::instance();
-    return ctx.preview_config_ && ctx.preview_config_->get<bool>("color_tooltip", false);
+    auto &cfg = PreviewConfig::instance();
+    return cfg.get<bool>("color_tooltip", false);
   }
+
   bool colorChooserEnabled() const {
-    auto &ctx = PreviewContext::instance();
-    return ctx.preview_config_ && ctx.preview_config_->get<bool>("color_chooser", false);
+    auto &cfg = PreviewConfig::instance();
+    return cfg.get<bool>("color_chooser", false);
   }
 
   static int containsColorValue(char *string, int position, int maxdist) {

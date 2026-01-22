@@ -43,9 +43,8 @@ class TweakUiDisableEditorCtrlWheelZoom
 
  private:
   static gboolean onScrollEvent(GtkWidget *, GdkEventScroll *event, gpointer user_data) {
-    auto &ctx = PreviewContext::instance();
-    if (!ctx.preview_config_ ||
-        ctx.preview_config_->get<bool>("disable_editor_ctrl_wheel_zoom", true)) {
+    auto &cfg = PreviewConfig::instance();
+    if (cfg.get<bool>("disable_editor_ctrl_wheel_zoom", true)) {
       return false;
     }
 

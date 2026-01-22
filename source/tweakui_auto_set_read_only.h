@@ -63,10 +63,8 @@ class TweakUiAutoSetReadOnly : public TweakUiBase<TweakUiAutoSetReadOnly> {
  private:
   static void documentSignal(GObject *, GeanyDocument *doc, gpointer user_data) {
     auto *self = static_cast<TweakUiAutoSetReadOnly *>(user_data);
-    auto &ctx = PreviewContext::instance();
-
-    if (!DOC_VALID(doc) || !ctx.preview_config_ ||
-        !ctx.preview_config_->get<bool>("auto_set_read_only", false)) {
+    auto &cfg = PreviewConfig::instance();
+    if (!DOC_VALID(doc) || !cfg.get<bool>("auto_set_read_only", false)) {
       return;
     }
 

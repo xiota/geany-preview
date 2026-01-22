@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2025 xiota
+// SPDX-FileCopyrightText: Copyright 2025-2026 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "preview_shortcuts.h"
@@ -278,7 +278,8 @@ void PreviewShortcuts::onFocusPreviewEditor(guint /*key_id*/) {
       GtkUtils::isWidgetOnVisibleNotebookPage(GTK_NOTEBOOK(sidebar), preview);
 
   if (!inEditor && !inPreview) {
-    bool strict = ctx.preview_config_->get<bool>("keybinding_behavior_strict", false);
+    auto &cfg = PreviewConfig::instance();
+    bool strict = cfg.get<bool>("keybinding_behavior_strict", false);
     if (strict) {
       return;
     } else {
@@ -309,7 +310,8 @@ void PreviewShortcuts::onFocusSidebarEditor(guint /*key_id*/) {
   const bool inSidebar = GtkUtils::hasFocusWithin(sidebar);
 
   if (!inEditor && !inSidebar) {
-    bool strict = ctx.preview_config_->get<bool>("keybinding_behavior_strict", false);
+    auto &cfg = PreviewConfig::instance();
+    bool strict = cfg.get<bool>("keybinding_behavior_strict", false);
     if (strict) {
       return;
     } else {
@@ -327,15 +329,15 @@ void PreviewShortcuts::onFocusSidebarEditor(guint /*key_id*/) {
 }
 
 void PreviewShortcuts::onOpenTerminal(guint /*key_id*/) {
-  auto &ctx = PreviewContext::instance();
   GeanyDocument *doc = document_get_current();
-  if (!DOC_VALID(doc) || !doc->real_path || !ctx.preview_config_) {
+  if (!DOC_VALID(doc) || !doc->real_path) {
     return;
   }
 
   auto dirPath = std::filesystem::path(doc->real_path).parent_path();
 
-  std::string cmd = ctx.preview_config_->get<std::string>("terminal_command");
+  auto &cfg = PreviewConfig::instance();
+  std::string cmd = cfg.get<std::string>("terminal_command");
 
   if (!Subprocess::commandExists(cmd)) {
     if (Subprocess::commandExists("xdg-terminal-exec")) {
@@ -364,15 +366,15 @@ void PreviewShortcuts::onOpenTerminal(guint /*key_id*/) {
 }
 
 void PreviewShortcuts::onOpenFileManager(guint /*key_id*/) {
-  auto &ctx = PreviewContext::instance();
   GeanyDocument *doc = document_get_current();
-  if (!DOC_VALID(doc) || !doc->real_path || !ctx.preview_config_) {
+  if (!DOC_VALID(doc) || !doc->real_path) {
     return;
   }
 
   auto dirPath = std::filesystem::path(doc->real_path).parent_path();
 
-  std::string cmd = ctx.preview_config_->get<std::string>("file_manager_command");
+  auto &cfg = PreviewConfig::instance();
+  std::string cmd = cfg.get<std::string>("file_manager_command");
 
   if (!Subprocess::commandExists(cmd)) {
     if (Subprocess::commandExists("xdg-open")) {
@@ -455,15 +457,20 @@ void PreviewShortcuts::onResetZoomWv(guint /*key_id*/) {
 
 void PreviewShortcuts::onZoomInBoth(guint /*key_id*/) {
   auto &ctx = PreviewContext::instance();
-  bool sync = ctx.preview_config_->get<bool>("preview_zoom_sync", false);
-
   GeanyDocument *doc = document_get_current();
   ScintillaObject *sci = (DOC_VALID(doc) && doc->editor) ? doc->editor->sci : nullptr;
 
-  if (sync && sci) {
+  if (!ctx.webview_ || !sci) {
+    return;
+  }
+
+  auto &cfg = PreviewConfig::instance();
+  bool sync = cfg.get<bool>("preview_zoom_sync", false);
+
+  if (sync) {
     scintilla_send_message(sci, SCI_ZOOMIN, 0, 0);
     ctx.webview_->stepZoom(+1);
-  } else if (sci && gtk_widget_has_focus(GTK_WIDGET(sci))) {
+  } else if (gtk_widget_has_focus(GTK_WIDGET(sci))) {
     scintilla_send_message(sci, SCI_ZOOMIN, 0, 0);
   } else if (gtk_widget_has_focus(ctx.webview_->widget())) {
     ctx.webview_->stepZoom(+1);
@@ -472,15 +479,20 @@ void PreviewShortcuts::onZoomInBoth(guint /*key_id*/) {
 
 void PreviewShortcuts::onZoomOutBoth(guint /*key_id*/) {
   auto &ctx = PreviewContext::instance();
-  bool sync = ctx.preview_config_->get<bool>("preview_zoom_sync", false);
-
   GeanyDocument *doc = document_get_current();
   ScintillaObject *sci = (DOC_VALID(doc) && doc->editor) ? doc->editor->sci : nullptr;
 
-  if (sync && sci) {
+  if (!ctx.webview_ || !sci) {
+    return;
+  }
+
+  auto &cfg = PreviewConfig::instance();
+  bool sync = cfg.get<bool>("preview_zoom_sync", false);
+
+  if (sync) {
     scintilla_send_message(sci, SCI_ZOOMOUT, 0, 0);
     ctx.webview_->stepZoom(-1);
-  } else if (sci && gtk_widget_has_focus(GTK_WIDGET(sci))) {
+  } else if (gtk_widget_has_focus(GTK_WIDGET(sci))) {
     scintilla_send_message(sci, SCI_ZOOMOUT, 0, 0);
   } else if (gtk_widget_has_focus(ctx.webview_->widget())) {
     ctx.webview_->stepZoom(-1);
@@ -489,19 +501,20 @@ void PreviewShortcuts::onZoomOutBoth(guint /*key_id*/) {
 
 void PreviewShortcuts::onResetZoomBoth(guint /*key_id*/) {
   auto &ctx = PreviewContext::instance();
-  if (!ctx.webview_) {
-    return;
-  }
-
-  bool sync = ctx.preview_config_->get<bool>("preview_zoom_sync", false);
-
   GeanyDocument *doc = document_get_current();
   ScintillaObject *sci = (DOC_VALID(doc) && doc->editor) ? doc->editor->sci : nullptr;
 
-  if (sync && sci) {
+  if (!ctx.webview_ || !sci) {
+    return;
+  }
+
+  auto &cfg = PreviewConfig::instance();
+  bool sync = cfg.get<bool>("preview_zoom_sync", false);
+
+  if (sync) {
     scintilla_send_message(sci, SCI_SETZOOM, 0, 0);
     ctx.webview_->resetZoom();
-  } else if (sci && gtk_widget_has_focus(GTK_WIDGET(sci))) {
+  } else if (gtk_widget_has_focus(GTK_WIDGET(sci))) {
     scintilla_send_message(sci, SCI_SETZOOM, 0, 0);
   } else if (gtk_widget_has_focus(ctx.webview_->widget())) {
     ctx.webview_->resetZoom();

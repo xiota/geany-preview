@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2025 xiota
+// SPDX-FileCopyrightText: Copyright 2025-2026 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "webview.h"
@@ -91,11 +91,8 @@ void WebView::reset() {
   );
 
   // enable zoom handling
-  auto &ctx = PreviewContext::instance();
-  double zoom = 100;
-  if (ctx.preview_config_) {
-    zoom = ctx.preview_config_->get<int>("preview_zoom_default", 100);
-  }
+  auto &cfg = PreviewConfig::instance();
+  double zoom = cfg.get<int>("preview_zoom_default", 100);
   zoom = std::max(zoom / 100.0, 0.01);
   webkit_web_view_set_zoom_level(WEBKIT_WEB_VIEW(webview_), zoom);
 
@@ -420,8 +417,9 @@ void WebView::onDecidePolicy(
 
 gboolean WebView::onScrollEvent(GtkWidget *widget, GdkEventScroll *event, gpointer user_data) {
   auto &ctx = PreviewContext::instance();
-  if (!ctx.preview_config_ || !ctx.webview_ || !ctx.webview_->widget() ||
-      !ctx.preview_config_->get<bool>("disable_preview_ctrl_wheel_zoom", false)) {
+  auto &cfg = PreviewConfig::instance();
+  if (!ctx.webview_ || !ctx.webview_->widget() ||
+      !cfg.get<bool>("disable_preview_ctrl_wheel_zoom", false)) {
     return false;
   }
 
@@ -500,11 +498,8 @@ constexpr int SCINTILLA_MAX_OFFSET = 20;
 }  // namespace
 
 WebView &WebView::resetZoom() {
-  auto &ctx = PreviewContext::instance();
-  double zoom = 1.0;
-  if (ctx.preview_config_) {
-    zoom = ctx.preview_config_->get<double>("preview_zoom_default", 1.0);
-  }
+  auto &cfg = PreviewConfig::instance();
+  double zoom = cfg.get<double>("preview_zoom_default", 1.0);
   return setZoom(zoom);
 }
 

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2025 xiota
+// SPDX-FileCopyrightText: Copyright 2025-2026 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #pragma once
@@ -18,7 +18,6 @@
 #include <geany/pluginutils.h>
 
 class PreviewPane;
-class PreviewConfig;
 class WebView;
 
 class PreviewContext {
@@ -34,7 +33,6 @@ class PreviewContext {
   GeanyKeyGroup *geany_key_group_ = nullptr;
 
   PreviewPane *preview_pane_ = nullptr;
-  PreviewConfig *preview_config_ = nullptr;
   WebView *webview_ = nullptr;
 
   void openPreferences() const {

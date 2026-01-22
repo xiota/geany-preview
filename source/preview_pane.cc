@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2025 xiota
+// SPDX-FileCopyrightText: Copyright 2025-2026 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "preview_pane.h"
@@ -30,7 +30,6 @@
 PreviewPane::PreviewPane() {
   auto &ctx = PreviewContext::instance();
   sidebar_notebook_ = ctx.geany_sidebar_;
-  preview_config_ = ctx.preview_config_;
   ctx.webview_ = &webview_;
 
   page_box_ = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -48,8 +47,9 @@ PreviewPane::PreviewPane() {
     gtk_widget_set_name(GTK_WIDGET(page_box_), "geany-preview-sidebar-page");
   }
 
-  addWatchIfNeeded(preview_config_->configDir() / "preview.css");
-  addWatchIfNeeded(preview_config_->configDir() / (previous_key_ + ".css"));
+  auto &cfg = PreviewConfig::instance();
+  addWatchIfNeeded(cfg.configDir() / "preview.css");
+  addWatchIfNeeded(cfg.configDir() / (previous_key_ + ".css"));
 
   // initial webview
   webview_.reset();
@@ -66,7 +66,7 @@ PreviewPane::PreviewPane() {
   safeReparentWebView(page_box_);
 
   // config callback
-  preview_config_->connectChanged([this]() {
+  cfg.connectChanged([this]() {
     webview_.reset();
     connectWebViewSignals();
 
@@ -256,9 +256,11 @@ PreviewPane &PreviewPane::scheduleUpdate() {
 
   update_pending_ = true;
 
+  auto &cfg = PreviewConfig::instance();
+
   gint64 now = g_get_monotonic_time() / 1000;
-  gint64 update_cooldown_ms_ = preview_config_->get<int>("update_cooldown");
-  gint64 update_min_delay_ = preview_config_->get<int>("update_min_delay");
+  gint64 update_cooldown_ms_ = cfg.get<int>("update_cooldown");
+  gint64 update_min_delay_ = cfg.get<int>("update_min_delay");
 
   gint64 delay_ms =
       std::max(update_min_delay_, update_cooldown_ms_ - (now - last_update_time_));
@@ -403,7 +405,8 @@ void PreviewPane::safeReparentWebView(GtkWidget *new_parent) {
 }
 
 std::string PreviewPane::generateHtml(const Document &document) const {
-  ConverterPreprocessor pre(document, preview_config_->get<int>("headers_incomplete_max"));
+  auto &cfg = PreviewConfig::instance();
+  ConverterPreprocessor pre(document, cfg.get<int>("headers_incomplete_max"));
 
   Converter *converter = nullptr;
   if (!pre.type().empty()) {
@@ -466,7 +469,8 @@ std::string toUri(const std::filesystem::path &path, const std::string &fallback
 }  // namespace
 
 std::string PreviewPane::calculateBaseUri(const Document &document) const {
-  std::string config_path = preview_config_->get<std::string>("preview_base_path", "sandbox");
+  auto &cfg = PreviewConfig::instance();
+  std::string config_path = cfg.get<std::string>("preview_base_path", "sandbox");
   config_path = config_path.empty() ? "sandbox" : XdgUtils::expandEnvVars(config_path);
 
   std::string default_base_uri = toUri(config_path, "file:///sandbox/");
@@ -485,17 +489,18 @@ std::string PreviewPane::calculateBaseUri(const Document &document) const {
 }
 
 PreviewPane &PreviewPane::update(const Document &document) {
+  auto &cfg = PreviewConfig::instance();
   std::string html = generateHtml(document);
 
   // load new css on document type change
   auto key = registrar_.getConverterKey(document);
   if (key != previous_key_) {
-    addWatchIfNeeded(preview_config_->configDir() / std::string{ key + ".css" });
+    addWatchIfNeeded(cfg.configDir() / std::string{ key + ".css" });
     previous_key_ = key;
     clearAndReloadCss();
   }
 
-  auto theme = preview_config_->get<std::string>("theme_mode", "system");
+  auto theme = cfg.get<std::string>("theme_mode", "system");
   if (theme != previous_theme_) {
     injectCssTheme();
   }
@@ -527,8 +532,9 @@ void PreviewPane::addWatchIfNeeded(const std::filesystem::path &path) {
   auto [it, inserted] = watches_.emplace(path, FileUtils::FileWatchHandle{});
 
   FileUtils::watchFile(it->second, path, [this, path]() {
-    auto preview_css_path = preview_config_->configDir() / "preview.css";
-    auto previous_css_path = preview_config_->configDir() / (previous_key_ + ".css");
+    auto &cfg = PreviewConfig::instance();
+    auto preview_css_path = cfg.configDir() / "preview.css";
+    auto previous_css_path = cfg.configDir() / (previous_key_ + ".css");
     if (path == preview_css_path || path == previous_css_path) {
       clearAndReloadCss();
     } else {
@@ -545,8 +551,9 @@ void PreviewPane::stopAllWatches() {
 }
 
 PreviewPane &PreviewPane::clearAndReloadCss() {
-  auto preview_css_path = preview_config_->configDir() / "preview.css";
-  auto previous_css_path = preview_config_->configDir() / (previous_key_ + ".css");
+  auto &cfg = PreviewConfig::instance();
+  auto preview_css_path = cfg.configDir() / "preview.css";
+  auto previous_css_path = cfg.configDir() / (previous_key_ + ".css");
 
   webview_.clearInjectedCss();
   if (FileUtils::fileExists(preview_css_path)) {
@@ -570,7 +577,8 @@ PreviewPane &PreviewPane::clearAndReloadCss() {
 }
 
 PreviewPane &PreviewPane::injectCssTheme() {
-  previous_theme_ = preview_config_->get<std::string>("theme_mode", "system");
+  auto &cfg = PreviewConfig::instance();
+  previous_theme_ = cfg.get<std::string>("theme_mode", "system");
   if (previous_theme_ == "light") {
     webview_.injectCssFromString("html { color-scheme: light; }");
   } else if (previous_theme_ == "dark") {
@@ -644,11 +652,12 @@ void PreviewPane::onPanedMotion() {
     return;
   }
 
-  if (!is_dragging_paned_ || !preview_config_) {
+  if (!is_dragging_paned_) {
     return;
   }
 
-  int resize_buffer = preview_config_->get<int>("webview_resize_buffer", 0);
+  auto &cfg = PreviewConfig::instance();
+  int resize_buffer = cfg.get<int>("webview_resize_buffer", 0);
   int width = gtk_widget_get_allocated_width(sidebar_notebook_);
 
   if (resize_buffer <= 0 || width <= 0) {

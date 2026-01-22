@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2025 xiota
+// SPDX-FileCopyrightText: Copyright 2025-2026 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "preview_menu.h"
@@ -145,12 +145,8 @@ void PreviewMenu::onPrint(GtkMenuItem *, gpointer user_data) {
 }
 
 void PreviewMenu::onOpenConfigFolder(GtkMenuItem *, gpointer user_data) {
-  auto &ctx = PreviewContext::instance();
-  if (!ctx.preview_config_) {
-    return;
-  }
-
-  const auto &path = ctx.preview_config_->configDir();
+  auto &cfg = PreviewConfig::instance();
+  const auto &path = cfg.configDir();
   if (!std::filesystem::exists(path)) {
     msgwin_status_add("Preview: Config folder does not exist.");
     return;

@@ -21,11 +21,12 @@ class TweakUiAutoSetPwd : public TweakUiBase<TweakUiAutoSetPwd> {
  public:
   explicit TweakUiAutoSetPwd() {
     auto &ctx = PreviewContext::instance();
-    if (!ctx.geany_plugin_ || !ctx.preview_config_) {
+    if (!ctx.geany_plugin_) {
       return;
     }
 
-    ctx.preview_config_->connectChanged([this]() { documentSignal(nullptr, nullptr, this); });
+    auto &cfg = PreviewConfig::instance();
+    cfg.connectChanged([this]() { documentSignal(nullptr, nullptr, this); });
 
     // Hook into document activation (fires on open/new/switch)
     plugin_signal_connect(
@@ -36,9 +37,8 @@ class TweakUiAutoSetPwd : public TweakUiBase<TweakUiAutoSetPwd> {
  private:
   static void documentSignal(GObject *, GeanyDocument *doc, gpointer user_data) {
     auto *self = static_cast<TweakUiAutoSetPwd *>(user_data);
-    auto &ctx = PreviewContext::instance();
-
-    if (!ctx.preview_config_ || !ctx.preview_config_->get<bool>("auto_set_pwd", false)) {
+    auto &cfg = PreviewConfig::instance();
+    if (cfg.get<bool>("auto_set_pwd", false)) {
       return;
     }
 

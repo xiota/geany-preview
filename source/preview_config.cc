@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2025 xiota
+// SPDX-FileCopyrightText: Copyright 2025-2026 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "preview_config.h"
@@ -224,14 +224,7 @@ static void onSearchEntryChanged(GtkEditable *editable, gpointer user_data) {
 
 }  // namespace
 
-PreviewConfig::PreviewConfig(
-    const std::filesystem::path &config_path,
-    std::string_view config_file
-)
-    : config_path_(std::filesystem::weakly_canonical(config_path)), config_file_(config_file) {
-  auto full_path = config_path_ / config_file_;
-  std::filesystem::create_directories(config_path_);
-
+PreviewConfig::PreviewConfig() {
   // Populate settings_ and help_texts_ from the master table
   for (const auto &def : setting_defs_) {
     settings_[def.key] = def.default_value;

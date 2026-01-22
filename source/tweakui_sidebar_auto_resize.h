@@ -97,18 +97,13 @@ class TweakUiSidebarAutoResize : public TweakUiBase<TweakUiSidebarAutoResize> {
   }
 
   void adjustSidebar() {
-    auto &ctx = PreviewContext::instance();
-    if (!ctx.preview_config_) {
-      return;
-    }
-
     // Core widget/type guards (cheap, before we set pending)
     if (!geany_hpane_ || !geany_window_ || !geany_sidebar_) {
       return;
     }
 
-    bool enabled = ctx.preview_config_->get<bool>("sidebar_auto_resize", false);
-    if (!enabled) {
+    auto &cfg = PreviewConfig::instance();
+    if (!cfg.get<bool>("sidebar_auto_resize", false)) {
       return;
     }
 
@@ -143,9 +138,9 @@ class TweakUiSidebarAutoResize : public TweakUiBase<TweakUiSidebarAutoResize> {
       maximized = false;
     }
 
-    int cols_normal = ctx.preview_config_->get<int>("sidebar_columns_normal", 80);
-    int cols_maximized = ctx.preview_config_->get<int>("sidebar_columns_maximized", 100);
-    int cols_fullscreen = ctx.preview_config_->get<int>("sidebar_columns_fullscreen", 100);
+    int cols_normal = cfg.get<int>("sidebar_columns_normal", 80);
+    int cols_maximized = cfg.get<int>("sidebar_columns_maximized", 100);
+    int cols_fullscreen = cfg.get<int>("sidebar_columns_fullscreen", 100);
 
     int target_cols = cols_normal;
     if (fullscreen) {
@@ -154,7 +149,7 @@ class TweakUiSidebarAutoResize : public TweakUiBase<TweakUiSidebarAutoResize> {
       target_cols = cols_maximized;
     }
 
-    int delay_ms = ctx.preview_config_->get<int>("sidebar_resize_delay", 50);
+    int delay_ms = cfg.get<int>("sidebar_resize_delay", 50);
     if (delay_ms < 0) {
       delay_ms = 0;
     }
@@ -192,11 +187,8 @@ class TweakUiSidebarAutoResize : public TweakUiBase<TweakUiSidebarAutoResize> {
             return G_SOURCE_REMOVE;
           }
 
-          int min_sidebar_width = 50;
-          auto &ctx = PreviewContext::instance();
-          if (ctx.preview_config_) {
-            min_sidebar_width = ctx.preview_config_->get<int>("sidebar_size_min", 50);
-          }
+          auto &cfg = PreviewConfig::instance();
+          int min_sidebar_width = cfg.get<int>("sidebar_size_min", 50);
 
           int max_editor_width = paned_w - min_sidebar_width;
 

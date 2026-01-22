@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2025 xiota
+// SPDX-FileCopyrightText: Copyright 2025-2026 xiota
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #pragma once
@@ -15,10 +15,27 @@
 
 class PreviewConfig {
  public:
-  explicit PreviewConfig(
-      const std::filesystem::path &config_path,
-      std::string_view config_file
-  );
+  static PreviewConfig &init(const std::filesystem::path &path, std::string_view file) {
+    static bool initialized = false;
+    auto &cfg = instance();
+
+    if (!initialized) {
+      cfg.setConfigPath(path);
+      cfg.setConfigFile(file);
+      initialized = true;
+    }
+
+    return cfg;
+  }
+
+  static PreviewConfig &instance() {
+    static PreviewConfig inst;
+    return inst;
+  }
+
+ private:
+  PreviewConfig();
+  ~PreviewConfig() = default;
 
   PreviewConfig(const PreviewConfig &) = delete;
   PreviewConfig &operator=(const PreviewConfig &) = delete;
@@ -214,6 +231,16 @@ class PreviewConfig {
 
   void connectChanged(Callback cb) {
     listeners_.push_back(std::move(cb));
+  }
+
+ private:
+  void setConfigPath(const std::filesystem::path &p) {
+    config_path_ = std::filesystem::weakly_canonical(p);
+    std::filesystem::create_directories(config_path_);
+  }
+
+  void setConfigFile(std::string_view f) {
+    config_file_ = f;
   }
 
  private:
