@@ -17,9 +17,21 @@
 
 class PreviewPane final {
  public:
-  explicit PreviewPane();
-  ~PreviewPane() noexcept;
+  static PreviewPane &instance() {
+    static PreviewPane inst;
+    return inst;
+  }
 
+ private:
+  PreviewPane();
+  ~PreviewPane();
+
+  PreviewPane(const PreviewPane &) = delete;
+  PreviewPane &operator=(const PreviewPane &) = delete;
+  PreviewPane(PreviewPane &&) = delete;
+  PreviewPane &operator=(PreviewPane &&) = delete;
+
+ public:
   GtkWidget *widget() const;
 
   PreviewPane &initWebView(const Document &document);

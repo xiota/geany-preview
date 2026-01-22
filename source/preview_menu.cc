@@ -56,7 +56,7 @@ namespace {
 // Returns empty path if user cancels.
 std::filesystem::path getExportDestination(const char *dialog_title, const char *default_ext) {
   auto &ctx = PreviewContext::instance();
-  if (!ctx.preview_pane_) {
+  if (!ctx.geany_data_) {
     return {};
   }
 
@@ -98,17 +98,13 @@ std::filesystem::path getExportDestination(const char *dialog_title, const char 
 }  // anonymous namespace
 
 void PreviewMenu::onExportToHtml(GtkMenuItem *, gpointer user_data) {
-  auto &ctx = PreviewContext::instance();
-  if (!ctx.preview_pane_) {
-    return;
-  }
-
   auto dest_path = getExportDestination("Export Preview to HTML", ".html");
   if (dest_path.empty()) {
     return;
   }
 
-  ctx.preview_pane_->exportHtmlToFileAsync(dest_path, [dest_path](bool ok) {
+  auto &pane = PreviewPane::instance();
+  pane.exportHtmlToFileAsync(dest_path, [dest_path](bool ok) {
     if (ok) {
       msgwin_status_add("Preview: Exported HTML to: %s", dest_path.string().c_str());
     } else {
@@ -118,17 +114,13 @@ void PreviewMenu::onExportToHtml(GtkMenuItem *, gpointer user_data) {
 }
 
 void PreviewMenu::onExportToPdf(GtkMenuItem *, gpointer user_data) {
-  auto &ctx = PreviewContext::instance();
-  if (!ctx.preview_pane_) {
-    return;
-  }
-
   auto dest_path = getExportDestination("Export Preview to PDF", ".pdf");
   if (dest_path.empty()) {
     return;
   }
 
-  ctx.preview_pane_->exportPdfToFileAsync(dest_path, [dest_path](bool ok) {
+  auto &pane = PreviewPane::instance();
+  pane.exportPdfToFileAsync(dest_path, [dest_path](bool ok) {
     if (ok) {
       msgwin_status_add("Preview: Exported PDF to: %s", dest_path.string().c_str());
     } else {

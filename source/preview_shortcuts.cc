@@ -70,12 +70,10 @@ std::string pickCommandForDe(const std::string &de, const DeCommand *cmds) {
 }
 
 bool isPreviewVisible() {
-  auto &ctx = PreviewContext::instance();
-  if (!ctx.preview_pane_) {
-    return false;
-  }
+  auto &pane = PreviewPane::instance();
+  GtkWidget *preview = pane.widget();
 
-  GtkWidget *preview = ctx.preview_pane_->widget();
+  auto &ctx = PreviewContext::instance();
   GtkWidget *sidebar = ctx.geany_sidebar_;
   if (!preview || !sidebar || !GTK_IS_NOTEBOOK(sidebar)) {
     return false;
@@ -107,12 +105,9 @@ PreviewShortcuts::PreviewShortcuts() {
 }
 
 void PreviewShortcuts::onCopy(guint /*key_id*/) {
-  auto &ctx = PreviewContext::instance();
-  if (!ctx.preview_pane_ || !ctx.webview_) {
-    return;
-  }
-
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(ctx.preview_pane_->widget()))) {
+  auto &pane = PreviewPane::instance();
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(pane.widget()))) {
+    auto &ctx = PreviewContext::instance();
     auto *wv = ctx.webview_->widget();
     webkit_web_view_execute_editing_command(WEBKIT_WEB_VIEW(wv), WEBKIT_EDITING_COMMAND_COPY);
   } else {
@@ -121,12 +116,9 @@ void PreviewShortcuts::onCopy(guint /*key_id*/) {
 }
 
 void PreviewShortcuts::onCut(guint /*key_id*/) {
-  auto &ctx = PreviewContext::instance();
-  if (!ctx.preview_pane_ || !ctx.webview_) {
-    return;
-  }
-
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(ctx.preview_pane_->widget()))) {
+  auto &pane = PreviewPane::instance();
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(pane.widget()))) {
+    auto &ctx = PreviewContext::instance();
     auto *wv = ctx.webview_->widget();
     webkit_web_view_execute_editing_command(WEBKIT_WEB_VIEW(wv), WEBKIT_EDITING_COMMAND_CUT);
   } else {
@@ -135,12 +127,9 @@ void PreviewShortcuts::onCut(guint /*key_id*/) {
 }
 
 void PreviewShortcuts::onPaste(guint /*key_id*/) {
-  auto &ctx = PreviewContext::instance();
-  if (!ctx.preview_pane_ || !ctx.webview_) {
-    return;
-  }
-
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(ctx.preview_pane_->widget()))) {
+  auto &pane = PreviewPane::instance();
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(pane.widget()))) {
+    auto &ctx = PreviewContext::instance();
     auto *wv = ctx.webview_->widget();
     webkit_web_view_execute_editing_command(WEBKIT_WEB_VIEW(wv), WEBKIT_EDITING_COMMAND_PASTE);
   } else {
@@ -166,12 +155,13 @@ void PreviewShortcuts::onCopyFilePath(guint /*key_id*/) {
 
 void PreviewShortcuts::onFind(guint /*key_id*/) {
   auto &ctx = PreviewContext::instance();
-  if (!ctx.preview_pane_ || !ctx.webview_ || !ctx.geany_data_ ||
-      !ctx.geany_data_->main_widgets || !ctx.geany_data_->main_widgets->window) {
+  if (!ctx.webview_ || !ctx.geany_data_ || !ctx.geany_data_->main_widgets ||
+      !ctx.geany_data_->main_widgets->window) {
     return;
   }
 
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(ctx.preview_pane_->widget()))) {
+  auto &pane = PreviewPane::instance();
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(pane.widget()))) {
     ctx.webview_->showFindPrompt(GTK_WINDOW(ctx.geany_data_->main_widgets->window));
   } else {
     keybindings_send_command(GEANY_KEY_GROUP_SEARCH, GEANY_KEYS_SEARCH_FIND);
@@ -180,12 +170,13 @@ void PreviewShortcuts::onFind(guint /*key_id*/) {
 
 void PreviewShortcuts::onFindNext(guint /*key_id*/) {
   auto &ctx = PreviewContext::instance();
-  if (!ctx.preview_pane_ || !ctx.webview_ || !ctx.geany_data_ ||
-      !ctx.geany_data_->main_widgets || !ctx.geany_data_->main_widgets->window) {
+  if (!ctx.webview_ || !ctx.geany_data_ || !ctx.geany_data_->main_widgets ||
+      !ctx.geany_data_->main_widgets->window) {
     return;
   }
 
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(ctx.preview_pane_->widget()))) {
+  auto &pane = PreviewPane::instance();
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(pane.widget()))) {
     ctx.webview_->findNext();
   } else {
     keybindings_send_command(GEANY_KEY_GROUP_SEARCH, GEANY_KEYS_SEARCH_FINDNEXTSEL);
@@ -194,12 +185,13 @@ void PreviewShortcuts::onFindNext(guint /*key_id*/) {
 
 void PreviewShortcuts::onFindPrev(guint /*key_id*/) {
   auto &ctx = PreviewContext::instance();
-  if (!ctx.preview_pane_ || !ctx.webview_ || !ctx.geany_data_ ||
-      !ctx.geany_data_->main_widgets || !ctx.geany_data_->main_widgets->window) {
+  if (!ctx.webview_ || !ctx.geany_data_ || !ctx.geany_data_->main_widgets ||
+      !ctx.geany_data_->main_widgets->window) {
     return;
   }
 
-  if (GtkUtils::hasFocusWithin(GTK_WIDGET(ctx.preview_pane_->widget()))) {
+  auto &pane = PreviewPane::instance();
+  if (GtkUtils::hasFocusWithin(GTK_WIDGET(pane.widget()))) {
     ctx.webview_->findPrevious();
   } else {
     keybindings_send_command(GEANY_KEY_GROUP_SEARCH, GEANY_KEYS_SEARCH_FINDPREVSEL);
@@ -242,16 +234,13 @@ void PreviewShortcuts::onFindPrevWv(guint /*key_id*/) {
 
 void PreviewShortcuts::onFocusPreview(guint /*key_id*/) {
   auto &ctx = PreviewContext::instance();
-  if (!ctx.preview_pane_) {
-    return;
-  }
-
   GtkWidget *sidebar = ctx.geany_sidebar_;
   if (!sidebar || !gtk_widget_get_visible(sidebar)) {
     return;
   }
 
-  GtkWidget *preview = ctx.preview_pane_->widget();
+  auto &pane = PreviewPane::instance();
+  GtkWidget *preview = pane.widget();
   if (preview) {
     GtkUtils::activateNotebookPageForWidget(preview);
   }
@@ -259,10 +248,6 @@ void PreviewShortcuts::onFocusPreview(guint /*key_id*/) {
 
 void PreviewShortcuts::onFocusPreviewEditor(guint /*key_id*/) {
   auto &ctx = PreviewContext::instance();
-  if (!ctx.preview_pane_) {
-    return;
-  }
-
   GtkWidget *sidebar = ctx.geany_sidebar_;
   if (!sidebar || !gtk_widget_get_visible(sidebar)) {
     return;
@@ -270,7 +255,9 @@ void PreviewShortcuts::onFocusPreviewEditor(guint /*key_id*/) {
 
   GeanyDocument *doc = document_get_current();
   GtkWidget *sci = (doc && doc->editor) ? GTK_WIDGET(doc->editor->sci) : nullptr;
-  GtkWidget *preview = ctx.preview_pane_->widget();
+
+  auto &pane = PreviewPane::instance();
+  GtkWidget *preview = pane.widget();
 
   const bool inEditor = sci && gtk_widget_has_focus(sci);
   const bool inPreview =

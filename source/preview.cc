@@ -24,7 +24,6 @@
 #include "tweakui_unchange_document.h"
 
 namespace {
-std::unique_ptr<PreviewPane> preview_pane;
 std::unique_ptr<PreviewMenu> preview_menu;
 std::unique_ptr<PreviewShortcuts> preview_shortcuts;
 
@@ -38,7 +37,8 @@ gboolean onEditorNotify(
     return false;
   }
 
-  preview_pane->scheduleUpdate();
+  auto &pane = PreviewPane::instance();
+  pane.scheduleUpdate();
   return false;
 }
 
@@ -47,7 +47,8 @@ void onDocumentActivate(
     GeanyDocument *geany_document,
     gpointer /*user_data*/
 ) {
-  preview_pane->scheduleUpdate();
+  auto &pane = PreviewPane::instance();
+  pane.scheduleUpdate();
 }
 
 GtkWidget *previewConfigure(
@@ -76,8 +77,7 @@ gboolean previewInit(
   ctx.geany_sidebar_ = plugin->geany_data->main_widgets->sidebar_notebook;
 
   // preview pane
-  preview_pane = std::make_unique<PreviewPane>();
-  ctx.preview_pane_ = preview_pane.get();
+  PreviewPane::instance();
 
   // signals
   plugin_signal_connect(
@@ -114,7 +114,6 @@ void previewCleanup(
 ) {
   PreviewConfig::instance().save();
 
-  preview_pane.reset();
   preview_menu.reset();
   preview_shortcuts.reset();
 }

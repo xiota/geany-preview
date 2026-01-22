@@ -17,7 +17,6 @@
 #endif
 #include <geany/pluginutils.h>
 
-class PreviewPane;
 class WebView;
 
 class PreviewContext {
@@ -32,7 +31,6 @@ class PreviewContext {
   GtkWidget *geany_sidebar_ = nullptr;
   GeanyKeyGroup *geany_key_group_ = nullptr;
 
-  PreviewPane *preview_pane_ = nullptr;
   WebView *webview_ = nullptr;
 
   void openPreferences() const {

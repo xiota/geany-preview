@@ -36,16 +36,18 @@ PreviewPane::PreviewPane() {
   offscreen_ = gtk_offscreen_window_new();
   gtk_widget_show(offscreen_);
 
-  if (GTK_IS_NOTEBOOK(sidebar_notebook_)) {
-    sidebar_page_number_ = gtk_notebook_append_page(
-        GTK_NOTEBOOK(sidebar_notebook_), page_box_, gtk_label_new("Preview")
-    );
-    gtk_widget_show_all(page_box_);
-    gtk_notebook_set_current_page(GTK_NOTEBOOK(sidebar_notebook_), sidebar_page_number_);
-
-    // for styling with geany.css
-    gtk_widget_set_name(GTK_WIDGET(page_box_), "geany-preview-sidebar-page");
+  if (!GTK_IS_NOTEBOOK(sidebar_notebook_)) {
+    // Sidebar not ready/valid; bail out safely.
+    return;
   }
+
+  sidebar_page_number_ = gtk_notebook_append_page(
+      GTK_NOTEBOOK(sidebar_notebook_), page_box_, gtk_label_new("Preview")
+  );
+  gtk_widget_show_all(page_box_);
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(sidebar_notebook_), sidebar_page_number_);
+
+  gtk_widget_set_name(GTK_WIDGET(page_box_), "geany-preview-sidebar-page");
 
   auto &cfg = PreviewConfig::instance();
   addWatchIfNeeded(cfg.configDir() / "preview.css");
@@ -105,14 +107,14 @@ PreviewPane::PreviewPane() {
       this
   );
 
-  // workaroound for resize artifact
+  // workaround for resize artifact
   sidebar_paned_ = GtkUtils::findAncestorOfType(sidebar_notebook_, GTK_TYPE_PANED);
   if (sidebar_paned_) {
     connectPanedHandlers();
   }
 }
 
-PreviewPane::~PreviewPane() noexcept {
+PreviewPane::~PreviewPane() {
   if (page_box_ && GTK_IS_NOTEBOOK(sidebar_notebook_)) {
     int idx = gtk_notebook_page_num(GTK_NOTEBOOK(sidebar_notebook_), page_box_);
     if (idx >= 0) {

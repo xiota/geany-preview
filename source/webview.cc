@@ -387,14 +387,12 @@ void WebView::onDecidePolicy(
         if (filename) {
           DocumentLocal doc(filename);
 
-          auto &ctx = PreviewContext::instance();
-          if (ctx.preview_pane_) {
-            if (ctx.preview_pane_->canPreviewFile(doc)) {
-              ctx.preview_pane_->initWebView(doc);
-              webkit_policy_decision_ignore(decision);
-              g_free(filename);
-              return;
-            }
+          auto &pane = PreviewPane::instance();
+          if (pane.canPreviewFile(doc)) {
+            pane.initWebView(doc);
+            webkit_policy_decision_ignore(decision);
+            g_free(filename);
+            return;
           }
 
           g_free(filename);
