@@ -24,7 +24,6 @@
 #include "tweakui_unchange_document.h"
 
 namespace {
-std::unique_ptr<PreviewMenu> preview_menu;
 std::unique_ptr<PreviewShortcuts> preview_shortcuts;
 
 gboolean onEditorNotify(
@@ -98,7 +97,7 @@ gboolean previewInit(
   }
 
   // menu
-  preview_menu = std::make_unique<PreviewMenu>();
+  PreviewMenu::instance();
 
   // shortcuts
   ctx.geany_key_group_ =
@@ -114,7 +113,6 @@ void previewCleanup(
 ) {
   PreviewConfig::instance().save();
 
-  preview_menu.reset();
   preview_shortcuts.reset();
 }
 }  // namespace

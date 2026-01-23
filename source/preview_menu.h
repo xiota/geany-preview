@@ -11,8 +11,21 @@
 
 class PreviewMenu {
  public:
-  explicit PreviewMenu();
+  static PreviewMenu &instance() {
+    static PreviewMenu inst;
+    return inst;
+  }
 
+ private:
+  PreviewMenu();
+  ~PreviewMenu() = default;
+
+  PreviewMenu(const PreviewMenu &) = delete;
+  PreviewMenu &operator=(const PreviewMenu &) = delete;
+  PreviewMenu(PreviewMenu &&) = delete;
+  PreviewMenu &operator=(PreviewMenu &&) = delete;
+
+ public:
   static constexpr gsize menuItemCount() {
     return std::size(menu_defs_);
   }
