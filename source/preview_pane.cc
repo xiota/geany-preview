@@ -30,7 +30,6 @@
 PreviewPane::PreviewPane() {
   auto &ctx = PreviewContext::instance();
   sidebar_notebook_ = ctx.geany_sidebar_;
-  ctx.webview_ = &webview_;
 
   page_box_ = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
   offscreen_ = gtk_offscreen_window_new();
@@ -54,7 +53,8 @@ PreviewPane::PreviewPane() {
   addWatchIfNeeded(cfg.configDir() / (previous_key_ + ".css"));
 
   // initial webview
-  webview_.reset();
+  auto &wv = WebView::instance();
+  wv.reset();
   connectWebViewSignals();
 
   DocumentLocal local_doc("/somewhere-out-there/over-the-rainbow.ftn");
@@ -69,7 +69,8 @@ PreviewPane::PreviewPane() {
 
   // config callback
   cfg.connectChanged([this]() {
-    webview_.reset();
+    auto &wv = WebView::instance();
+    wv.reset();
     connectWebViewSignals();
 
     DocumentLocal local_doc("/somewhere-out-there/over-the-rainbow.ftn");
@@ -137,7 +138,7 @@ PreviewPane::~PreviewPane() {
     }
   }
 
-  if (GtkWidget *wv = webview_.widget()) {
+  if (GtkWidget *wv = WebView::instance().widget()) {
     if (GTK_IS_WIDGET(wv)) {
       if (GtkWidget *p = gtk_widget_get_parent(wv)) {
         gtk_container_remove(GTK_CONTAINER(p), wv);
@@ -159,7 +160,8 @@ PreviewPane::~PreviewPane() {
 }
 
 GtkWidget *PreviewPane::widget() const {
-  return page_box_ ? page_box_ : webview_.widget();
+  auto &wv = WebView::instance();
+  return page_box_ ? page_box_ : wv.widget();
 }
 
 PreviewPane &PreviewPane::initWebView(const Document &document) {
@@ -169,7 +171,9 @@ PreviewPane &PreviewPane::initWebView(const Document &document) {
 
   const std::string base_uri = calculateBaseUri(document);
   root_id_ = "geany-preview-" + StringUtils::randomHex(8);
-  webview_.loadHtml("", base_uri, root_id_, nullptr);
+
+  auto &wv = WebView::instance();
+  wv.loadHtml("", base_uri, root_id_, nullptr);
 
   clearAndReloadCss();
 
@@ -178,14 +182,16 @@ PreviewPane &PreviewPane::initWebView(const Document &document) {
 }
 
 void PreviewPane::connectWebViewSignals() {
+  auto &wv = WebView::instance();
   init_handler_id_ = g_signal_connect(
-      webview_.widget(),
+      wv.widget(),
       "load-changed",
       G_CALLBACK(+[](WebKitWebView *, WebKitLoadEvent e, gpointer user_data) {
         auto *self = static_cast<PreviewPane *>(user_data);
+        auto &wv = WebView::instance();
         if (e == WEBKIT_LOAD_FINISHED) {
           self->scheduleUpdate();
-          g_signal_handler_disconnect(self->webview_.widget(), self->init_handler_id_);
+          g_signal_handler_disconnect(wv.widget(), self->init_handler_id_);
           self->init_handler_id_ = 0;
         }
       }),
@@ -193,7 +199,7 @@ void PreviewPane::connectWebViewSignals() {
   );
 
   g_signal_connect(
-      webview_.widget(),
+      wv.widget(),
       "load-changed",
       G_CALLBACK(+[](WebKitWebView *, WebKitLoadEvent e, gpointer user_data) {
         auto *self = static_cast<PreviewPane *>(user_data);
@@ -220,8 +226,9 @@ PreviewPane &PreviewPane::checkHealth() {
       "`)"
       ")";
 
+  auto &wv = WebView::instance();
   webkit_web_view_evaluate_javascript(
-      WEBKIT_WEB_VIEW(webview_.widget()),
+      WEBKIT_WEB_VIEW(wv.widget()),
       js.c_str(),
       -1,
       nullptr,
@@ -290,7 +297,8 @@ void PreviewPane::exportHtmlToFileAsync(
     const std::filesystem::path &dest,
     std::function<void(bool)> callback
 ) {
-  webview_.getDomSnapshot(
+  auto &wv = WebView::instance();
+  wv.getDomSnapshot(
       root_id_, [dest, cb = std::move(callback)](const std::string &content_html) {
         bool success = false;
         if (!content_html.empty()) {
@@ -348,7 +356,8 @@ void PreviewPane::exportPdfToFileAsync(
     return;
   }
 
-  WebKitPrintOperation *op = webkit_print_operation_new(WEBKIT_WEB_VIEW(webview_.widget()));
+  auto &wv = WebView::instance();
+  WebKitPrintOperation *op = webkit_print_operation_new(WEBKIT_WEB_VIEW(wv.widget()));
   webkit_print_operation_set_print_settings(op, settings);
 
   GtkPageSetup *page_setup = gtk_page_setup_new();
@@ -378,7 +387,7 @@ bool PreviewPane::canPreviewFile(const Document &doc) const {
 }
 
 void PreviewPane::safeReparentWebView(GtkWidget *new_parent) {
-  GtkWidget *wv = webview_.widget();
+  GtkWidget *wv = WebView::instance().widget();
   if (!GTK_IS_WIDGET(new_parent) || !GTK_IS_WIDGET(wv)) {
     return;
   }
@@ -510,16 +519,18 @@ PreviewPane &PreviewPane::update(const Document &document) {
   auto file = document.filePath();
   std::string base_uri = calculateBaseUri(document);
 
+  auto &wv = WebView::instance();
   if (base_uri != previous_base_uri_) {
     previous_base_uri_ = base_uri;
-    webview_.loadHtml(html, base_uri, root_id_, &scroll_by_file_[file]);
+    wv.loadHtml(html, base_uri, root_id_, &scroll_by_file_[file]);
   } else if (!webview_healthy_) {
-    webview_.loadHtml(html, base_uri, root_id_, &scroll_by_file_[file]);
+    wv.loadHtml(html, base_uri, root_id_, &scroll_by_file_[file]);
     webview_healthy_ = true;
   } else {
-    webview_.getScrollFraction([this, file, base_uri, html](double frac) {
+    wv.getScrollFraction([this, file, base_uri, html](double frac) {
       scroll_by_file_[file] = frac;
-      webview_.updateHtml(html, base_uri, root_id_, &scroll_by_file_[file]);
+      auto &wv = WebView::instance();
+      wv.updateHtml(html, base_uri, root_id_, &scroll_by_file_[file]);
     });
   }
   return *this;
@@ -557,21 +568,22 @@ PreviewPane &PreviewPane::clearAndReloadCss() {
   auto preview_css_path = cfg.configDir() / "preview.css";
   auto previous_css_path = cfg.configDir() / (previous_key_ + ".css");
 
-  webview_.clearInjectedCss();
+  auto &wv = WebView::instance();
+  wv.clearInjectedCss();
   if (FileUtils::fileExists(preview_css_path)) {
-    webview_.injectCssFromFile(preview_css_path);
+    wv.injectCssFromFile(preview_css_path);
   } else {
     auto it = kDefaultCssMap.find("preview.css");
     std::string_view css = (it != kDefaultCssMap.end()) ? it->second : std::string_view{};
-    webview_.injectCssFromLiteral(css.data());
+    wv.injectCssFromLiteral(css.data());
   }
 
   if (FileUtils::fileExists(previous_css_path)) {
-    webview_.injectCssFromFile(previous_css_path);
+    wv.injectCssFromFile(previous_css_path);
   } else {
     auto it = kDefaultCssMap.find(previous_key_ + ".css");
     std::string_view css = (it != kDefaultCssMap.end()) ? it->second : std::string_view{};
-    webview_.injectCssFromLiteral(css.data());
+    wv.injectCssFromLiteral(css.data());
   }
 
   injectCssTheme();
@@ -581,12 +593,14 @@ PreviewPane &PreviewPane::clearAndReloadCss() {
 PreviewPane &PreviewPane::injectCssTheme() {
   auto &cfg = PreviewConfig::instance();
   previous_theme_ = cfg.get<std::string>("theme_mode", "system");
+
+  auto &wv = WebView::instance();
   if (previous_theme_ == "light") {
-    webview_.injectCssFromString("html { color-scheme: light; }");
+    wv.injectCssFromString("html { color-scheme: light; }");
   } else if (previous_theme_ == "dark") {
-    webview_.injectCssFromString("html { color-scheme: dark; }");
+    wv.injectCssFromString("html { color-scheme: dark; }");
   } else {
-    webview_.injectCssFromString("html { color-scheme: light dark; }");
+    wv.injectCssFromString("html { color-scheme: light dark; }");
   }
   return *this;
 }
@@ -638,19 +652,21 @@ void PreviewPane::onPanedButtonPress(GdkEventButton *event) {
 }
 
 void PreviewPane::onPanedButtonRelease(GdkEventButton *event) {
-  if (event->button != 1 || !is_dragging_paned_ || !GTK_IS_WIDGET(webview_.widget())) {
+  auto *wv = WebView::instance().widget();
+  if (event->button != 1 || !is_dragging_paned_ || !GTK_IS_WIDGET(wv)) {
     return;
   }
 
   is_dragging_paned_ = false;
 
   // Clear the temporary size constraint
-  gtk_widget_set_size_request(webview_.widget(), -1, -1);
-  gtk_widget_queue_resize(webview_.widget());
+  gtk_widget_set_size_request(wv, -1, -1);
+  gtk_widget_queue_resize(wv);
 }
 
 void PreviewPane::onPanedMotion() {
-  if (!GTK_IS_WIDGET(webview_.widget()) || !sidebar_notebook_) {
+  auto *wv = WebView::instance().widget();
+  if (!GTK_IS_WIDGET(wv) || !sidebar_notebook_) {
     return;
   }
 
@@ -666,5 +682,5 @@ void PreviewPane::onPanedMotion() {
     return;
   }
 
-  gtk_widget_set_size_request(webview_.widget(), width + resize_buffer, -1);
+  gtk_widget_set_size_request(wv, width + resize_buffer, -1);
 }

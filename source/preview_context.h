@@ -17,8 +17,6 @@
 #endif
 #include <geany/pluginutils.h>
 
-class WebView;
-
 class PreviewContext {
  public:
   static PreviewContext &instance() {
@@ -39,8 +37,6 @@ class PreviewContext {
   GeanyPlugin *geany_plugin_ = nullptr;
   GeanyData *geany_data_ = nullptr;
   GtkWidget *geany_sidebar_ = nullptr;
-
-  WebView *webview_ = nullptr;
 
   void openPreferences() const {
     if (geany_plugin_) {

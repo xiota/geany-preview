@@ -68,7 +68,6 @@ class PreviewPane final {
   guint sidebar_page_number_ = 0;
   gulong sidebar_switch_page_handler_id_ = 0;
 
-  WebView webview_;
   ConverterRegistrar registrar_;
 
   bool update_pending_ = false;

@@ -13,14 +13,25 @@
 
 #include "preview_context.h"
 #include "util/file_utils.h"
-
-class WebViewFindDialog;
+#include "webview_find_dialog.h"
 
 class WebView final {
  public:
-  explicit WebView() noexcept;
-  ~WebView() noexcept;
+  static WebView &instance() {
+    static WebView inst;
+    return inst;
+  }
 
+ private:
+  WebView() = default;
+  ~WebView();
+
+  WebView(const WebView &) = delete;
+  WebView &operator=(const WebView &) = delete;
+  WebView(WebView &&) = delete;
+  WebView &operator=(WebView &&) = delete;
+
+ public:
   GtkWidget *widget() const;
   void reset();
 

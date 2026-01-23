@@ -22,7 +22,11 @@ namespace {
 #include "default_js.h"
 }  // namespace
 
-WebView::WebView() noexcept {}
+WebView::~WebView() {
+  if (G_IS_OBJECT(webview_settings_)) {
+    g_object_unref(webview_settings_);
+  }
+}
 
 void WebView::reset() {
   if (GTK_IS_WIDGET(webview_)) {
@@ -113,12 +117,6 @@ void WebView::reset() {
 
   g_signal_connect(webview_, "decide-policy", G_CALLBACK(onDecidePolicy), nullptr);
   g_signal_connect(webview_, "scroll-event", G_CALLBACK(onScrollEvent), nullptr);
-}
-
-WebView::~WebView() noexcept {
-  if (G_IS_OBJECT(webview_settings_)) {
-    g_object_unref(webview_settings_);
-  }
 }
 
 GtkWidget *WebView::widget() const {
@@ -355,7 +353,7 @@ WebView &WebView::clearFind() {
 
 WebView &WebView::showFindPrompt(GtkWindow *parent) {
   if (!find_dialog_) {
-    find_dialog_ = std::make_unique<WebViewFindDialog>(this);
+    find_dialog_ = std::make_unique<WebViewFindDialog>();
   }
   find_dialog_->show(parent);
   return *this;
@@ -414,10 +412,8 @@ void WebView::onDecidePolicy(
 }
 
 gboolean WebView::onScrollEvent(GtkWidget *widget, GdkEventScroll *event, gpointer user_data) {
-  auto &ctx = PreviewContext::instance();
   auto &cfg = PreviewConfig::instance();
-  if (!ctx.webview_ || !ctx.webview_->widget() ||
-      !cfg.get<bool>("disable_preview_ctrl_wheel_zoom", false)) {
+  if (!cfg.get<bool>("disable_preview_ctrl_wheel_zoom", false)) {
     return false;
   }
 
@@ -425,14 +421,15 @@ gboolean WebView::onScrollEvent(GtkWidget *widget, GdkEventScroll *event, gpoint
     return false;
   }
 
+  auto &wv = WebView::instance();
   if (event->direction == GDK_SCROLL_SMOOTH) {
-    double zoom = webkit_web_view_get_zoom_level(WEBKIT_WEB_VIEW(ctx.webview_->widget()));
+    double zoom = webkit_web_view_get_zoom_level(WEBKIT_WEB_VIEW(wv.widget()));
     zoom = std::max(zoom - event->delta_y * 0.1, 0.01);
-    webkit_web_view_set_zoom_level(WEBKIT_WEB_VIEW(ctx.webview_->widget()), zoom);
+    webkit_web_view_set_zoom_level(WEBKIT_WEB_VIEW(wv.widget()), zoom);
   } else if (event->direction == GDK_SCROLL_UP) {
-    ctx.webview_->stepZoom(+1);
+    wv.stepZoom(+1);
   } else if (event->direction == GDK_SCROLL_DOWN) {
-    ctx.webview_->stepZoom(-1);
+    wv.stepZoom(-1);
   } else {
     return false;
   }

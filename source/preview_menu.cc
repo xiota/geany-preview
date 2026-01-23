@@ -131,9 +131,8 @@ void PreviewMenu::onExportToPdf(GtkMenuItem *, gpointer user_data) {
 
 void PreviewMenu::onPrint(GtkMenuItem *, gpointer user_data) {
   auto &ctx = PreviewContext::instance();
-  if (ctx.webview_) {
-    ctx.webview_->print(GTK_WINDOW(ctx.geany_data_->main_widgets->window));
-  }
+  auto &wv = WebView::instance();
+  wv.print(GTK_WINDOW(ctx.geany_data_->main_widgets->window));
 }
 
 void PreviewMenu::onOpenConfigFolder(GtkMenuItem *, gpointer user_data) {

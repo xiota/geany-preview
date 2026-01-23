@@ -7,11 +7,10 @@
 #include <webkit2/webkit2.h>
 
 #include "preview_context.h"
-#include "webview.h"
 
 class WebViewFindDialog {
  public:
-  WebViewFindDialog(WebView *wv);
+  WebViewFindDialog() = default;
   ~WebViewFindDialog();
 
   void show(GtkWindow *parent);
@@ -30,8 +29,6 @@ class WebViewFindDialog {
 
   GtkWidget *dialog_ = nullptr;
   GtkWidget *entry_ = nullptr;
-
-  WebView *webview_ = nullptr;
 
   gulong auto_dismiss_handler_ = 0;
   gulong notebook_switch_handler_ = 0;

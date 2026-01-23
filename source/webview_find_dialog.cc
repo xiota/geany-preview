@@ -10,8 +10,6 @@
 #include "util/gtk_utils.h"
 #include "webview.h"
 
-WebViewFindDialog::WebViewFindDialog(WebView *wv) : webview_(wv) {}
-
 WebViewFindDialog::~WebViewFindDialog() {
   auto &ctx = PreviewContext::instance();
 
@@ -44,12 +42,13 @@ void WebViewFindDialog::show(GtkWindow *parent) {
   gtk_widget_show_all(dialog_);
 
   // Center over WebView
-  if (gtk_widget_get_window(webview_->widget())) {
+  auto &wv = WebView::instance();
+  if (gtk_widget_get_window(wv.widget())) {
     int wx = 0, wy = 0;
-    gdk_window_get_origin(gtk_widget_get_window(webview_->widget()), &wx, &wy);
+    gdk_window_get_origin(gtk_widget_get_window(wv.widget()), &wx, &wy);
 
-    int w_width = gtk_widget_get_allocated_width(webview_->widget());
-    int w_height = gtk_widget_get_allocated_height(webview_->widget());
+    int w_width = gtk_widget_get_allocated_width(wv.widget());
+    int w_height = gtk_widget_get_allocated_height(wv.widget());
 
     GtkRequisition req;
     gtk_widget_get_preferred_size(dialog_, &req, nullptr);
@@ -85,8 +84,8 @@ void WebViewFindDialog::buildDialog(GtkWindow *parent) {
   gtk_box_pack_start(GTK_BOX(hbox), btn_prev, false, false, 0);
 
   // Get find controller
-  WebKitFindController *fc =
-      webkit_web_view_get_find_controller(WEBKIT_WEB_VIEW(webview_->widget()));
+  auto &wv = WebView::instance();
+  WebKitFindController *fc = webkit_web_view_get_find_controller(WEBKIT_WEB_VIEW(wv.widget()));
 
   // Entry changed → search or clear
   g_signal_connect(
@@ -158,8 +157,9 @@ void WebViewFindDialog::buildDialog(GtkWindow *parent) {
       "destroy",
       G_CALLBACK(+[](GtkWidget *, gpointer data) {
         auto *self = static_cast<WebViewFindDialog *>(data);
+        auto &wv = WebView::instance();
         WebKitFindController *fc =
-            webkit_web_view_get_find_controller(WEBKIT_WEB_VIEW(self->webview_->widget()));
+            webkit_web_view_get_find_controller(WEBKIT_WEB_VIEW(wv.widget()));
         webkit_find_controller_search_finish(fc);
         self->dialog_ = nullptr;
       }),
@@ -168,7 +168,7 @@ void WebViewFindDialog::buildDialog(GtkWindow *parent) {
 
   // Destroy dialog if WebView is destroyed
   g_signal_connect(
-      webview_->widget(),
+      wv.widget(),
       "destroy",
       G_CALLBACK(+[](GtkWidget *, gpointer data) {
         GtkWidget **p = static_cast<GtkWidget **>(data);
@@ -181,7 +181,7 @@ void WebViewFindDialog::buildDialog(GtkWindow *parent) {
   );
 
   // Find the notebook ancestor of the WebView
-  notebook_ = GtkUtils::findAncestorOfType(webview_->widget(), GTK_TYPE_NOTEBOOK);
+  notebook_ = GtkUtils::findAncestorOfType(wv.widget(), GTK_TYPE_NOTEBOOK);
 
   if (notebook_) {
     notebook_switch_handler_ = g_signal_connect(
@@ -189,9 +189,10 @@ void WebViewFindDialog::buildDialog(GtkWindow *parent) {
         "switch-page",
         G_CALLBACK(+[](GtkNotebook *nb, GtkWidget *, guint, gpointer data) {
           auto *self = static_cast<WebViewFindDialog *>(data);
+          auto &wv = WebView::instance();
 
           // If our WebView is NOT on the visible page → dismiss
-          if (!GtkUtils::isWidgetOnVisibleNotebookPage(nb, self->webview_->widget())) {
+          if (!GtkUtils::isWidgetOnVisibleNotebookPage(nb, wv.widget())) {
             if (self->dialog_) {
               gtk_widget_destroy(self->dialog_);
               self->dialog_ = nullptr;

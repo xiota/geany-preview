@@ -132,14 +132,9 @@ void onFindActivate(GSimpleAction *, GVariant *, gpointer data) {
 }
 
 WebKitContextMenuItem *createFindItem() {
-  auto &ctx = PreviewContext::instance();
-
-  if (!ctx.webview_) {
-    return nullptr;
-  }
-
+  auto &wv = WebView::instance();
   GSimpleAction *action = g_simple_action_new("find_in_page", nullptr);
-  g_signal_connect(action, "activate", G_CALLBACK(onFindActivate), ctx.webview_);
+  g_signal_connect(action, "activate", G_CALLBACK(onFindActivate), &wv);
 
   WebKitContextMenuItem *item =
       webkit_context_menu_item_new_from_gaction(G_ACTION(action), "Find in Page…", nullptr);
