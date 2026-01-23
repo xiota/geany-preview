@@ -77,6 +77,10 @@ class PreviewConfig {
       "Affects interpretation of relative links. "
       "Supports variable expansion ($PWD, $HOME, $XDG_DOCUMENTS_DIR)." },
 
+    { "preview_show_extra_info",
+      setting_value_type{ false },
+      "Show extra information when the document cannot be rendered." },
+
     { "preview_zoom_default",
       setting_value_type{ 1.0 },
       "Default zoom level for the preview pane.  (1.0 = 100%)" },

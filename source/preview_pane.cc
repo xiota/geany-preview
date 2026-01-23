@@ -445,10 +445,12 @@ std::string PreviewPane::generateHtml(const Document &document) const {
     html += std::string{ ctx.geany_plugin_->info->name } + " ";
     html += std::string{ ctx.geany_plugin_->info->version } + "</br>";
     html += "&nbsp;&nbsp;&nbsp;";
-    if (!document.filetypeName().empty()) {
-      html += document.filetypeName() + ", " + document.encodingName();
-    } else {
-      html += "Unknown";
+    if (cfg.get<bool>("preview_show_extra_info")) {
+      if (!document.filetypeName().empty()) {
+        html += document.filetypeName() + ", " + document.encodingName();
+      } else {
+        html += "Unknown";
+      }
     }
     if (!pre.type().empty()) {
       html += ", " + normalizedType(pre.type());
