@@ -83,27 +83,6 @@ bool isPreviewVisible() {
 }
 }  // namespace
 
-PreviewShortcuts::PreviewShortcuts() {
-  auto &ctx = PreviewContext::instance();
-  key_group_ = ctx.geany_key_group_;
-
-  for (gsize i = 0; i < std::size(shortcut_defs_); ++i) {
-    if (!shortcut_defs_[i].label) {
-      break;  // stop at dummy entry
-    }
-    keybindings_set_item(
-        key_group_,
-        i,
-        shortcut_defs_[i].callback,
-        0,  // no default key
-        static_cast<GdkModifierType>(0),
-        shortcut_defs_[i].label,
-        shortcut_defs_[i].tooltip,
-        nullptr /* user_data unused here */
-    );
-  }
-}
-
 void PreviewShortcuts::onCopy(guint /*key_id*/) {
   auto &pane = PreviewPane::instance();
   if (GtkUtils::hasFocusWithin(GTK_WIDGET(pane.widget()))) {

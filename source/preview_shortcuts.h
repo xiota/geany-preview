@@ -11,8 +11,50 @@
 
 class PreviewShortcuts {
  public:
-  explicit PreviewShortcuts();
+  static PreviewShortcuts &init(GeanyPlugin *plugin, const char *name) {
+    static bool initialized = false;
+    auto &kb = instance();
 
+    if (!initialized && plugin) {
+      GeanyKeyGroup *key_group = plugin_set_key_group(plugin, name, shortcutCount(), nullptr);
+
+      for (gsize i = 0; i < std::size(shortcut_defs_); ++i) {
+        if (!shortcut_defs_[i].label) {
+          break;  // stop at dummy entry
+        }
+        keybindings_set_item(
+            key_group,
+            i,
+            shortcut_defs_[i].callback,
+            0,  // no default key
+            static_cast<GdkModifierType>(0),
+            shortcut_defs_[i].label,
+            shortcut_defs_[i].tooltip,
+            nullptr /* user_data unused here */
+        );
+      }
+
+      initialized = true;
+    }
+
+    return kb;
+  }
+
+  static PreviewShortcuts &instance() {
+    static PreviewShortcuts inst;
+    return inst;
+  }
+
+ private:
+  PreviewShortcuts() = default;
+  ~PreviewShortcuts() = default;
+
+  PreviewShortcuts(const PreviewShortcuts &) = delete;
+  PreviewShortcuts &operator=(const PreviewShortcuts &) = delete;
+  PreviewShortcuts(PreviewShortcuts &&) = delete;
+  PreviewShortcuts &operator=(PreviewShortcuts &&) = delete;
+
+ public:
   static constexpr gsize shortcutCount() {
     return std::size(shortcut_defs_) - 1;
   }

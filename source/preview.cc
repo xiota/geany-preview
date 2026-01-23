@@ -24,8 +24,6 @@
 #include "tweakui_unchange_document.h"
 
 namespace {
-std::unique_ptr<PreviewShortcuts> preview_shortcuts;
-
 gboolean onEditorNotify(
     GObject * /*object*/,
     GeanyEditor *editor,
@@ -100,9 +98,7 @@ gboolean previewInit(
   PreviewMenu::instance();
 
   // shortcuts
-  ctx.geany_key_group_ =
-      plugin_set_key_group(plugin, "Preview", PreviewShortcuts::shortcutCount(), nullptr);
-  preview_shortcuts = std::make_unique<PreviewShortcuts>();
+  PreviewShortcuts::instance().init(plugin, plugin->info->name);
 
   return true;
 }
@@ -112,8 +108,6 @@ void previewCleanup(
     gpointer /*user_data*/
 ) {
   PreviewConfig::instance().save();
-
-  preview_shortcuts.reset();
 }
 }  // namespace
 

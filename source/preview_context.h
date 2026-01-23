@@ -29,7 +29,6 @@ class PreviewContext {
   GeanyPlugin *geany_plugin_ = nullptr;
   GeanyData *geany_data_ = nullptr;
   GtkWidget *geany_sidebar_ = nullptr;
-  GeanyKeyGroup *geany_key_group_ = nullptr;
 
   WebView *webview_ = nullptr;
 
