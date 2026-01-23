@@ -37,6 +37,24 @@ class TweakUiColorTip : public TweakUiBase<TweakUiColorTip> {
       }
     }
 
+    PreviewConfig::registerSetting(
+        "tweakui/color_tooltip",
+        false,
+        "Show hex colors in tooltips when the mouse hovers over them."
+    );
+
+    PreviewConfig::registerSetting(
+        "tweakui/color_tooltip_size",
+        "small",
+        "Tooltip size: small, medium, or large. The first letter is significant."
+    );
+
+    PreviewConfig::registerSetting(
+        "tweakui/color_chooser",
+        false,
+        "Open the color chooser when double-clicking a color value."
+    );
+
     // Hook into document/editor signals
     plugin_signal_connect(
         ctx.geany_plugin_, nullptr, "document-open", true, G_CALLBACK(documentSignal), this
@@ -76,12 +94,12 @@ class TweakUiColorTip : public TweakUiBase<TweakUiColorTip> {
  private:
   bool colorTooltipEnabled() const {
     auto &cfg = PreviewConfig::instance();
-    return cfg.get<bool>("color_tooltip", false);
+    return cfg.get<bool>("tweakui/color_tooltip", false);
   }
 
   bool colorChooserEnabled() const {
     auto &cfg = PreviewConfig::instance();
-    return cfg.get<bool>("color_chooser", false);
+    return cfg.get<bool>("tweakui/color_chooser", false);
   }
 
   static int containsColorValue(char *string, int position, int maxdist) {

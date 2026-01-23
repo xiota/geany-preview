@@ -17,6 +17,13 @@ class TweakUiRedetectFileType : public TweakUiBase<TweakUiRedetectFileType> {
     if (!ctx.geany_plugin_) {
       return;
     }
+
+    PreviewConfig::registerSetting(
+        "tweakui/redetect_filetype_on_reload",
+        false,
+        "Re-detect file type when a document is reloaded. Normally only on open and save."
+    );
+
     plugin_signal_connect(
         ctx.geany_plugin_, nullptr, "document-reload", true, G_CALLBACK(documentSignal), this
     );
@@ -66,7 +73,7 @@ class TweakUiRedetectFileType : public TweakUiBase<TweakUiRedetectFileType> {
     auto *self = static_cast<TweakUiRedetectFileType *>(user_data);
     auto &cfg = PreviewConfig::instance();
     if (!DOC_VALID(doc) || !doc->file_name ||
-        !cfg.get<bool>("redetect_filetype_on_reload", false)) {
+        !cfg.get<bool>("tweakui/redetect_filetype_on_reload", false)) {
       return;
     }
 

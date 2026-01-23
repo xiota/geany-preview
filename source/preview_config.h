@@ -42,10 +42,11 @@ class PreviewConfig {
   PreviewConfig(PreviewConfig &&) = delete;
   PreviewConfig &operator=(PreviewConfig &&) = delete;
 
- private:
+ public:
   using setting_value_type =
       std::variant<int, double, bool, std::string, std::vector<int>, std::vector<std::string> >;
 
+ private:
   struct SettingDef {
     const char *key;
     setting_value_type default_value;
@@ -53,43 +54,7 @@ class PreviewConfig {
   };
 
   // clang-format off
-  inline static const SettingDef setting_defs_[] = {
-    { "auto_set_pwd",
-      setting_value_type{ false },
-      "Set $PWD to the current document’s folder, walking up if needed." },
-
-    { "auto_set_read_only",
-      setting_value_type{ false },
-      "Automatically set documents to read-only mode when they are not writable." },
-
-    { "color_tooltip",
-      setting_value_type{ false },
-      "Show hex colors in tooltips when the mouse hovers over them." },
-
-    { "color_tooltip_size",
-      setting_value_type{ "small" },
-      "Tooltip size: small, medium, or large. The first letter is significant." },
-
-    { "color_chooser",
-      setting_value_type{ false },
-      "Open the color chooser when double-clicking a color value." },
-
-    { "column_markers",
-      setting_value_type{ false },
-      "Enable or disable visual column markers in the editor." },
-
-    { "column_markers_columns",
-      setting_value_type{ std::vector<int>{ 60, 72, 80, 88, 96, 104, 112, 120, 128 } },
-      "List of column positions (in characters) for vertical guide lines." },
-
-    { "column_markers_colors",
-      setting_value_type{ std::vector<std::string>{ "#ccc", "#bdf", "#fcf", "#ccc", "#fba", "#ccc", "#ccc", "#ccc", "#ccc" } },
-      "Colors for each column marker, #RRGGBB or #RGB, matching column_markers_columns." },
-
-    { "disable_editor_ctrl_wheel_zoom",
-      setting_value_type{ false },
-      "Disable Ctrl+MouseWheel zoom in the editor." },
-
+  inline static std::vector<SettingDef> setting_defs_ = {
     { "disable_preview_ctrl_wheel_zoom",
       setting_value_type{ false },
       "Disable Ctrl+MouseWheel zoom in the preview pane." },
@@ -98,10 +63,6 @@ class PreviewConfig {
       setting_value_type{ std::string{ "xdg-open %d" } },
       "Command to launch a file manager. %d = current document directory." },
 
-    { "focus_editor_on_raise",
-      setting_value_type{ false },
-      "Focus the editor when the Geany window is raised." },
-
     { "headers_incomplete_max",
       setting_value_type{ 3 },
       "Max number of incomplete header lines before treating all as body." },
@@ -109,18 +70,6 @@ class PreviewConfig {
     { "keybinding_behavior_strict",
       setting_value_type{ false },
       "Change focus only if editor or preview/sidebar has focus; otherwise do nothing." },
-
-    { "mark_word",
-      setting_value_type{ false },
-      "Mark all occurrences of a word when double-clicking it." },
-
-    { "mark_word_double_click_delay",
-      setting_value_type{ 50 },
-      "Delay in milliseconds before marking all occurrences after a double-click." },
-
-    { "mark_word_single_click_deselect",
-      setting_value_type{ true },
-      "Deselect the previous highlight by single click." },
 
     { "preview_base_path",
       setting_value_type{ std::string{ "sandbox" } },
@@ -136,34 +85,6 @@ class PreviewConfig {
       setting_value_type{ false },
       "Synchronize zoom changes between Preview and Editor" },
 
-    { "redetect_filetype_on_reload",
-      setting_value_type{ false },
-      "Re-detect file type when a document is reloaded. Normally only on open and save." },
-
-    { "sidebar_auto_resize",
-      setting_value_type{ false },
-      "Auto resize sidebar based on window state (normal, maximized, fullscreen)." },
-
-    { "sidebar_resize_delay",
-      setting_value_type{ 50 },
-      "Delay (ms) before auto resize after window changes." },
-
-    { "sidebar_columns_fullscreen",
-      setting_value_type{ 94 },
-      "Editor columns to keep visible in fullscreen mode." },
-
-    { "sidebar_columns_maximized",
-      setting_value_type{ 94 },
-      "Editor columns to keep visible in maximized mode." },
-
-    { "sidebar_columns_normal",
-      setting_value_type{ 82 },
-      "Editor columns to keep visible in normal mode." },
-
-    { "sidebar_size_min",
-      setting_value_type{ 150 },
-      "Minimum sidebar width (px). Prevents shrinking too far." },
-
     { "terminal_command",
       setting_value_type{ std::string{ "xdg-terminal-exec --working-directory=%d" } },
       "Command to launch a terminal. %d = current document directory." },
@@ -171,10 +92,6 @@ class PreviewConfig {
     { "theme_mode",
       setting_value_type{ std::string{ "system" } },
       "Theme to use for the preview: 'light', 'dark', or 'system'." },
-
-    { "unchange_document",
-      setting_value_type{ false },
-      "Mark new, unsaved, empty documents as unchanged." },
 
     { "update_cooldown",
       setting_value_type{ 65 },
@@ -191,6 +108,17 @@ class PreviewConfig {
   // clang-format on
 
  public:
+  static void
+  registerSetting(const char *key, setting_value_type default_value, const char *help) {
+    // Extend the master table so the GUI sees it
+    setting_defs_.push_back({ key, default_value, help });
+
+    // Insert into runtime maps
+    auto &cfg = instance();
+    cfg.settings_[key] = default_value;
+    cfg.help_texts_[key] = help;
+  }
+
   std::unordered_map<std::string, setting_value_type> settings_;
   std::unordered_map<std::string, std::string> help_texts_;
 

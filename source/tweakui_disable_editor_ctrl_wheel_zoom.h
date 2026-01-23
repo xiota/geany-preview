@@ -29,6 +29,12 @@ class TweakUiDisableEditorCtrlWheelZoom
       }
     }
 
+    PreviewConfig::registerSetting(
+        "tweakui/disable_editor_ctrl_wheel_zoom",
+        false,
+        "Disable Ctrl+MouseWheel zoom in the editor."
+    );
+
     // Hook into new documents
     plugin_signal_connect(
         ctx.geany_plugin_, nullptr, "document-open", true, G_CALLBACK(documentSignal), this
@@ -44,7 +50,7 @@ class TweakUiDisableEditorCtrlWheelZoom
  private:
   static gboolean onScrollEvent(GtkWidget *, GdkEventScroll *event, gpointer user_data) {
     auto &cfg = PreviewConfig::instance();
-    if (cfg.get<bool>("disable_editor_ctrl_wheel_zoom", true)) {
+    if (cfg.get<bool>("tweakui/disable_editor_ctrl_wheel_zoom", true)) {
       return false;
     }
 

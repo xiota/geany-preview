@@ -30,6 +30,12 @@ class TweakUiAutoSetReadOnly : public TweakUiBase<TweakUiAutoSetReadOnly> {
       ));
     }
 
+    PreviewConfig::registerSetting(
+        "tweakui/auto_set_read_only",
+        false,
+        "Automatically set documents to read-only mode when they are not writable."
+    );
+
     plugin_signal_connect(
         ctx.geany_plugin_,
         nullptr,
@@ -64,7 +70,7 @@ class TweakUiAutoSetReadOnly : public TweakUiBase<TweakUiAutoSetReadOnly> {
   static void documentSignal(GObject *, GeanyDocument *doc, gpointer user_data) {
     auto *self = static_cast<TweakUiAutoSetReadOnly *>(user_data);
     auto &cfg = PreviewConfig::instance();
-    if (!DOC_VALID(doc) || !cfg.get<bool>("auto_set_read_only", false)) {
+    if (!DOC_VALID(doc) || !cfg.get<bool>("tweakui/auto_set_read_only", false)) {
       return;
     }
 

@@ -61,11 +61,10 @@ gboolean previewInit(
     GeanyPlugin *plugin,
     gpointer /*user_data*/
 ) {
-  // config
+  // config - init
   auto config_path =
       std::filesystem::path(plugin->geany_data->app->configdir) / "plugins" / "preview";
-
-  PreviewConfig::init(config_path, "preview.conf").load();
+  auto &cfg = PreviewConfig::init(config_path, "preview.conf");
 
   // context
   auto &ctx = PreviewContext::instance();
@@ -99,6 +98,9 @@ gboolean previewInit(
 
   // shortcuts
   PreviewShortcuts::instance().init(plugin, plugin->info->name);
+
+  // config - delayed load
+  cfg.load();
 
   return true;
 }

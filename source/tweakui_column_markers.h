@@ -30,6 +30,25 @@ class TweakUiColumnMarkers : public TweakUiBase<TweakUiColumnMarkers> {
       }
     }
 
+    PreviewConfig::registerSetting(
+        "tweakui/column_markers",
+        false,
+        "Enable or disable visual column markers in the editor."
+    );
+
+    PreviewConfig::registerSetting(
+        "tweakui/column_markers_columns",
+        std::vector<int>{ 60, 72, 80, 88, 96, 104, 112, 120, 128 },
+        "List of column positions (in characters) for vertical guide lines."
+    );
+
+    PreviewConfig::registerSetting(
+        "tweakui/column_markers_colors",
+        std::vector<std::string>{
+            "#ccc", "#bdf", "#fcf", "#ccc", "#fba", "#ccc", "#ccc", "#ccc", "#ccc" },
+        "Colors for each column marker, #RRGGBB or #RGB, matching column_markers_columns."
+    );
+
     auto &cfg = PreviewConfig::instance();
     cfg.connectChanged([this]() { show(); });
 
@@ -49,7 +68,7 @@ class TweakUiColumnMarkers : public TweakUiBase<TweakUiColumnMarkers> {
 
   void show(GeanyDocument *doc = nullptr) {
     auto &cfg = PreviewConfig::instance();
-    if (!cfg.get<bool>("column_markers", false)) {
+    if (!cfg.get<bool>("tweakui/column_markers", false)) {
       clear();
       return;
     }
@@ -60,10 +79,10 @@ class TweakUiColumnMarkers : public TweakUiBase<TweakUiColumnMarkers> {
     }
 
     auto cols = cfg.get<std::vector<int>>(
-        "column_markers_columns", { 60, 72, 80, 88, 96, 104, 112, 120, 128 }
+        "tweakui/column_markers_columns", { 60, 72, 80, 88, 96, 104, 112, 120, 128 }
     );
     auto colors = cfg.get<std::vector<std::string>>(
-        "column_markers_colors",
+        "tweakui/column_markers_colors",
         { "#ccc", "#bdf", "#fcf", "#ccc", "#fba", "#ccc", "#ccc", "#ccc", "#ccc" }
     );
 

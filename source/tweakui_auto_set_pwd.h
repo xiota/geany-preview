@@ -25,6 +25,12 @@ class TweakUiAutoSetPwd : public TweakUiBase<TweakUiAutoSetPwd> {
       return;
     }
 
+    PreviewConfig::registerSetting(
+        "tweakui/auto_set_pwd",
+        false,
+        "Set $PWD to the current document’s folder, walking up if needed."
+    );
+
     auto &cfg = PreviewConfig::instance();
     cfg.connectChanged([this]() { documentSignal(nullptr, nullptr, this); });
 
@@ -38,7 +44,7 @@ class TweakUiAutoSetPwd : public TweakUiBase<TweakUiAutoSetPwd> {
   static void documentSignal(GObject *, GeanyDocument *doc, gpointer user_data) {
     auto *self = static_cast<TweakUiAutoSetPwd *>(user_data);
     auto &cfg = PreviewConfig::instance();
-    if (cfg.get<bool>("auto_set_pwd", false)) {
+    if (cfg.get<bool>("tweakui/auto_set_pwd", false)) {
       return;
     }
 

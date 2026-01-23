@@ -31,6 +31,22 @@ class TweakUiMarkWord : public TweakUiBase<TweakUiMarkWord> {
       }
     }
 
+    PreviewConfig::registerSetting(
+        "tweakui/mark_word", false, "Mark all occurrences of a word when double-clicking it."
+    );
+
+    PreviewConfig::registerSetting(
+        "tweakui/mark_word_double_click_delay",
+        50,
+        "Delay in milliseconds before marking all occurrences after a double-click."
+    );
+
+    PreviewConfig::registerSetting(
+        "tweakui/mark_word_single_click_deselect",
+        true,
+        "Deselect the previous highlight by single click."
+    );
+
     // Hook into document and editor signals
     plugin_signal_connect(
         ctx.geany_plugin_, nullptr, "document-open", true, G_CALLBACK(documentSignal), this

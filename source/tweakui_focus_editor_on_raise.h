@@ -25,13 +25,19 @@ class TweakUiFocusEditorOnRaise : public TweakUiBase<TweakUiFocusEditorOnRaise> 
       return;
     }
 
+    PreviewConfig::registerSetting(
+        "tweakui/focus_editor_on_raise",
+        false,
+        "Focus the editor when the Geany window is raised."
+    );
+
     g_signal_connect(geany_window, "notify::is-active", G_CALLBACK(onWindowActive), nullptr);
   }
 
  private:
   static void onWindowActive(GObject *object, GParamSpec *, gpointer user_data) {
     auto &cfg = PreviewConfig::instance();
-    if (!cfg.get<bool>("focus_editor_on_raise", false)) {
+    if (!cfg.get<bool>("tweakui/focus_editor_on_raise", false)) {
       return;
     }
 

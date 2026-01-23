@@ -19,6 +19,11 @@ class TweakUiUnchangeDocument : public TweakUiBase<TweakUiUnchangeDocument> {
     if (!ctx.geany_plugin_) {
       return;
     }
+
+    PreviewConfig::registerSetting(
+        "tweakui/unchange_document", false, "Mark new, unsaved, empty documents as unchanged."
+    );
+
     plugin_signal_connect(
         ctx.geany_plugin_, nullptr, "editor-notify", false, G_CALLBACK(editorNotify), this
     );
@@ -38,7 +43,7 @@ class TweakUiUnchangeDocument : public TweakUiBase<TweakUiUnchangeDocument> {
     }
 
     auto &cfg = PreviewConfig::instance();
-    if (!cfg.get<bool>("unchange_document", false)) {
+    if (!cfg.get<bool>("tweakui/unchange_document", false)) {
       return;
     }
 
