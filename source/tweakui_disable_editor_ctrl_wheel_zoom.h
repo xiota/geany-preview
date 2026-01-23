@@ -9,10 +9,9 @@
 #include <scintilla/Scintilla.h>
 
 #include "preview_context.h"
-#include "tweakui_base.h"
+#include "tweakui.h"
 
-class TweakUiDisableEditorCtrlWheelZoom
-    : public TweakUiBase<TweakUiDisableEditorCtrlWheelZoom> {
+class TweakUiDisableEditorCtrlWheelZoom : public TweakUi<TweakUiDisableEditorCtrlWheelZoom> {
  public:
   explicit TweakUiDisableEditorCtrlWheelZoom() {
     auto &ctx = PreviewContext::instance();
@@ -92,4 +91,4 @@ class TweakUiDisableEditorCtrlWheelZoom
   }
 };
 
-template class TweakUiBase<TweakUiDisableEditorCtrlWheelZoom>;
+template class TweakUi<TweakUiDisableEditorCtrlWheelZoom>;

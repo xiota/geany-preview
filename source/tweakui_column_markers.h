@@ -12,9 +12,9 @@
 
 #include "preview_config.h"
 #include "preview_context.h"
-#include "tweakui_base.h"
+#include "tweakui.h"
 
-class TweakUiColumnMarkers : public TweakUiBase<TweakUiColumnMarkers> {
+class TweakUiColumnMarkers : public TweakUi<TweakUiColumnMarkers> {
  public:
   explicit TweakUiColumnMarkers() {
     auto &ctx = PreviewContext::instance();
@@ -165,4 +165,4 @@ class TweakUiColumnMarkers : public TweakUiBase<TweakUiColumnMarkers> {
   bool show_idle_in_progress_ = false;
 };
 
-template class TweakUiBase<TweakUiColumnMarkers>;
+template class TweakUi<TweakUiColumnMarkers>;

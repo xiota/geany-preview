@@ -16,7 +16,7 @@
 
 #include "preview_config.h"
 #include "preview_context.h"
-#include "tweakui_base.h"
+#include "tweakui.h"
 
 class TweakUiSidebarAutoResize;
 
@@ -28,7 +28,7 @@ struct DelayedApplyData {
 };
 }  // anonymous namespace
 
-class TweakUiSidebarAutoResize : public TweakUiBase<TweakUiSidebarAutoResize> {
+class TweakUiSidebarAutoResize : public TweakUi<TweakUiSidebarAutoResize> {
  public:
   explicit TweakUiSidebarAutoResize() {
     auto &ctx = PreviewContext::instance();
@@ -258,4 +258,4 @@ class TweakUiSidebarAutoResize : public TweakUiBase<TweakUiSidebarAutoResize> {
   static constexpr int kEditorMinWidth = 200;
 };
 
-template class TweakUiBase<TweakUiSidebarAutoResize>;
+template class TweakUi<TweakUiSidebarAutoResize>;

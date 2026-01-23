@@ -8,9 +8,9 @@
 #include <pluginutils.h>
 
 #include "preview_context.h"
-#include "tweakui_base.h"
+#include "tweakui.h"
 
-class TweakUiRedetectFileType : public TweakUiBase<TweakUiRedetectFileType> {
+class TweakUiRedetectFileType : public TweakUi<TweakUiRedetectFileType> {
  public:
   explicit TweakUiRedetectFileType() {
     auto &ctx = PreviewContext::instance();
@@ -81,4 +81,4 @@ class TweakUiRedetectFileType : public TweakUiBase<TweakUiRedetectFileType> {
   }
 };
 
-template class TweakUiBase<TweakUiRedetectFileType>;
+template class TweakUi<TweakUiRedetectFileType>;

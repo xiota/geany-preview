@@ -10,9 +10,9 @@
 
 #include "preview_config.h"
 #include "preview_context.h"
-#include "tweakui_base.h"
+#include "tweakui.h"
 
-class TweakUiFocusEditorOnRaise : public TweakUiBase<TweakUiFocusEditorOnRaise> {
+class TweakUiFocusEditorOnRaise : public TweakUi<TweakUiFocusEditorOnRaise> {
  public:
   explicit TweakUiFocusEditorOnRaise() {
     auto &ctx = PreviewContext::instance();
@@ -55,4 +55,4 @@ class TweakUiFocusEditorOnRaise : public TweakUiBase<TweakUiFocusEditorOnRaise> 
   }
 };
 
-template class TweakUiBase<TweakUiFocusEditorOnRaise>;
+template class TweakUi<TweakUiFocusEditorOnRaise>;

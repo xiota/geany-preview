@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
- * SECTION:tweakui_base
- * @title: TweakUiBase
+ * SECTION:tweakui
+ * @title: TweakUi
  * @short_description: CRTP base class for tweakui modules
  *
- * TweakUiBase is a small CRTP helper that gives each tweakui module:
+ * TweakUi is a small CRTP helper that gives each tweakui module:
  *
  *   • A per-class singleton instance() method
  *   • Automatic registration into tweakui_registry()
@@ -17,18 +17,18 @@
  * instantiate its specialization to ensure the registrar is emitted:
  *
  * |[
- *   template class TweakUiBase<TweakUiColorTip>;
+ *   template class TweakUi<TweakUiColorTip>;
  * ]|
  *
  * Example:
  *
  * |[
- *   class TweakUiColorTip : public TweakUiBase<TweakUiColorTip> {
+ *   class TweakUiColorTip : public TweakUi<TweakUiColorTip> {
  *   public:
  *     TweakUiColorTip();
  *   };
  *
- *   template class TweakUiBase<TweakUiColorTip>;
+ *   template class TweakUi<TweakUiColorTip>;
  * ]|
  */
 
@@ -37,7 +37,7 @@
 #include "tweakui_registry.h"
 
 template <typename Derived>
-class TweakUiBase {
+class TweakUi {
  public:
   static Derived &instance() {
     static Derived inst;
@@ -45,11 +45,11 @@ class TweakUiBase {
   }
 
  protected:
-  TweakUiBase() = default;
+  TweakUi() = default;
 
  private:
-  static AutoRegisterTweakUi<Derived> reg_;
+  static TweakUiRegistry<Derived> reg_;
 };
 
 template <typename Derived>
-AutoRegisterTweakUi<Derived> TweakUiBase<Derived>::reg_{};
+TweakUiRegistry<Derived> TweakUi<Derived>::reg_{};

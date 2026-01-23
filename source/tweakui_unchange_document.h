@@ -10,9 +10,9 @@
 
 #include "preview_config.h"
 #include "preview_context.h"
-#include "tweakui_base.h"
+#include "tweakui.h"
 
-class TweakUiUnchangeDocument : public TweakUiBase<TweakUiUnchangeDocument> {
+class TweakUiUnchangeDocument : public TweakUi<TweakUiUnchangeDocument> {
  public:
   explicit TweakUiUnchangeDocument() {
     auto &ctx = PreviewContext::instance();
@@ -55,4 +55,4 @@ class TweakUiUnchangeDocument : public TweakUiBase<TweakUiUnchangeDocument> {
   }
 };
 
-template class TweakUiBase<TweakUiUnchangeDocument>;
+template class TweakUi<TweakUiUnchangeDocument>;

@@ -13,9 +13,9 @@
 
 #include "preview_config.h"
 #include "preview_context.h"
-#include "tweakui_base.h"
+#include "tweakui.h"
 
-class TweakUiMarkWord : public TweakUiBase<TweakUiMarkWord> {
+class TweakUiMarkWord : public TweakUi<TweakUiMarkWord> {
  public:
   explicit TweakUiMarkWord() {
     auto &ctx = PreviewContext::instance();
@@ -168,4 +168,4 @@ class TweakUiMarkWord : public TweakUiBase<TweakUiMarkWord> {
   int double_click_delay_ms_ = 50;
 };
 
-template class TweakUiBase<TweakUiMarkWord>;
+template class TweakUi<TweakUiMarkWord>;

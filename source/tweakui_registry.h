@@ -7,7 +7,7 @@
  * @short_description: Header-only registry for tweakui initialization
  *
  * The tweakui registry stores initialization callbacks inserted by
- * AutoRegisterTweakUi. Each tweakui module registers a callback that
+ * TweakUiRegistry. Each tweakui module registers a callback that
  * constructs its singleton during plugin startup.
  *
  * This avoids static initialization ordering issues and keeps all tweakui
@@ -34,8 +34,8 @@ inline std::vector<std::function<void()>> &tweakui_registry() {
 
 // Auto-registration helper
 template <typename T>
-struct AutoRegisterTweakUi {
-  AutoRegisterTweakUi() {
+struct TweakUiRegistry {
+  TweakUiRegistry() {
     tweakui_registry().push_back([] { T::instance(); });
   }
 };

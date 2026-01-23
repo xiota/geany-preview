@@ -16,9 +16,9 @@
 
 #include "preview_config.h"
 #include "preview_context.h"
-#include "tweakui_base.h"
+#include "tweakui.h"
 
-class TweakUiColorTip : public TweakUiBase<TweakUiColorTip> {
+class TweakUiColorTip : public TweakUi<TweakUiColorTip> {
  public:
   explicit TweakUiColorTip() {
     auto &ctx = PreviewContext::instance();
@@ -288,4 +288,4 @@ class TweakUiColorTip : public TweakUiBase<TweakUiColorTip> {
   std::string colortip_template_{ "    " };
 };
 
-template class TweakUiBase<TweakUiColorTip>;
+template class TweakUi<TweakUiColorTip>;

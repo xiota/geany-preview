@@ -15,9 +15,9 @@
 
 #include "preview_config.h"
 #include "preview_context.h"
-#include "tweakui_base.h"
+#include "tweakui.h"
 
-class TweakUiAutoSetPwd : public TweakUiBase<TweakUiAutoSetPwd> {
+class TweakUiAutoSetPwd : public TweakUi<TweakUiAutoSetPwd> {
  public:
   explicit TweakUiAutoSetPwd() {
     auto &ctx = PreviewContext::instance();
@@ -79,4 +79,4 @@ class TweakUiAutoSetPwd : public TweakUiBase<TweakUiAutoSetPwd> {
   }
 };
 
-template class TweakUiBase<TweakUiAutoSetPwd>;
+template class TweakUi<TweakUiAutoSetPwd>;

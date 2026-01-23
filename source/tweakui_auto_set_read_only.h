@@ -14,9 +14,9 @@
 
 #include "preview_config.h"
 #include "preview_context.h"
-#include "tweakui_base.h"
+#include "tweakui.h"
 
-class TweakUiAutoSetReadOnly : public TweakUiBase<TweakUiAutoSetReadOnly> {
+class TweakUiAutoSetReadOnly : public TweakUi<TweakUiAutoSetReadOnly> {
  public:
   explicit TweakUiAutoSetReadOnly() {
     auto &ctx = PreviewContext::instance();
@@ -82,4 +82,4 @@ class TweakUiAutoSetReadOnly : public TweakUiBase<TweakUiAutoSetReadOnly> {
   GtkCheckMenuItem *read_only_menu_item_ = nullptr;
 };
 
-template class TweakUiBase<TweakUiAutoSetReadOnly>;
+template class TweakUi<TweakUiAutoSetReadOnly>;
