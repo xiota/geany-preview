@@ -36,13 +36,13 @@ class TweakUiMarkWord : public TweakUi<TweakUiMarkWord> {
     );
 
     PreviewConfig::registerSetting(
-        "tweakui/mark_word_double_click_delay",
+        "tweakui/mark_word/double_click_delay",
         50,
         "Delay in milliseconds before marking all occurrences after a double-click."
     );
 
     PreviewConfig::registerSetting(
-        "tweakui/mark_word_single_click_deselect",
+        "tweakui/mark_word/single_click_deselect",
         true,
         "Deselect the previous highlight by single click."
     );
@@ -68,12 +68,12 @@ class TweakUiMarkWord : public TweakUi<TweakUiMarkWord> {
  private:
   bool isEnabled() const {
     auto &cfg = PreviewConfig::instance();
-    return cfg.get<bool>("mark_word", false);
+    return cfg.get<bool>("tweakui/mark_word", false);
   }
 
   bool singleClickDeselect() const {
     auto &cfg = PreviewConfig::instance();
-    return cfg.get<bool>("mark_word_single_click_deselect", true);
+    return cfg.get<bool>("tweakui/mark_word/single_click_deselect", true);
   }
 
   static void clearMarker(GeanyDocument *doc = nullptr) {
@@ -106,7 +106,7 @@ class TweakUiMarkWord : public TweakUi<TweakUiMarkWord> {
       } else if (event->type == GDK_2BUTTON_PRESS) {
         if (self->double_click_timer_id_ == 0) {
           auto &cfg = PreviewConfig::instance();
-          int val = cfg.get<int>("mark_word_double_click_delay", 50);
+          int val = cfg.get<int>("tweakui/mark_word/double_click_delay", 50);
           self->double_click_delay_ms_ = val;
 
           self->double_click_timer_id_ =
