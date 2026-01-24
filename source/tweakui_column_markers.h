@@ -37,13 +37,13 @@ class TweakUiColumnMarkers : public TweakUi<TweakUiColumnMarkers> {
     );
 
     PreviewConfig::registerSetting(
-        "tweakui/column_markers_columns",
+        "tweakui/column_markers/columns",
         std::vector<int>{ 60, 72, 80, 88, 96, 104, 112, 120, 128 },
         "List of column positions (in characters) for vertical guide lines."
     );
 
     PreviewConfig::registerSetting(
-        "tweakui/column_markers_colors",
+        "tweakui/column_markers/colors",
         std::vector<std::string>{
             "#ccc", "#bdf", "#fcf", "#ccc", "#fba", "#ccc", "#ccc", "#ccc", "#ccc" },
         "Colors for each column marker, #RRGGBB or #RGB, matching column_markers_columns."
@@ -79,10 +79,10 @@ class TweakUiColumnMarkers : public TweakUi<TweakUiColumnMarkers> {
     }
 
     auto cols = cfg.get<std::vector<int>>(
-        "tweakui/column_markers_columns", { 60, 72, 80, 88, 96, 104, 112, 120, 128 }
+        "tweakui/column_markers/columns", { 60, 72, 80, 88, 96, 104, 112, 120, 128 }
     );
     auto colors = cfg.get<std::vector<std::string>>(
-        "tweakui/column_markers_colors",
+        "tweakui/column_markers/colors",
         { "#ccc", "#bdf", "#fcf", "#ccc", "#fba", "#ccc", "#ccc", "#ccc", "#ccc" }
     );
 

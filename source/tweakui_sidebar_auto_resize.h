@@ -51,29 +51,31 @@ class TweakUiSidebarAutoResize : public TweakUi<TweakUiSidebarAutoResize> {
     );
 
     PreviewConfig::registerSetting(
-        "tweakui/sidebar_resize_delay",
+        "tweakui/sidebar_auto_resize/resize_delay",
         50,
         "Delay (ms) before auto resize after window changes."
     );
 
     PreviewConfig::registerSetting(
-        "tweakui/sidebar_columns_fullscreen",
+        "tweakui/sidebar_auto_resize/columns_fullscreen",
         94,
         "Editor columns to keep visible in fullscreen mode."
     );
 
     PreviewConfig::registerSetting(
-        "tweakui/sidebar_columns_maximized",
+        "tweakui/sidebar_auto_resize/columns_maximized",
         94,
         "Editor columns to keep visible in maximized mode."
     );
 
     PreviewConfig::registerSetting(
-        "tweakui/sidebar_columns_normal", 82, "Editor columns to keep visible in normal mode."
+        "tweakui/sidebar_auto_resize/columns_normal",
+        82,
+        "Editor columns to keep visible in normal mode."
     );
 
     PreviewConfig::registerSetting(
-        "tweakui/sidebar_size_min",
+        "tweakui/sidebar_auto_resize/size_min",
         150,
         "Minimum sidebar width (px). Prevents shrinking too far."
     );
@@ -172,9 +174,9 @@ class TweakUiSidebarAutoResize : public TweakUi<TweakUiSidebarAutoResize> {
       maximized = false;
     }
 
-    int cols_normal = cfg.get<int>("tweakui/sidebar_columns_normal", 80);
-    int cols_maximized = cfg.get<int>("tweakui/sidebar_columns_maximized", 100);
-    int cols_fullscreen = cfg.get<int>("tweakui/sidebar_columns_fullscreen", 100);
+    int cols_normal = cfg.get<int>("tweakui/sidebar_auto_resize/columns_normal", 80);
+    int cols_maximized = cfg.get<int>("tweakui/sidebar_auto_resize/columns_maximized", 100);
+    int cols_fullscreen = cfg.get<int>("tweakui/sidebar_auto_resize/columns_fullscreen", 100);
 
     int target_cols = cols_normal;
     if (fullscreen) {
@@ -183,7 +185,7 @@ class TweakUiSidebarAutoResize : public TweakUi<TweakUiSidebarAutoResize> {
       target_cols = cols_maximized;
     }
 
-    int delay_ms = cfg.get<int>("tweakui/sidebar_resize_delay", 50);
+    int delay_ms = cfg.get<int>("tweakui/sidebar_auto_resize/resize_delay", 50);
     if (delay_ms < 0) {
       delay_ms = 0;
     }
@@ -222,7 +224,7 @@ class TweakUiSidebarAutoResize : public TweakUi<TweakUiSidebarAutoResize> {
           }
 
           auto &cfg = PreviewConfig::instance();
-          int min_sidebar_width = cfg.get<int>("tweakui/sidebar_size_min", 50);
+          int min_sidebar_width = cfg.get<int>("tweakui/sidebar_auto_resize/size_min", 150);
 
           int max_editor_width = paned_w - min_sidebar_width;
 

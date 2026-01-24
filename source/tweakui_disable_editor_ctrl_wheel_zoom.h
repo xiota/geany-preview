@@ -29,7 +29,7 @@ class TweakUiDisableEditorCtrlWheelZoom : public TweakUi<TweakUiDisableEditorCtr
     }
 
     PreviewConfig::registerSetting(
-        "tweakui/disable_editor_ctrl_wheel_zoom",
+        "tweakui/editor_ctrl_wheel_zoom/disable",
         false,
         "Disable Ctrl+MouseWheel zoom in the editor."
     );
@@ -49,7 +49,7 @@ class TweakUiDisableEditorCtrlWheelZoom : public TweakUi<TweakUiDisableEditorCtr
  private:
   static gboolean onScrollEvent(GtkWidget *, GdkEventScroll *event, gpointer user_data) {
     auto &cfg = PreviewConfig::instance();
-    if (cfg.get<bool>("tweakui/disable_editor_ctrl_wheel_zoom", true)) {
+    if (cfg.get<bool>("tweakui/editor_ctrl_wheel_zoom/disable", true)) {
       return false;
     }
 
