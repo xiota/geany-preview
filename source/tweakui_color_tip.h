@@ -22,7 +22,7 @@ class TweakUiColorTip : public TweakUi<TweakUiColorTip> {
  public:
   explicit TweakUiColorTip() {
     auto &ctx = PreviewContext::instance();
-    if (!ctx.geany_data_ || ctx.geany_plugin_) {
+    if (!ctx.geany_data_ || !ctx.geany_plugin_) {
       return;
     }
 
@@ -44,13 +44,13 @@ class TweakUiColorTip : public TweakUi<TweakUiColorTip> {
     );
 
     PreviewConfig::registerSetting(
-        "tweakui/color_tooltip_size",
+        "tweakui/color_tooltip/size",
         "small",
         "Tooltip size: small, medium, or large. The first letter is significant."
     );
 
     PreviewConfig::registerSetting(
-        "tweakui/color_chooser",
+        "tweakui/color_tooltip/chooser",
         false,
         "Open the color chooser when double-clicking a color value."
     );
@@ -68,27 +68,6 @@ class TweakUiColorTip : public TweakUi<TweakUiColorTip> {
     plugin_signal_connect(
         ctx.geany_plugin_, nullptr, "editor-notify", false, G_CALLBACK(editorNotify), this
     );
-
-    setSize();
-  }
-
-  void setSize(std::string strSize = {}) {
-    auto lowered = to_lower(trim(strSize));
-    if (!lowered.empty()) {
-      color_tooltip_size_ = lowered;
-    }
-    switch (color_tooltip_size_[0]) {
-      case 'l':
-        colortip_template_ = "          \n          \n          \n          ";
-        break;
-      case 'm':
-        colortip_template_ = "        \n        ";
-        break;
-      case 's':
-      default:
-        colortip_template_ = "    ";
-        break;
-    }
   }
 
  private:
@@ -99,7 +78,7 @@ class TweakUiColorTip : public TweakUi<TweakUiColorTip> {
 
   bool colorChooserEnabled() const {
     auto &cfg = PreviewConfig::instance();
-    return cfg.get<bool>("tweakui/color_chooser", false);
+    return cfg.get<bool>("tweakui/color_tooltip/chooser", false);
   }
 
   static int containsColorValue(char *string, int position, int maxdist) {
@@ -251,10 +230,16 @@ class TweakUiColorTip : public TweakUi<TweakUiColorTip> {
         if (subtext) {
           int color = containsColorValue(subtext, pos, 2);
           if (color != -1) {
+            auto &cfg = PreviewConfig::instance();
+            auto size = cfg.get<std::string>("tweakui/color_tooltip/size", "small");
+            char c = size.empty() ? 's' : std::tolower(size[0]);
+
+            const char *tpl = (c == 'l')   ? colortip_templates_[2]
+                              : (c == 'm') ? colortip_templates_[1]
+                                           : colortip_templates_[0];
+
             scintilla_send_message(sci, SCI_CALLTIPSETBACK, color, 0);
-            scintilla_send_message(
-                sci, SCI_CALLTIPSHOW, nt->position, (sptr_t)self->colortip_template_.c_str()
-            );
+            scintilla_send_message(sci, SCI_CALLTIPSHOW, nt->position, (sptr_t)tpl);
           }
           g_free(subtext);
         }
@@ -284,8 +269,11 @@ class TweakUiColorTip : public TweakUi<TweakUiColorTip> {
     return out;
   }
 
-  std::string color_tooltip_size_{ "small" };
-  std::string colortip_template_{ "    " };
+  static constexpr const char *colortip_templates_[] = {
+    "    ",                                           // s
+    "        \n        ",                             // m
+    "          \n          \n          \n          "  // l
+  };
 };
 
 template class TweakUi<TweakUiColorTip>;
